@@ -19,6 +19,7 @@ from services.security_service import enforce_request_tenant, require_permission
 from engine import anomaly, logs
 from config import DEFAULT_METRIC_QUERIES
 from engine.correlation import correlate, link_logs_to_metrics
+from engine.registry import get_registry
 from engine.fetcher import fetch_metrics
 from api.requests import CorrelateRequest
 
@@ -68,7 +69,15 @@ async def correlate_signals(req: CorrelateRequest) -> Dict[str, Any]:
     if not isinstance(logs_raw, Exception):
         log_bursts_list = logs.detect_bursts(logs_raw)
 
-    events = correlate(metric_anomalies, log_bursts_list, [], window_seconds=req.window_seconds)
+    # compute confidence using tenant-specific signal weights if available
+    state = await get_registry().get_state(req.tenant_id)
+    events = correlate(
+        metric_anomalies,
+        log_bursts_list,
+        [],
+        window_seconds=req.window_seconds,
+        weight_fn=state.weighted_confidence,
+    )
     links = link_logs_to_metrics(metric_anomalies, log_bursts_list)
 
     return {

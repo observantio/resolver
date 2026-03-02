@@ -50,6 +50,15 @@ def _coerce_query_value(value, cast):
     return cast(value)
 
 
+def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> Dict[str, list[str]]:
+    common: Dict[str, list[str]] = {}
+    for idx, root_a in enumerate(roots):
+        for root_b in roots[idx + 1:]:
+            pair_key = f"{root_a}|{root_b}"
+            common[pair_key] = causal_graph.find_common_causes(root_a, root_b)
+    return common
+
+
 @router.post(
     "/causal/granger",
     summary="Granger causality between metrics (bounded by default)",
@@ -107,6 +116,7 @@ async def granger_causality(
             for root in causal_graph.root_causes()
         },
         "topological_order": causal_graph.topological_sort(),
+        "common_causes_between_roots": _common_causes_for_roots(causal_graph, causal_graph.root_causes()),
     }
     if include_raw:
         raw_pairs = test_all_pairs(series_map) if len(series_map) >= 2 else []

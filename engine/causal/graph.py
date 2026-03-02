@@ -50,7 +50,7 @@ class CausalGraph:
                 self.add_edge(r.cause_metric, r.effect_metric, r.strength)
 
     def topological_sort(self) -> List[str]:
-        nodes = set(self._forward) | {e.effect for e in self._edges}
+        nodes = self.all_nodes()
         in_degree: Dict[str, int] = {n: 0 for n in nodes}
         for node in self._forward:
             for edge in self._forward[node]:

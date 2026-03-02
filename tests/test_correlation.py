@@ -10,6 +10,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from engine.correlation.temporal import CorrelatedEvent, correlate
 from engine.correlation.signals import link_logs_to_metrics
+from config import settings
 from api.responses import MetricAnomaly, LogBurst, ServiceLatency
 from engine.enums import Severity, ChangeType
 
@@ -153,3 +154,19 @@ def test_correlate_does_not_use_substring_service_match():
     events = correlate(anomalies, bursts, latency, window_seconds=30)
     assert events
     assert events[0].service_latency == []
+
+
+def test_correlate_with_custom_weight_fn():
+    # make sure weight_fn override is applied and respects score cap
+    anomalies = [make_anomaly(0)]
+    bursts = [make_logburst(0, 1)]
+    sl = [make_latency()]
+    # compute unweighted metric score for reference
+    m_score = min(settings.correlation_score_max, 1 * settings.correlation_weight_time)
+    # define a weight function that doubles metric component only
+    def wfn(m, log_score, t):
+        return m * 2
+    events = correlate(anomalies, bursts, sl, window_seconds=10, weight_fn=wfn)
+    assert events
+    expected = round(min(settings.correlation_score_max, wfn(m_score, 0, 0)), 3)
+    assert events[0].confidence == expected

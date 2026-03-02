@@ -109,6 +109,14 @@ class TenantState:
         log_score: float,
         trace_score: float,
     ) -> float:
+        """Return a confidence value computed as a weighted sum of the three
+        signal-specific scores using the tenant's adaptive weights.
+
+        The result is capped according to ``settings.correlation_score_max``
+        when used in temporal correlation.  This helper is consumed by
+        ``engine.correlation.temporal.correlate`` and other components that
+        need to combine per-signal scores according to tenant preferences.
+        """
         w = self._weights
         default = _default_weights()
         return round(
@@ -162,7 +170,7 @@ class TenantRegistry:
         state = await self.get_state(tenant_id)
         state.reset()
         await weight_store.delete(tenant_id)
-        self._states.pop(tenant_id, None)
+        self.evict(tenant_id)
         return state
 
     async def register_event(self, tenant_id: str, event: DeploymentEvent) -> None:

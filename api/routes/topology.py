@@ -45,4 +45,8 @@ async def blast_radius(req: TopologyRequest) -> Dict[str, Any]:
         "affected_downstream": radius.affected_downstream,
         "upstream_roots": upstream,
         "all_services": sorted(graph.all_services()),
+        "critical_paths": {
+            service: graph.critical_path(req.root_service, service)
+            for service in radius.affected_downstream
+        },
     }

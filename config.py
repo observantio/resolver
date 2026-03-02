@@ -98,9 +98,7 @@ BECERTAIN_ANALYZE_JOB_TTL_DAYS = int(os.getenv("BECERTAIN_ANALYZE_JOB_TTL_DAYS",
 # tenant defaults
 BECERTAIN_DEFAULT_TENANT_ID = os.getenv("BECERTAIN_DEFAULT_TENANT_ID", "Av45ZchZsQdKjN8XyG")
 
-
 DEFAULT_SERVICE_NAME = "default_service"
-
 
 SLO_ERROR_QUERY_TEMPLATE = (
     'sum(rate(http_requests_total{{service="{service}",status=~"5.."}}[5m]))'
@@ -141,7 +139,6 @@ SEVERITY_WEIGHTS: dict[str, int] = {
 DATASOURCE_TIMEOUT = 30  
 HEALTH_PATH = "/ready"
 
-# registry defaults
 DEFAULT_WEIGHTS: Dict[str, float] = {
     "metrics": 0.30,
     "logs": 0.35,

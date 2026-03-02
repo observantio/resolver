@@ -63,3 +63,4 @@ async def test_topology_blast_radius_supports_dict_trace_payload(monkeypatch):
     assert "payments" in result["affected_downstream"]
     assert "checkout" in result["all_services"]
     assert "payments" in result["all_services"]
+    assert result["critical_paths"]["payments"] == ["checkout", "payments"]

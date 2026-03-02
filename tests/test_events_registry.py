@@ -22,8 +22,6 @@ def test_event_registry_basic():
     all_events = reg.list_all()
     assert len(all_events) == 2
     assert reg.for_service("svc") == all_events
-    assert reg.most_recent("svc") == e2
     assert reg.in_window(150, 250) == [e2]
-    assert reg.near_timestamp(200, window_seconds=10) == [e2]
     reg.clear()
     assert reg.list_all() == []

@@ -117,6 +117,14 @@ class DummyRegistry:
     async def events_in_window(self, tenant_id: str, start: int, end: int):
         return []
 
+    async def get_state(self, tenant_id: str):
+        # return a minimal object supporting weighted_confidence used by analyzer
+        class _State:
+            def weighted_confidence(self, metric_score, log_score, trace_score):
+                # default behaviour mirrors previous unweighted logic
+                return metric_score + log_score + trace_score
+        return _State()
+
 
 def fake_detect(metric_name, ts, vals, sensitivity=None):
     t = float(ts[len(ts) // 2])
@@ -206,6 +214,44 @@ async def test_analyzer_concurrent_throughput_target(monkeypatch):
     p95_index = max(0, int(round(0.95 * len(durations_sorted))) - 1)
     p95 = durations_sorted[p95_index]
     assert p95 < 1.5
+
+
+@pytest.mark.asyncio
+async def test_analyzer_uses_causal_and_topology_graph_helpers(monkeypatch):
+    monkeypatch.setattr(analyzer, "DEFAULT_METRIC_QUERIES", ["q_a", "q_b"])
+    monkeypatch.setattr(analyzer, "get_registry", lambda: DummyRegistry())
+    monkeypatch.setattr(analyzer.anomaly, "detect", fake_detect)
+    monkeypatch.setattr(analyzer, "changepoint_detect", lambda ts, vals, threshold_sigma=None: [])
+    monkeypatch.setattr(analyzer, "test_all_pairs", lambda series_map, max_lag=None, p_threshold=None: [])
+
+    called = {"find_common_causes": 0, "critical_path": 0}
+    original_find_common_causes = analyzer.CausalGraph.find_common_causes
+    original_critical_path = analyzer.DependencyGraph.critical_path
+
+    def spy_find_common_causes(self, node_a, node_b):
+        called["find_common_causes"] += 1
+        return original_find_common_causes(self, node_a, node_b)
+
+    def spy_critical_path(self, source, target):
+        called["critical_path"] += 1
+        return original_critical_path(self, source, target)
+
+    async def fake_compute_and_persist(tenant_id, metric_name, ts, vals, z_threshold=3.0):
+        return Baseline(mean=1.0, std=1.0, lower=0.0, upper=2.0, sample_count=len(vals))
+
+    async def fake_save_and_merge(tenant_id, service, fresh_results):
+        return []
+
+    monkeypatch.setattr(analyzer.CausalGraph, "find_common_causes", spy_find_common_causes)
+    monkeypatch.setattr(analyzer.DependencyGraph, "critical_path", spy_critical_path)
+    monkeypatch.setattr(analyzer.baseline_store, "compute_and_persist", fake_compute_and_persist)
+    monkeypatch.setattr(analyzer.granger_store, "save_and_merge", fake_save_and_merge)
+
+    req = AnalyzeRequest(tenant_id="tenant-helpers", start=1, end=3600, step="15s", services=["payment-service"])
+    await analyzer.run(DummyProvider(), req)
+
+    assert called["find_common_causes"] >= 1
+    assert called["critical_path"] >= 1
 
 
 @pytest.mark.asyncio

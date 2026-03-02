@@ -59,3 +59,4 @@ async def test_granger_causality_uses_unique_series_keys(monkeypatch):
     assert res["fresh_pairs"] == 0
     assert captured["count"] == 2
     assert captured["keys"][0] != captured["keys"][1]
+    assert res["common_causes_between_roots"] == {}

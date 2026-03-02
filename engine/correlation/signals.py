@@ -52,4 +52,4 @@ def link_logs_to_metrics(
                     strength=strength,
                 ))
 
-    return sorted(links, key=lambda l: l.strength, reverse=True)
+    return sorted(links, key=lambda link: link.strength, reverse=True)

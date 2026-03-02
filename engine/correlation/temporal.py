@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
-from typing import List, Set
+from typing import List, Set, Callable
 
 from api.responses import MetricAnomaly, LogBurst, ServiceLatency
 from config import settings
@@ -94,6 +94,8 @@ def correlate(
     log_bursts: List[LogBurst],
     service_latency: List[ServiceLatency],
     window_seconds: float | None = None,
+    *,
+    weight_fn: Callable[[float, float, float], float] | None = None,
 ) -> List[CorrelatedEvent]:
     if window_seconds is None:
         window_seconds = settings.correlation_window_seconds
@@ -161,7 +163,11 @@ def correlate(
         metric_score = min(settings.correlation_score_max, len(ma) * settings.correlation_weight_time)
         log_score = min(settings.correlation_score_max, len(lb) * settings.correlation_weight_latency)
         trace_score = min(settings.correlation_errors_cap, len(sl) * settings.correlation_weight_errors)
-        confidence = round(min(settings.correlation_score_max, metric_score + log_score + trace_score), 3)
+        if weight_fn is not None:
+            raw_conf = weight_fn(metric_score, log_score, trace_score)
+        else:
+            raw_conf = metric_score + log_score + trace_score
+        confidence = round(min(settings.correlation_score_max, raw_conf), 3)
 
         events.append(CorrelatedEvent(
             window_start=w_start,

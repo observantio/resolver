@@ -15,6 +15,7 @@ from typing import List, Optional
 
 import numpy as np
 
+from config import settings
 from engine.rca.hypothesis import RootCause
 from engine.correlation.temporal import CorrelatedEvent
 
@@ -27,7 +28,6 @@ class RankedCause:
     feature_importance: dict[str, float]
 
 
-from config import settings
 
 def _extract_features(cause: RootCause, event: Optional[CorrelatedEvent] = None) -> List[float]:
     return [

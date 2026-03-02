@@ -40,7 +40,6 @@ class NpModel(BaseModel):
 
 
 class MetricAnomaly(NpModel):
-
     metric_name: str
     timestamp: float
     value: float
@@ -54,7 +53,6 @@ class MetricAnomaly(NpModel):
 
 
 class LogBurst(NpModel):
-
     window_start: float
     window_end: float
     rate_per_second: float
@@ -64,7 +62,6 @@ class LogBurst(NpModel):
 
 
 class LogPattern(NpModel):
-
     pattern: str
     count: int
     first_seen: float
@@ -76,7 +73,6 @@ class LogPattern(NpModel):
 
 
 class ServiceLatency(NpModel):
-
     service: str
     operation: str
     p50_ms: float
@@ -91,7 +87,6 @@ class ServiceLatency(NpModel):
 
 
 class ErrorPropagation(NpModel):
-
     source_service: str
     affected_services: List[str]
     error_rate: float
@@ -99,7 +94,6 @@ class ErrorPropagation(NpModel):
 
 
 class RootCause(NpModel):
-
     hypothesis: str
     confidence: float = Field(ge=0.0, le=1.0)
     evidence: List[str]
@@ -112,7 +106,6 @@ class RootCause(NpModel):
 
 
 class SloBurnAlert(NpModel):
-
     service: str
     window_label: str
     error_rate: float
@@ -122,7 +115,6 @@ class SloBurnAlert(NpModel):
 
 
 class BudgetStatus(NpModel):
-
     service: str
     target_availability: float
     current_availability: float
@@ -139,7 +131,6 @@ class AnalysisQuality(NpModel):
 
 
 class AnalysisReport(NpModel):
-
     tenant_id: str
     start: int
     end: int
@@ -165,7 +156,6 @@ class AnalysisReport(NpModel):
     quality: Optional[AnalysisQuality] = None
 
 class JobStatus(str, Enum):
-
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -175,7 +165,6 @@ class JobStatus(str, Enum):
 
 
 class AnalyzeJobCreateResponse(BaseModel):
-
     job_id: str
     report_id: str
     status: JobStatus
@@ -185,7 +174,6 @@ class AnalyzeJobCreateResponse(BaseModel):
 
 
 class AnalyzeJobSummary(BaseModel):
-
     job_id: str
     report_id: str
     status: JobStatus

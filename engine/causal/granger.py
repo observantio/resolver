@@ -15,6 +15,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
+from config import settings
+
 
 @dataclass(frozen=True)
 class GrangerResult:
@@ -42,7 +44,6 @@ def _lag_matrix(series: np.ndarray, max_lag: int) -> np.ndarray:
     return np.column_stack(cols)
 
 
-from config import settings
 
 def granger_pair_analysis(
     cause_name: str,

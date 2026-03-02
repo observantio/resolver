@@ -15,7 +15,7 @@ from engine.enums import Severity
 
 def make_loki_response(lines):
     return {
-        "data": {"result": [{"values": [[str(int(t*1e9)), l] for t, l in lines]}]}
+        "data": {"result": [{"values": [[str(int(t*1e9)), msg] for t, msg in lines]}]}
     }
 
 

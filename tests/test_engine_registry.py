@@ -60,6 +60,16 @@ async def test_engine_registry_defaults_and_updates(monkeypatch):
     assert state3.update_count == 0
     assert state3.weights_serializable == {"metrics": 0.3, "logs": 0.35, "traces": 0.35}
 
+    # ensure weighted_confidence returns weighted sum using current state
+    base = state3.weighted_confidence(1.0, 1.0, 1.0)
+    # since defaults sum to 1, should equal 1.0
+    assert base == pytest.approx(1.0)
+    # simulate skewing weights and confirm computation changes
+    state3._weights[Signal.metrics] = 1.0
+    state3._weights[Signal.logs] = 0.0
+    state3._weights[Signal.traces] = 0.0
+    assert state3.weighted_confidence(0.5, 0.5, 0.5) == pytest.approx(0.5)
+
 
 @pytest.mark.asyncio
 async def test_engine_registry_sanitizes_corrupt_stored_weights(monkeypatch):

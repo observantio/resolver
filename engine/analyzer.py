@@ -514,9 +514,11 @@ async def _process_one_metric_series(
     analysis_window_seconds: float,
 ):
     try:
-        baseline = await baseline_store.compute_and_persist(req.tenant_id, metric_name, ts, vals, z_threshold)
+        # result is persisted by store; value not used later
+        _ = await baseline_store.compute_and_persist(req.tenant_id, metric_name, ts, vals, z_threshold)
     except Exception:
-        baseline = baseline_compute(ts, vals, z_threshold=z_threshold)
+        # fallback compute also only triggers side‑effects
+        _ = baseline_compute(ts, vals, z_threshold=z_threshold)
 
     metric_anomalies = anomaly.detect(metric_name, ts, vals, req.sensitivity)
     sigma_multiplier = float(z_threshold) if z_threshold and math.isfinite(float(z_threshold)) else float(
@@ -794,6 +796,15 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         service_latency = traces.analyze(traces_raw, req.apdex_threshold_ms)
         error_propagation = traces.detect_propagation(traces_raw)
         graph.from_spans(traces_raw)
+        topology_critical_paths: dict[str, list[str]] = {}
+        if primary_service:
+            latency_services = sorted({s.service for s in service_latency if getattr(s, "service", "")})
+            for service in latency_services[:3]:
+                path = graph.critical_path(primary_service, service)
+                if path:
+                    topology_critical_paths[f"{primary_service}->{service}"] = path
+        if topology_critical_paths:
+            log.debug("analyzer topology critical_paths=%s", topology_critical_paths)
         if not traces_raw.get("traces"):
             warnings.append("Trace query returned no traces; topology and propagation insights are limited.")
             try:
@@ -835,11 +846,14 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
 
     correlate_started = time.perf_counter()
     log_metric_links = link_logs_to_metrics(metric_anomalies, log_bursts)
+    # fetch tenant-specific weights used to compute confidence
+    state = await registry.get_state(tenant_id)
     correlated_events = correlate(
         metric_anomalies,
         log_bursts,
         service_latency,
         window_seconds=req.correlation_window_seconds,
+        weight_fn=state.weighted_confidence,
     )
     anomaly_clusters = cluster(metric_anomalies)
     log.debug("analyzer stage=correlate duration=%.4fs", time.perf_counter() - correlate_started)
@@ -865,6 +879,14 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
 
     causal_graph = CausalGraph()
     causal_graph.from_granger_results(fresh_granger)
+    common_cause_hints: dict[str, list[str]] = {}
+    anomalous_metrics = sorted({a.metric_name for a in metric_anomalies if getattr(a, "metric_name", "")})
+    if anomalous_metrics:
+        metric_a = anomalous_metrics[0]
+        metric_b = anomalous_metrics[1] if len(anomalous_metrics) >= 2 else anomalous_metrics[0]
+        common_cause_hints[f"{metric_a}|{metric_b}"] = causal_graph.find_common_causes(metric_a, metric_b)
+    if common_cause_hints:
+        log.debug("analyzer causal common_cause_hints=%s", common_cause_hints)
 
     deployment_events = cast(list[dict], await registry.events_in_window(tenant_id, req.start, req.end))
     bayesian_scores = bayesian_score(

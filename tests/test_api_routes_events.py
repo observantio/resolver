@@ -37,7 +37,8 @@ async def test_register_deployment_with_query_param(monkeypatch):
     dummy = DummyRegistry()
     monkeypatch.setattr(events_route, "get_registry", lambda: dummy)
     req = DeploymentEventRequest(tenant_id="t1", service="s", timestamp=123, version="v1")
-    res = await events_route.register_deployment(req, tenant_id="t2")
+    # result not needed; only side effect on dummy registry is asserted
+    _ = await events_route.register_deployment(req, tenant_id="t2")
     assert dummy.events[0][0] == "t2"
 
 

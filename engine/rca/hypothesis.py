@@ -150,7 +150,13 @@ def generate(
         confidence = round(min(settings.rca_score_cap, base_score + deploy_score * 0.2), 3)
 
         deploy_event: Optional[DeploymentEvent] = None
-        nearby_deploys = [d for d in deployments if abs(d.timestamp - event.window_start) <= settings.rca_deploy_window_seconds]
+        window_seconds = float(settings.rca_deploy_window_seconds)
+        window_start = float(event.window_start) - window_seconds
+        window_end = float(event.window_start) + window_seconds
+        if event_registry:
+            nearby_deploys = event_registry.in_window(window_start, window_end)
+        else:
+            nearby_deploys = [d for d in deployments if window_start <= d.timestamp <= window_end]
         if nearby_deploys:
             deploy_event = min(nearby_deploys, key=lambda d: abs(d.timestamp - event.window_start))
 
@@ -160,6 +166,13 @@ def generate(
             root_svc = event.service_latency[0].service
             blast = graph.blast_radius(root_svc)
             affected = blast.affected_downstream
+            if event_registry:
+                service_deploys = [
+                    d for d in event_registry.for_service(root_svc)
+                    if window_start <= d.timestamp <= window_end
+                ]
+                if service_deploys:
+                    deploy_event = min(service_deploys, key=lambda d: abs(d.timestamp - event.window_start))
 
         metric_names = list({a.metric_name for a in event.metric_anomalies})[:2]
         svc_names = list({s.service for s in event.service_latency})[:2]

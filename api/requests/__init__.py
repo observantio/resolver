@@ -52,7 +52,6 @@ class LogRequest(BaseModel):
 
 
 class TraceRequest(BaseModel):
-
     tenant_id: str
     start: int
     end: int
@@ -61,7 +60,6 @@ class TraceRequest(BaseModel):
 
 
 class SloRequest(BaseModel):
-
     tenant_id: str
     service: str
     start: int
@@ -79,7 +77,6 @@ class SloRequest(BaseModel):
 
 
 class CorrelateRequest(BaseModel):
-
     tenant_id: str
     start: int
     end: int
@@ -97,7 +94,6 @@ class CorrelateRequest(BaseModel):
 
 
 class ChangepointRequest(BaseModel):
-
     tenant_id: str
     query: str
     start: int
@@ -107,7 +103,6 @@ class ChangepointRequest(BaseModel):
 
 
 class TopologyRequest(BaseModel):
-
     tenant_id: str
     start: int
     end: int
@@ -116,7 +111,6 @@ class TopologyRequest(BaseModel):
 
 
 class DeploymentEventRequest(BaseModel):
-
     tenant_id: str
     service: str
     timestamp: float
