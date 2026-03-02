@@ -21,10 +21,8 @@ from store import keys
 
 log = logging.getLogger(__name__)
 
-
 def _pair_key(cause: str, effect: str) -> str:
     return f"{cause}>>>{effect}"
-
 
 async def load(tenant_id: str, service: str) -> List[dict]:
     try:
@@ -34,7 +32,6 @@ async def load(tenant_id: str, service: str) -> List[dict]:
     except Exception as exc:
         log.debug("Granger load failed %s/%s: %s", tenant_id, service, exc)
     return []
-
 
 async def save_and_merge(tenant_id: str, service: str, fresh_results: list) -> List[dict]:
     cached = await load(tenant_id, service)
@@ -63,7 +60,6 @@ async def save_and_merge(tenant_id: str, service: str, fresh_results: list) -> L
     except Exception as exc:
         log.debug("Granger save failed %s/%s: %s", tenant_id, service, exc)
     return merged
-
 
 async def load_all_services(tenant_id: str, services: List[str]) -> List[dict]:
     per_service = await asyncio.gather(*[load(tenant_id, svc) for svc in services])

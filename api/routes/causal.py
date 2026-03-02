@@ -10,14 +10,12 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict
-
 import numpy as np
-from fastapi import APIRouter, Query
-
+from fastapi import APIRouter, Depends, Query
 from api.requests import AnalyzeRequest, CorrelateRequest
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from config import DEFAULT_METRIC_QUERIES, DEFAULT_SERVICE_NAME
 from engine import anomaly
 from engine.causal import CausalGraph, bayesian_score, test_all_pairs
@@ -52,7 +50,11 @@ def _coerce_query_value(value, cast):
     return cast(value)
 
 
-@router.post("/causal/granger", summary="Granger causality between metrics (bounded by default)")
+@router.post(
+    "/causal/granger",
+    summary="Granger causality between metrics (bounded by default)",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def granger_causality(
     req: CorrelateRequest,
@@ -112,7 +114,11 @@ async def granger_causality(
     return response
 
 
-@router.post("/causal/bayesian", summary="Bayesian posterior over RCA categories given observed signals")
+@router.post(
+    "/causal/bayesian",
+    summary="Bayesian posterior over RCA categories given observed signals",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def bayesian_rca(req: AnalyzeRequest) -> Dict[str, Any]:
     req = enforce_request_tenant(req)

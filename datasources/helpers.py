@@ -11,9 +11,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
-
 import httpx
-
 from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTimeout
 
 

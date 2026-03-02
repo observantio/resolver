@@ -10,12 +10,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict, List
-
-from fastapi import APIRouter, Query
-
+from fastapi import APIRouter, Depends, Query
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import anomaly
 from config import DEFAULT_METRIC_QUERIES, FORECAST_THRESHOLDS
 from engine.fetcher import fetch_metrics
@@ -26,12 +24,15 @@ router = APIRouter(tags=["Forecast"])
 
 
 def _coerce_query_value(value: Any, cast: Any) -> Any:
-    # Allow direct unit-test invocation without FastAPI Query parsing.
     raw = value.default if hasattr(value, "default") else value
     return cast(raw)
 
 
-@router.post("/forecast/trajectory", summary="Time-to-failure and degradation trajectory per metric")
+@router.post(
+    "/forecast/trajectory",
+    summary="Time-to-failure and degradation trajectory per metric",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def metric_trajectory(
     req: CorrelateRequest,

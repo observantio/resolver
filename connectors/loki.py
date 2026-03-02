@@ -36,7 +36,7 @@ class LokiConnector(LogsConnector):
         q = (query or "").strip()
         if not q or q == "{}":
             return '{service=~".+"}'
-        # Loki rejects empty-compatible regex matchers in selectors.
+
         q = re.sub(r'=~"\.\*"', '=~".+"', q)
         return q
 

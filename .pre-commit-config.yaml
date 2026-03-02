@@ -4,6 +4,6 @@ repos:
       - id: becertain-unit-tests
         name: BeCertain unit tests
         language: system
-        entry: bash -lc 'cd BeCertain && python -m pytest -q'
+        entry: bash -lc 'python -m pytest -q'
         pass_filenames: false
         always_run: true

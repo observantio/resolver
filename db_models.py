@@ -1,5 +1,11 @@
 """
-Core module implementing `db_models` functionality for the analysis engine.
+All database models for Be Certain are defined in this module. This includes the RcaJob and RcaReport models, which represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's DeclarativeBase, allowing for easy interaction with the database using Python objects.
+
+Copyright (c) 2026 Stefan Kumarasinghe
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 """
 from __future__ import annotations
 
@@ -11,7 +17,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
     pass
-
 
 class RcaJob(Base):
     __tablename__ = "rca_jobs"

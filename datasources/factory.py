@@ -13,7 +13,6 @@ from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
 from connectors.victoria import VictoriaMetricsConnector
 
-
 class DataSourceFactory:
 
     @staticmethod

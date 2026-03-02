@@ -1,5 +1,11 @@
 """
-Route-level tests for analyze endpoint schema compatibility.
+API route tests for trace anomaly detection paths, focused on validating that the trace query route correctly handles cases where no service filters are provided, ensuring that it does not apply any default service filters and allows the provider to process the request with an empty filter set as intended.
+
+Copyright (c) 2026 Stefan Kumarasinghe
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations

@@ -20,7 +20,6 @@ from store import keys
 
 log = logging.getLogger(__name__)
 
-
 async def load(tenant_id: str) -> Optional[Dict[str, Any]]:
     try:
         raw = await redis_get(keys.weights(tenant_id))
@@ -42,14 +41,12 @@ async def load(tenant_id: str) -> Optional[Dict[str, Any]]:
         log.debug("Weights load failed %s: %s", tenant_id, exc)
     return None
 
-
 async def save(tenant_id: str, weight_map: Dict[str, float], update_count: int) -> None:
     payload = {"weights": weight_map, "update_count": update_count}
     try:
         await redis_set(keys.weights(tenant_id), json.dumps(payload), ttl=WEIGHTS_TTL)
     except Exception as exc:
         log.debug("Weights save failed %s: %s", tenant_id, exc)
-
 
 async def delete(tenant_id: str) -> None:
     try:

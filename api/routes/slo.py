@@ -12,12 +12,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any, Dict
-
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import anomaly
 from engine.slo import evaluate as slo_evaluate, remaining_minutes
 from api.requests import SloRequest
@@ -27,7 +25,11 @@ router = APIRouter(tags=["SLO"])
 log = logging.getLogger(__name__)
 
 
-@router.post("/slo/burn", summary="SLO error budget burn rate")
+@router.post(
+    "/slo/burn",
+    summary="SLO error budget burn rate",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def slo_burn(req: SloRequest) -> Dict[str, Any]:
     req = enforce_request_tenant(req)

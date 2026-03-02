@@ -33,7 +33,6 @@ def _serialise(event) -> str:
         "metadata": dict(event.metadata),
     })
 
-
 async def load(tenant_id: str) -> List[dict]:
     try:
         items = await redis_lrange(keys.events(tenant_id))
@@ -42,13 +41,11 @@ async def load(tenant_id: str) -> List[dict]:
         log.debug("Events load failed %s: %s", tenant_id, exc)
     return []
 
-
 async def append(tenant_id: str, event) -> None:
     try:
         await redis_rpush(keys.events(tenant_id), _serialise(event), ttl=EVENTS_TTL, max_len=_MAX_EVENTS)
     except Exception as exc:
         log.debug("Events append failed %s: %s", tenant_id, exc)
-
 
 async def clear(tenant_id: str) -> None:
     try:

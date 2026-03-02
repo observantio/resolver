@@ -193,8 +193,8 @@ async def ready() -> JSONResponse:
 
 if __name__ == "__main__":
     uvicorn_kwargs = {
-        "host": "0.0.0.0",
-        "port": 4322,
+        "host": settings.host,
+        "port": settings.port,
         "log_level": "info",
         "access_log": True,
     }

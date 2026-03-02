@@ -12,12 +12,10 @@ from __future__ import annotations
 import asyncio
 import re
 from typing import Any, Dict, List
-
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import anomaly, logs
 from config import DEFAULT_METRIC_QUERIES
 from engine.correlation import correlate, link_logs_to_metrics
@@ -38,7 +36,11 @@ def _build_log_query(services: list[str] | None, requested_log_query: str | None
     return '{service_name=~".+"}'
 
 
-@router.post("/correlate", summary="Cross-signal temporal correlation without full RCA")
+@router.post(
+    "/correlate",
+    summary="Cross-signal temporal correlation without full RCA",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def correlate_signals(req: CorrelateRequest) -> Dict[str, Any]:
     req = enforce_request_tenant(req)

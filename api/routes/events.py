@@ -11,18 +11,22 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from engine.events.registry import DeploymentEvent
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, get_context_tenant
+from services.security_service import enforce_request_tenant, get_context_tenant, require_permission_dependency
 from engine.registry import get_registry
 from api.requests import DeploymentEventRequest
 
 router = APIRouter(tags=["Events"])
 
 
-@router.post("/events/deployment", summary="Register a deployment event for RCA correlation")
+@router.post(
+    "/events/deployment",
+    summary="Register a deployment event for RCA correlation",
+    dependencies=[Depends(require_permission_dependency("create:rca"))],
+)
 @handle_exceptions
 async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None = None) -> Dict[str, str]:
     req = enforce_request_tenant(req)
@@ -45,13 +49,21 @@ async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None
     return {"status": "registered", "service": req.service, "version": req.version}
 
 
-@router.get("/events/deployments", summary="List registered deployment events for a tenant")
+@router.get(
+    "/events/deployments",
+    summary="List registered deployment events for a tenant",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def list_deployments(tenant_id: str) -> List[Dict[str, Any]]:
     return await get_registry().get_events(get_context_tenant(tenant_id))
 
 
-@router.delete("/events/deployments", summary="Clear all deployment events for a tenant")
+@router.delete(
+    "/events/deployments",
+    summary="Clear all deployment events for a tenant",
+    dependencies=[Depends(require_permission_dependency("delete:rca"))],
+)
 @handle_exceptions
 async def clear_deployments(tenant_id: str) -> Dict[str, str]:
     resolved_tenant = get_context_tenant(tenant_id)

@@ -20,11 +20,11 @@ from config import settings
 
 log = logging.getLogger(__name__)
 
-_METRIC_NAME_RE = re.compile(r"[a-zA-Z_:][a-zA-Z0-9_:]*")
+METRIC_NAME_RE = re.compile(r"[a-zA-Z_:][a-zA-Z0-9_:]*")
 
 
 def _extract_metric_names(query: str) -> list[str]:
-    return _METRIC_NAME_RE.findall(query)
+    return METRIC_NAME_RE.findall(query)
 
 
 async def _scrape_and_fill(

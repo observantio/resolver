@@ -18,7 +18,6 @@ from typing import Any, Callable, Type, TypeVar, Tuple, cast
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-
 def retry(
     *,
     attempts: int = 3,

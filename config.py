@@ -12,6 +12,7 @@ import os
 import sys
 from typing import Dict, List, Tuple, Optional
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -19,6 +20,34 @@ def _to_bool(value: Optional[str], default: bool = False) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _env_name() -> str:
+    return (os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or "development").strip().lower()
+
+
+def _is_production_env() -> bool:
+    return _env_name() in {"prod", "production"}
+
+
+def _normalized_secret(value: Optional[str]) -> str:
+    return str(value or "").strip().lower()
+
+
+def _is_weak_secret(value: Optional[str]) -> bool:
+    normalized = _normalized_secret(value)
+    if not normalized:
+        return True
+    weak_markers = ("changeme", "replace_with", "example", "default", "secret", "password")
+    return any(marker in normalized for marker in weak_markers)
+
+
+ALLOWED_CONTEXT_ALGORITHMS = {"HS256", "HS384", "HS512"}
+
+
+def _parse_context_algorithms(raw: Optional[str]) -> list[str]:
+    values = [str(v).strip().upper() for v in str(raw or "HS256").split(",") if str(v).strip()]
+    return values or ["HS256"]
 
 
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -49,11 +78,14 @@ BECERTAIN_TRACES_TEMPO_URL = os.getenv("BECERTAIN_TRACES_TEMPO_URL", "http://tem
 
 BECERTAIN_CONNECTOR_TIMEOUT = int(os.getenv("BECERTAIN_CONNECTOR_TIMEOUT", "10"))
 BECERTAIN_STARTUP_TIMEOUT = int(os.getenv("BECERTAIN_STARTUP_TIMEOUT", "120"))
+BECERTAIN_HOST = os.getenv("BECERTAIN_HOST", "127.0.0.1")
+BECERTAIN_PORT = int(os.getenv("BECERTAIN_PORT", "4322"))
 BECERTAIN_EXPECTED_SERVICE_TOKEN = os.getenv("BECERTAIN_EXPECTED_SERVICE_TOKEN", "")
 BECERTAIN_CONTEXT_VERIFY_KEY = os.getenv("BECERTAIN_CONTEXT_VERIFY_KEY", "")
 BECERTAIN_CONTEXT_ISSUER = os.getenv("BECERTAIN_CONTEXT_ISSUER", "beobservant-main")
 BECERTAIN_CONTEXT_AUDIENCE = os.getenv("BECERTAIN_CONTEXT_AUDIENCE", "becertain")
 BECERTAIN_CONTEXT_ALGORITHMS = os.getenv("BECERTAIN_CONTEXT_ALGORITHMS", "HS256")
+BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS = int(os.getenv("BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS", "180"))
 BECERTAIN_SSL_ENABLED = _to_bool(os.getenv("BECERTAIN_SSL_ENABLED"), default=False)
 BECERTAIN_SSL_CERTFILE = os.getenv("BECERTAIN_SSL_CERTFILE", "")
 BECERTAIN_SSL_KEYFILE = os.getenv("BECERTAIN_SSL_KEYFILE", "")
@@ -89,12 +121,9 @@ DEFAULT_METRIC_QUERIES = [
     "system_filesystem_usage_bytes",
 ]
 
-# explicit queries used by analyzer for SLO burn; kept separate from the
-# configurable templates above because they target pre-aggregated spanmetrics
 SLO_ERROR_QUERY = 'sum(rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m]))'
 SLO_TOTAL_QUERY = 'sum(rate(traces_spanmetrics_calls_total[5m]))'
 
-# thresholds for which metrics we attempt to forecast or signal degradation
 FORECAST_THRESHOLDS: dict[str, float] = {
     "system_memory_usage_bytes": 0.85,
     "system_filesystem_usage_bytes": 0.90,
@@ -102,7 +131,6 @@ FORECAST_THRESHOLDS: dict[str, float] = {
     "traces_service_graph_request_failed": 0.05,
 }
 
-# weight values assigned to severity labels for comparison and ranking
 SEVERITY_WEIGHTS: dict[str, int] = {
     "low": 1,
     "medium": 2,
@@ -140,11 +168,14 @@ class Settings(BaseSettings):
 
     connector_timeout: int = BECERTAIN_CONNECTOR_TIMEOUT
     startup_timeout: int = BECERTAIN_STARTUP_TIMEOUT
+    host: str = BECERTAIN_HOST
+    port: int = BECERTAIN_PORT
     expected_service_token: str = BECERTAIN_EXPECTED_SERVICE_TOKEN
     context_verify_key: str = BECERTAIN_CONTEXT_VERIFY_KEY
     context_issuer: str = BECERTAIN_CONTEXT_ISSUER
     context_audience: str = BECERTAIN_CONTEXT_AUDIENCE
     context_algorithms: str = BECERTAIN_CONTEXT_ALGORITHMS
+    context_replay_ttl_seconds: int = BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS
     ssl_enabled: bool = BECERTAIN_SSL_ENABLED
     ssl_certfile: str = BECERTAIN_SSL_CERTFILE
     ssl_keyfile: str = BECERTAIN_SSL_KEYFILE
@@ -450,6 +481,42 @@ class Settings(BaseSettings):
         "env_prefix": "BECERTAIN_",
         "extra": "ignore",
     }
+
+    @model_validator(mode="after")
+    def _validate_security(self) -> "Settings":
+        algorithms = _parse_context_algorithms(self.context_algorithms)
+        unsupported = sorted(set(algorithms) - ALLOWED_CONTEXT_ALGORITHMS)
+        if unsupported:
+            raise ValueError(
+                f"BECERTAIN_CONTEXT_ALGORITHMS contains unsupported values: {', '.join(unsupported)}; "
+                f"allowed values: {', '.join(sorted(ALLOWED_CONTEXT_ALGORITHMS))}"
+            )
+        if self.context_replay_ttl_seconds <= 0:
+            raise ValueError("BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS must be greater than 0")
+
+        if not _is_production_env():
+            return self
+
+        if not self.database_url:
+            raise ValueError("BECERTAIN_DATABASE_URL is required in production")
+
+        expected_service_token = str(self.expected_service_token or "").strip()
+        if len(expected_service_token) < 24 or _is_weak_secret(expected_service_token):
+            raise ValueError(
+                "BECERTAIN_EXPECTED_SERVICE_TOKEN must be a strong non-placeholder secret of at least 24 characters in production"
+            )
+
+        context_verify_key = str(self.context_verify_key or "").strip()
+        if len(context_verify_key) < 32 or _is_weak_secret(context_verify_key):
+            raise ValueError(
+                "BECERTAIN_CONTEXT_VERIFY_KEY must be a strong non-placeholder secret of at least 32 characters in production"
+            )
+
+        if not str(self.context_issuer or "").strip():
+            raise ValueError("BECERTAIN_CONTEXT_ISSUER must be set in production")
+        if not str(self.context_audience or "").strip():
+            raise ValueError("BECERTAIN_CONTEXT_AUDIENCE must be set in production")
+        return self
 
 
 settings = Settings()

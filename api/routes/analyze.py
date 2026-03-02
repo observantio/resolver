@@ -12,17 +12,22 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.exception import handle_exceptions
 from api.requests import AnalyzeRequest
 from api.responses import AnalysisReport
 from services.analyze_service import run_analysis
+from services.security_service import require_permission_dependency
 
 router = APIRouter(tags=["RCA"])
 
 
-@router.post("/analyze", response_model=AnalysisReport, summary="Full cross-signal RCA")
+@router.post(
+    "/analyze",
+    response_model=AnalysisReport,
+    summary="Full cross-signal RCA",
+    dependencies=[Depends(require_permission_dependency("create:rca"))],
+)
 @handle_exceptions
 async def analyze(req: AnalyzeRequest) -> AnalysisReport:
     return await run_analysis(req)

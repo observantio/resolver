@@ -21,17 +21,17 @@ from config import DEFAULT_WEIGHTS, REGISTRY_ALPHA
 
 log = logging.getLogger(__name__)
 
-_SIGNAL_KEYS: tuple[Signal, ...] = (Signal.metrics, Signal.logs, Signal.traces)
+SIGNAL_KEYS: tuple[Signal, ...] = (Signal.metrics, Signal.logs, Signal.traces)
 
 
 def _default_weights() -> Dict[Signal, float]:
     defaults: Dict[Signal, float] = {}
-    for signal in _SIGNAL_KEYS:
+    for signal in SIGNAL_KEYS:
         configured = DEFAULT_WEIGHTS.get(signal.value)
         if isinstance(configured, (int, float)) and math.isfinite(float(configured)) and float(configured) >= 0.0:
             defaults[signal] = float(configured)
         else:
-            defaults[signal] = 1.0 / len(_SIGNAL_KEYS)
+            defaults[signal] = 1.0 / len(SIGNAL_KEYS)
     total = sum(defaults.values()) or 1.0
     for signal in defaults:
         defaults[signal] = defaults[signal] / total
@@ -98,7 +98,7 @@ class TenantState:
 
     def update_weight(self, signal: Signal, was_correct: bool) -> None:
         reward = 1.0 if was_correct else 0.0
-        current = self._weights.get(signal, _default_weights().get(signal, 1.0 / len(_SIGNAL_KEYS)))
+        current = self._weights.get(signal, _default_weights().get(signal, 1.0 / len(SIGNAL_KEYS)))
         self._weights[signal] = (1 - REGISTRY_ALPHA) * current + REGISTRY_ALPHA * reward
         self._normalize()
         self._update_count += 1
@@ -112,9 +112,9 @@ class TenantState:
         w = self._weights
         default = _default_weights()
         return round(
-            w.get(Signal.metrics, default.get(Signal.metrics, 1.0 / len(_SIGNAL_KEYS))) * metric_score
-            + w.get(Signal.logs, default.get(Signal.logs, 1.0 / len(_SIGNAL_KEYS))) * log_score
-            + w.get(Signal.traces, default.get(Signal.traces, 1.0 / len(_SIGNAL_KEYS))) * trace_score,
+            w.get(Signal.metrics, default.get(Signal.metrics, 1.0 / len(SIGNAL_KEYS))) * metric_score
+            + w.get(Signal.logs, default.get(Signal.logs, 1.0 / len(SIGNAL_KEYS))) * log_score
+            + w.get(Signal.traces, default.get(Signal.traces, 1.0 / len(SIGNAL_KEYS))) * trace_score,
             4,
         )
 

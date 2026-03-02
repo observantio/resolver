@@ -10,12 +10,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import List
-
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import anomaly
 from engine.changepoint import detect as changepoint_detect, ChangePoint
 from api.requests import MetricRequest, ChangepointRequest
@@ -23,10 +21,11 @@ from api.responses import MetricAnomaly
 
 router = APIRouter(tags=["Metrics"])
 
-# provider helper moved to api.routes.common
-
-
-@router.post("/anomalies/metrics", response_model=List[MetricAnomaly])
+@router.post(
+    "/anomalies/metrics",
+    response_model=List[MetricAnomaly],
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
     req = enforce_request_tenant(req)
@@ -42,7 +41,11 @@ async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
     return sorted(results, key=lambda a: a.timestamp)
 
 
-@router.post("/changepoints", response_model=List[ChangePoint])
+@router.post(
+    "/changepoints",
+    response_model=List[ChangePoint],
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def metric_changepoints(req: ChangepointRequest) -> List[ChangePoint]:
     req = enforce_request_tenant(req)

@@ -9,10 +9,8 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 """
 
 from __future__ import annotations
-
 from enum import Enum
-
-from config import SEVERITY_WEIGHTS
+from config import SEVERITY_WEIGHTS, settings
 
 class Severity(str, Enum):
     low = "low"
@@ -22,10 +20,6 @@ class Severity(str, Enum):
 
     @classmethod
     def from_score(cls, score: float) -> Severity:
-        # thresholds are configurable via settings so that tests and
-        # runtime behaviour can be tuned without modifying this logic.
-        from config import settings
-
         if score >= settings.severity_score_critical:
             return cls.critical
         if score >= settings.severity_score_high:

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import re
+import logging
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
@@ -22,6 +23,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from db_models import Base
 
+logger = logging.getLogger(__name__)
 _engine: Optional[Engine] = None
 _session_factory: Optional[sessionmaker] = None
 
@@ -87,7 +89,9 @@ def get_db_session() -> Iterator[Session]:
 def init_db() -> None:
     if _engine is None:
         raise RuntimeError("Database not initialized")
+    logger.info("Initializing BeCertain database tables...")
     Base.metadata.create_all(bind=_engine)
+    logger.info("BeCertain database tables created successfully")
 
 
 def connection_test() -> bool:

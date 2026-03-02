@@ -10,12 +10,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict, List
-
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import traces
 from api.requests import TraceRequest
 from api.responses import ServiceLatency
@@ -23,7 +21,11 @@ from api.responses import ServiceLatency
 router = APIRouter(tags=["Traces"])
 
 
-@router.post("/anomalies/traces", response_model=List[ServiceLatency])
+@router.post(
+    "/anomalies/traces",
+    response_model=List[ServiceLatency],
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def trace_anomalies(req: TraceRequest) -> List[ServiceLatency]:
     req = enforce_request_tenant(req)

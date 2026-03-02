@@ -11,12 +11,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import List
-
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
 from api.routes.common import get_provider, safe_call, to_nanoseconds
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from engine import logs
 from api.requests import LogRequest
 from api.responses import LogBurst, LogPattern
@@ -24,7 +22,11 @@ from api.responses import LogBurst, LogPattern
 router = APIRouter(tags=["Logs"])
 
 
-@router.post("/anomalies/logs/patterns", response_model=List[LogPattern])
+@router.post(
+    "/anomalies/logs/patterns",
+    response_model=List[LogPattern],
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def log_patterns(req: LogRequest) -> List[LogPattern]:
     req = enforce_request_tenant(req)
@@ -36,7 +38,11 @@ async def log_patterns(req: LogRequest) -> List[LogPattern]:
     return logs.analyze(raw)
 
 
-@router.post("/anomalies/logs/bursts", response_model=List[LogBurst])
+@router.post(
+    "/anomalies/logs/bursts",
+    response_model=List[LogBurst],
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def log_bursts(req: LogRequest) -> List[LogBurst]:
     req = enforce_request_tenant(req)

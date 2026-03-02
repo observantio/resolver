@@ -24,18 +24,18 @@ def test_linear_fit_and_r2():
 
 
 def test_forecast_insufficient(monkeypatch):
-    # when sample count is below configured minimum we bail out
+    
     monkeypatch.setattr(settings, "forecast_trajectory_min_length", 5)
     assert forecast("m", [0, 1, 2, 3], [1, 2, 3, 4], threshold=10) is None
 
-    # if we lower the requirement the same data becomes eligible
+    
     monkeypatch.setattr(settings, "forecast_trajectory_min_length", 3)
     assert forecast("m", [0, 1, 2, 3], [1, 2, 3, 4], threshold=10) is not None
 
 
 def test_forecast_no_r2():
     ts = list(range(10))
-    vals = [1] * 10  # zero slope
+    vals = [1] * 10  
     assert forecast("m", ts, vals, threshold=2) is None
 
 
@@ -50,16 +50,16 @@ def test_forecast_breach():
 
 def test_forecast_r2_threshold(monkeypatch):
     ts = list(range(10))
-    # series with a slight outlier producing a good-but-not-perfect r2
+    
     vals = [i + (2 if i == 5 else 0) for i in range(10)]
-    # use a threshold/horizon combination that would normally return a forecast
-    # with default settings so we can isolate the r2 check
+    
+    
     threshold = 25
     horizon = 10
 
-    # require almost perfect fit -> should be rejected
+    
     monkeypatch.setattr(settings, "forecast_trajectory_r2_threshold", 0.99)
     assert forecast("m", ts, vals, threshold=threshold, horizon_seconds=horizon) is None
-    # relax requirement and it can succeed
+    
     monkeypatch.setattr(settings, "forecast_trajectory_r2_threshold", 0.0)
     assert forecast("m", ts, vals, threshold=threshold, horizon_seconds=horizon) is not None

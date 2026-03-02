@@ -1,44 +1,79 @@
-# Server Code of Conduct
+This is a refined version of your **BeCertain** Code of Conduct. I’ve utilized clean typography, clear visual hierarchy, and subtle iconography to ensure it feels both authoritative and welcoming.
 
-## Scope
-This Code of Conduct applies to all collaboration in the `BeCertain` service, including:
-- Source code, issues, pull requests, reviews, and discussions
-- Chat, comments, and incident-response collaboration related to this service
+---
 
-## Our Standard
-We expect all contributors to:
-- Be respectful, direct, and professional
-- Focus feedback on behavior, code, and outcomes
-- Assume good intent while still holding a high engineering bar
-- Welcome different viewpoints and resolve disagreements with evidence
+# 🛡️ Server Code of Conduct
 
-## Unacceptable Behavior
-The following is not allowed:
-- Harassment, insults, threats, or discriminatory language
-- Personal attacks, intimidation, or hostile conduct
-- Repeated derailing, bad-faith arguments, or intentional disruption
-- Sharing private or sensitive information without permission
+### Project: BeCertain
 
-## Engineering Conduct Expectations
-When working on `BeCertain`, contributors should:
-- Prioritize safety, correctness, and maintainability
-- Avoid reckless or destructive changes without explicit approval
-- Document breaking changes and operational risk clearly
-- Treat production-impacting incidents with urgency and clarity
+This document outlines the standards and expectations for all contributors to the `BeCertain` service. We are committed to fostering an environment that prioritizes technical excellence, mutual respect, and operational safety.
 
-## Reporting
-If you experience or witness unacceptable behavior:
-- Open a private report to repository maintainers
-- Include links, timestamps, and relevant context
-- If urgent, escalate through the project’s incident/security channel
+---
 
-All reports are handled as confidentially as possible.
+## 📍 Scope
 
-## Enforcement
-Maintainers may take action including:
-- Warning or request to correct behavior
-- Temporary interaction restrictions
-- Removal of comments/content
-- Suspension or removal from collaboration spaces
+This Code of Conduct applies to all collaboration within the `BeCertain` ecosystem, including:
 
-Enforcement decisions are made to protect contributors and keep collaboration effective.
+* **Technical Assets:** Source code, issues, pull requests, reviews, and documentation.
+* **Communication:** Chat platforms, comments, and incident-response channels.
+* **Representations:** Any activity related to the service or its community.
+
+---
+
+## ✨ Our Standard
+
+We hold ourselves to a high standard of professional interaction. All contributors are expected to:
+
+* **Be Direct & Respectful:** Communicate clearly and professionally.
+* **Focus on Outcomes:** Center feedback on behavior, code quality, and project goals rather than individuals.
+* **Maintain the Engineering Bar:** Assume good intent while rigorously defending the quality and security of the system.
+* **Value Evidence:** Resolve disagreements through data, logic, and peer-reviewed consensus.
+
+---
+
+## ⚙️ Engineering Excellence
+
+As an engineering-first project, we uphold specific operational expectations:
+
+1. **Safety First:** Prioritize correctness and maintainability over speed.
+2. **Risk Management:** Document breaking changes and operational risks with clarity.
+3. **Controlled Changes:** Avoid reckless or destructive modifications without explicit approval.
+4. **Incident Urgency:** Treat production-impacting events with immediate attention and transparent communication.
+
+---
+
+## 🚫 Unacceptable Behavior
+
+To protect our community and our code, the following behaviors are strictly prohibited:
+
+* **Harassment:** Insults, threats, or discriminatory language of any kind.
+* **Hostility:** Personal attacks, intimidation, or aggressive conduct.
+* **Disruption:** Repeatedly derailing discussions or engaging in bad-faith arguments.
+* **Privacy Violations:** Sharing sensitive or private information without explicit permission.
+
+---
+
+## 📣 Reporting & Enforcement
+
+If you experience or witness behavior that violates these standards, please take the following steps:
+
+### How to Report
+
+* **Private Report:** Submit a formal report to the repository maintainers.
+* **Context is Key:** Include links, timestamps, and relevant screenshots.
+* **Urgent Matters:** If the situation involves an active security risk or emergency, escalate through the project’s dedicated **Incident/Security channel**.
+
+### Enforcement Actions
+
+Maintainers reserve the right to take corrective action, which may include:
+
+* Formal warnings or requests for behavior correction.
+* Temporary or permanent interaction restrictions.
+* Removal of content (comments, code, or documentation).
+* Suspension or permanent removal from all collaboration spaces.
+
+> **Our Goal:** These measures are in place not to punish, but to ensure that `BeCertain` remains a safe, effective, and high-performance environment for everyone.
+
+---
+
+**Would you like me to create a condensed "TL;DR" version for a README file or a footer for your pull request templates?**

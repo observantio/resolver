@@ -164,9 +164,6 @@ class AnalysisReport(NpModel):
     summary: str
     quality: Optional[AnalysisQuality] = None
 
-
-# Job-related response models and supporting enum:
-
 class JobStatus(str, Enum):
 
     QUEUED = "queued"

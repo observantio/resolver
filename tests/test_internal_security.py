@@ -10,10 +10,13 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 import asyncio
 import json
+import uuid
 from pydantic import BaseModel
 import jwt
 from starlette.responses import JSONResponse
+import pytest
 
+import services.security_service as security_service
 from services.security_service import (
     InternalAuthMiddleware,
     InternalContext,
@@ -39,6 +42,13 @@ def _set_security_defaults():
     settings.context_issuer = "beobservant-main"
     settings.context_audience = "becertain"
     settings.context_algorithms = "HS256"
+    settings.context_replay_ttl_seconds = 180
+
+
+@pytest.fixture(autouse=True)
+def _clear_replay_cache():
+    with security_service._jti_seen_lock:
+        security_service._jti_seen_cache.clear()
 
 
 async def _run_request(path: str, headers: dict[str, str]):
@@ -104,6 +114,7 @@ def test_valid_context_enforces_tenant_scope():
             "aud": settings.context_audience,
             "iat": 1_700_000_000,
             "exp": 4_700_000_000,
+            "jti": str(uuid.uuid4()),
             "tenant_id": "tenant-from-context",
             "org_id": "tenant-from-context",
             "user_id": "u1",
@@ -140,3 +151,46 @@ def test_enforce_request_tenant_overrides_payload():
         assert scoped.tenant_id == "ctx-tenant"
     finally:
         reset_internal_context(token)
+
+
+def test_context_token_missing_jti_rejected():
+    _set_security_defaults()
+    headers = _headers(
+        {
+            "iss": settings.context_issuer,
+            "aud": settings.context_audience,
+            "iat": 1_700_000_000,
+            "exp": 4_700_000_000,
+            "jti": " ",
+            "tenant_id": "tenant-from-context",
+            "org_id": "tenant-from-context",
+            "user_id": "u1",
+            "username": "alice",
+        }
+    )
+    status, payload = asyncio.run(_run_request("/api/v1/tenant", headers=headers))
+    assert status == 401
+    assert payload["detail"] == "Missing context token jti"
+
+
+def test_context_token_replay_rejected():
+    _set_security_defaults()
+    jti = str(uuid.uuid4())
+    headers = _headers(
+        {
+            "iss": settings.context_issuer,
+            "aud": settings.context_audience,
+            "iat": 1_700_000_000,
+            "exp": 4_700_000_000,
+            "jti": jti,
+            "tenant_id": "tenant-from-context",
+            "org_id": "tenant-from-context",
+            "user_id": "u1",
+            "username": "alice",
+        }
+    )
+    status_1, _ = asyncio.run(_run_request("/api/v1/tenant", headers=headers))
+    status_2, payload_2 = asyncio.run(_run_request("/api/v1/tenant", headers=headers))
+    assert status_1 == 200
+    assert status_2 == 401
+    assert payload_2["detail"] == "Replayed context token"

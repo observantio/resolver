@@ -4,7 +4,6 @@ Core module implementing `jobs` functionality for the analysis engine.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, status
-
 from api.requests import AnalyzeJobCreateRequest
 from api.responses import (
     JobStatus,
@@ -15,20 +14,14 @@ from api.responses import (
     AnalyzeReportDeleteResponse,
     AnalyzeReportResponse,
 )
-from services.security_service import get_internal_context
+from services.security_service import ensure_permission, get_internal_context
 from services.rca_job_service import rca_job_service
 
 router = APIRouter(tags=["RCA Jobs"])
 
 
 def _require_permission(name: str) -> None:
-    ctx = get_internal_context()
-    if ctx is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing internal context")
-    if ctx.is_superuser:
-        return
-    if name not in (ctx.permissions or []):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Missing permission: {name}")
+    ensure_permission(name)
 
 
 def _required_context():

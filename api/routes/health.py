@@ -10,9 +10,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict
-
 from fastapi import APIRouter
-
 from store.client import get_redis, is_using_fallback
 from api.routes.exception import handle_exceptions
 

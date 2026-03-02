@@ -10,19 +10,21 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict
-
-from fastapi import APIRouter, HTTPException
-
+from fastapi import APIRouter, Depends, HTTPException
 from engine.enums import Signal
 from api.routes.exception import handle_exceptions
-from services.security_service import get_context_tenant
+from services.security_service import get_context_tenant, require_permission_dependency
 from engine.registry import get_registry
 from api.routes.common import safe_call
 
 router = APIRouter(tags=["ML"])
 
 
-@router.post("/ml/weights/feedback", summary="Submit signal correctness feedback")
+@router.post(
+    "/ml/weights/feedback",
+    summary="Submit signal correctness feedback",
+    dependencies=[Depends(require_permission_dependency("create:rca"))],
+)
 @handle_exceptions
 async def signal_feedback(tenant_id: str, signal: str, was_correct: bool) -> Dict[str, Any]:
     tenant_id = get_context_tenant(tenant_id)
@@ -34,11 +36,14 @@ async def signal_feedback(tenant_id: str, signal: str, was_correct: bool) -> Dic
             detail=f"Unknown signal '{signal}'. Valid values: {[s.value for s in Signal]}",
         )
     state = await safe_call(get_registry().update_weight(tenant_id, sig, was_correct), 500)
-    # weights_serializable always uses plain string keys suitable for JSON output
     return {"updated_weights": state.weights_serializable, "update_count": state.update_count}
 
 
-@router.get("/ml/weights", summary="Current adaptive signal weights for a tenant")
+@router.get(
+    "/ml/weights",
+    summary="Current adaptive signal weights for a tenant",
+    dependencies=[Depends(require_permission_dependency("read:rca"))],
+)
 @handle_exceptions
 async def get_signal_weights(tenant_id: str) -> Dict[str, Any]:
     tenant_id = get_context_tenant(tenant_id)
@@ -46,7 +51,11 @@ async def get_signal_weights(tenant_id: str) -> Dict[str, Any]:
     return {"weights": state.weights_serializable, "update_count": state.update_count}
 
 
-@router.post("/ml/weights/reset", summary="Reset adaptive weights to defaults for a tenant")
+@router.post(
+    "/ml/weights/reset",
+    summary="Reset adaptive weights to defaults for a tenant",
+    dependencies=[Depends(require_permission_dependency("delete:rca"))],
+)
 @handle_exceptions
 async def reset_signal_weights(tenant_id: str) -> Dict[str, Any]:
     tenant_id = get_context_tenant(tenant_id)

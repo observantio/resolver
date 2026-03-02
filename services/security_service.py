@@ -13,6 +13,8 @@ from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from hmac import compare_digest
 import logging
+import threading
+import time
 from typing import Any, Mapping, Optional
 
 import jwt
@@ -21,10 +23,12 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from config import settings
+from config import ALLOWED_CONTEXT_ALGORITHMS, settings
 
 _context_var: ContextVar["InternalContext | None"] = ContextVar("becertain_internal_context", default=None)
 log = logging.getLogger(__name__)
+_jti_seen_lock = threading.Lock()
+_jti_seen_cache: dict[str, float] = {}
 
 
 @dataclass(frozen=True)
@@ -41,7 +45,30 @@ class InternalContext:
 
 def _context_algorithms() -> list[str]:
     raw = settings.context_algorithms or "HS256"
-    return [v.strip() for v in str(raw).split(",") if v.strip()] or ["HS256"]
+    parsed = [str(v).strip().upper() for v in str(raw).split(",") if str(v).strip()]
+    algorithms = parsed or ["HS256"]
+    invalid = sorted(set(algorithms) - ALLOWED_CONTEXT_ALGORITHMS)
+    if invalid:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Unsupported context token algorithm configuration: "
+                + ",".join(invalid)
+            ),
+        )
+    return algorithms
+
+
+def _assert_jti_not_replayed(jti: str) -> None:
+    now = time.monotonic()
+    ttl = int(getattr(settings, "context_replay_ttl_seconds", 180) or 180)
+    with _jti_seen_lock:
+        stale = [token_id for token_id, ts in _jti_seen_cache.items() if now - ts > ttl]
+        for token_id in stale:
+            _jti_seen_cache.pop(token_id, None)
+        if jti in _jti_seen_cache:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Replayed context token")
+        _jti_seen_cache[jti] = now
 
 
 def _parse_bearer(auth_header: str | None) -> str:
@@ -58,18 +85,30 @@ def _decode_context_token(token: str) -> dict[str, Any]:
     if not key:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Missing context verify key")
     try:
-        return jwt.decode(
+        payload = jwt.decode(
             token,
             key,
             algorithms=_context_algorithms(),
             audience=settings.context_audience,
             issuer=settings.context_issuer,
-            options={"require": ["exp", "iat", "iss", "aud"]},
+            options={"require": ["exp", "iat", "iss", "aud", "jti"]},
         )
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Context token expired") from exc
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid context token") from exc
+    try:
+        iat = int(payload.get("iat"))
+        exp = int(payload.get("exp"))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid context token claims") from exc
+    if exp <= iat:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid context token lifetime")
+    jti = str(payload.get("jti") or "").strip()
+    if not jti:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing context token jti")
+    _assert_jti_not_replayed(jti)
+    return payload
 
 
 def _build_context(payload: dict[str, Any]) -> InternalContext:
@@ -107,6 +146,24 @@ def get_context_tenant(default_tenant: Optional[str] = None) -> str:
     if default_tenant:
         return default_tenant
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing tenant context")
+
+
+def ensure_permission(permission: str) -> InternalContext:
+    ctx = get_internal_context()
+    if ctx is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing internal context")
+    if ctx.is_superuser:
+        return ctx
+    if permission not in (ctx.permissions or []):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Missing permission: {permission}")
+    return ctx
+
+
+def require_permission_dependency(permission: str):
+    def _dependency() -> InternalContext:
+        return ensure_permission(permission)
+
+    return _dependency
 
 
 def enforce_request_tenant(model: Any) -> Any:

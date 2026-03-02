@@ -16,9 +16,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Awaitable, TypeVar
-
 from fastapi import HTTPException
-
 from datasources.data_config import DataSourceSettings
 from datasources.provider import DataSourceProvider
 from services.security_service import get_context_tenant
