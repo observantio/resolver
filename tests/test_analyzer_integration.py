@@ -23,14 +23,18 @@ from engine.ml.ranking import RankedCause
 from engine.rca.hypothesis import RootCause
 
 
-def _metric_result(name: str, values: list[float]) -> dict:
+def _metric_result(name: str, values: list[float], service: str = "payment-service") -> dict:
     ts = list(range(1, len(values) + 1))
     return {
         "status": "success",
         "data": {
             "result": [
                 {
-                    "metric": {"__name__": name},
+                    "metric": {
+                        "__name__": name,
+                        "service": service,
+                        "service_name": service,
+                    },
                     "values": [[t, str(v)] for t, v in zip(ts, values)],
                 }
             ]
