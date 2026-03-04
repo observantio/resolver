@@ -104,6 +104,49 @@ def _build_log_query(services: list[str] | None, requested_log_query: str | None
     return '{service_name=~".+"}'
 
 
+_SERVICE_LABEL_KEYS = ("service", "service_name", "service.name", "job")
+
+
+def _normalize_services(services: list[str] | None) -> set[str]:
+    return {str(service or "").strip().lower() for service in (services or []) if str(service or "").strip()}
+
+
+def _result_matches_services(result: object, services: set[str]) -> bool:
+    if not services:
+        return True
+    if not isinstance(result, dict):
+        return False
+    metric = result.get("metric", {})
+    if not isinstance(metric, dict):
+        return False
+    for key in _SERVICE_LABEL_KEYS:
+        value = str(metric.get(key) or "").strip().lower()
+        if value and value in services:
+            return True
+    return False
+
+
+def _filter_metric_response_by_services(response: object, services: set[str]) -> object:
+    if not services:
+        return response
+    if not isinstance(response, dict):
+        return response
+    data = response.get("data")
+    if not isinstance(data, dict):
+        return response
+    results = data.get("result")
+    if not isinstance(results, list):
+        return response
+    filtered = [item for item in results if _result_matches_services(item, services)]
+    if len(filtered) == len(results):
+        return response
+    response_copy = dict(response)
+    data_copy = dict(data)
+    data_copy["result"] = filtered
+    response_copy["data"] = data_copy
+    return response_copy
+
+
 def _to_root_cause_model(rc) -> RootCauseModel:
     def _normalize_signals(values: list) -> list[Signal]:
         normalized: list[Signal] = []
@@ -553,6 +596,12 @@ async def _process_metrics(
     analysis_window_seconds: float,
 ) -> Tuple[list, List[ChangePoint], list, list, Dict[str, List[float]]]:
     metrics_raw = await fetch_metrics(provider, all_metric_queries, req.start, req.end, req.step)
+    requested_services = _normalize_services(req.services)
+    if requested_services:
+        metrics_raw = [
+            (query_string, cast(Dict[str, object], _filter_metric_response_by_services(resp, requested_services)))
+            for query_string, resp in metrics_raw
+        ]
 
     series_list: List[Tuple[str, str, list, list]] = [
         (query_string, metric_name, ts, vals)
@@ -645,7 +694,9 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     started = time.perf_counter()
     registry = get_registry()
     tenant_id = req.tenant_id
-    primary_service = req.services[0] if req.services else None
+    normalized_services = [str(service or "").strip() for service in (req.services or []) if str(service or "").strip()]
+    req.services = normalized_services
+    primary_service = normalized_services[0] if normalized_services else None
     warnings: list[str] = []
     suppression_counts: dict[str, int] = {}
     analysis_window_seconds = float(max(0, req.end - req.start))
@@ -835,6 +886,10 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     slo_started = time.perf_counter()
     slo_alerts_raw = []
     if not isinstance(slo_errors_raw, Exception) and not isinstance(slo_total_raw, Exception):
+        requested_service_set = _normalize_services(req.services)
+        if requested_service_set:
+            slo_errors_raw = _filter_metric_response_by_services(slo_errors_raw, requested_service_set)
+            slo_total_raw = _filter_metric_response_by_services(slo_total_raw, requested_service_set)
         for err_ts, err_vals, tot_vals in _slo_series_pairs(slo_errors_raw, slo_total_raw, warnings):
             slo_alerts_raw.extend(
                 slo_evaluate(primary_service or "global", err_vals, tot_vals, err_ts, req.slo_target or 0.999)
