@@ -112,3 +112,34 @@ def test_generate_deduplicates_same_hypothesis_events():
     causes = generate([], [], [], [], [], correlated_events=[ev1, ev2], graph=None, event_registry=None)
     assert len(causes) == 1
     assert causes[0].corroboration_summary
+
+
+def test_generate_includes_process_entity_from_metric_labels():
+    anomaly = MetricAnomaly(
+        metric_id="m",
+        metric_name=(
+            "process_cpu_time_seconds_total{service_name=cache,"
+            "process_executable_name=redis-server,process_pid=274}"
+        ),
+        timestamp=1,
+        value=100,
+        change_type=ChangeType.spike,
+        z_score=10,
+        mad_score=5,
+        isolation_score=0.0,
+        expected_range=(0, 1),
+        severity=Severity.high,
+        description="",
+    )
+    ev = CorrelatedEvent(
+        window_start=1,
+        window_end=2,
+        metric_anomalies=[anomaly],
+        log_bursts=[],
+        service_latency=[],
+        confidence=0.7,
+    )
+    causes = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
+    assert causes
+    assert "process hotspot in redis-server(pid=274)" in causes[0].hypothesis
+    assert any(str(item).startswith("process_entities=") for item in causes[0].evidence)

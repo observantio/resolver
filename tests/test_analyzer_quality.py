@@ -12,10 +12,11 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from api.responses import MetricAnomaly, RootCause as RootCauseModel
+from api.responses import LogBurst, LogPattern, MetricAnomaly, RootCause as RootCauseModel
 from engine.analyzer import (
     _apply_precision_quality_gates,
     _build_log_query,
+    _filter_log_bursts_for_precision_rca,
     _limit_analyzer_output,
     _select_granger_series,
     _to_root_cause_model,
@@ -229,11 +230,24 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
         SimpleNamespace(root_cause=SimpleNamespace(hypothesis="low-confidence-single-signal"), final_score=0.1),
         SimpleNamespace(root_cause=SimpleNamespace(hypothesis="multi-signal-cause"), final_score=0.8),
     ]
+    change_points = [
+        ChangePoint(
+            index=i,
+            timestamp=float(100 + i * 10),
+            value_before=1.0,
+            value_after=2.0,
+            magnitude=float(i + 1),
+            change_type=ChangeType.shift,
+            metric_name="shared_metric",
+        )
+        for i in range(6)
+    ]
     warnings: list[str] = []
     suppression_counts: dict[str, int] = {}
 
-    anomalies_after, causes_after, ranked_after, quality = _apply_precision_quality_gates(
+    anomalies_after, change_points_after, causes_after, ranked_after, quality = _apply_precision_quality_gates(
         metric_anomalies=anomalies,
+        change_points=change_points,
         root_causes=causes,
         ranked_causes=ranked,
         duration_seconds=3600.0,
@@ -242,6 +256,7 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
     )
 
     assert len(anomalies_after) == 1
+    assert len(change_points_after) == 2
     assert len(causes_after) == 1
     assert causes_after[0].hypothesis == "multi-signal-cause"
     assert causes_after[0].corroboration_summary
@@ -250,6 +265,7 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
     assert quality.gating_profile == "precision_strict_v1"
     assert quality.confidence_calibration_version == "calib_test"
     assert quality.suppression_counts.get("density_suppressed_metric_anomalies", 0) >= 1
+    assert quality.suppression_counts.get("density_suppressed_change_points", 0) >= 1
     assert quality.suppression_counts.get("low_confidence_root_causes", 0) >= 1
 
 
@@ -261,3 +277,79 @@ def test_build_log_query_defaults_to_global_selector():
 def test_build_log_query_services_use_service_name_label():
     query = _build_log_query(["payments"], None)
     assert query == '{service_name=~"payments"}'
+
+
+def test_filter_log_bursts_for_precision_rca_suppresses_periodic_low_signal(monkeypatch):
+    monkeypatch.setattr("config.settings.quality_gating_profile", "precision_strict_v1")
+    bursts = [
+        LogBurst(
+            window_start=1000.0 + (i * 60.0),
+            window_end=1010.0 + (i * 60.0),
+            rate_per_second=0.5,
+            baseline_rate=0.1,
+            ratio=5.0,
+            severity=Severity.high,
+        )
+        for i in range(6)
+    ]
+    patterns = [
+        LogPattern(
+            pattern="background saving terminated with success",
+            count=6,
+            first_seen=1000.0,
+            last_seen=1300.0,
+            rate_per_minute=1.0,
+            entropy=0.1,
+            severity=Severity.low,
+            sample="Background saving terminated with success",
+        )
+    ]
+    suppression_counts: dict[str, int] = {}
+    warnings: list[str] = []
+    filtered = _filter_log_bursts_for_precision_rca(
+        log_bursts=bursts,
+        log_patterns=patterns,
+        suppression_counts=suppression_counts,
+        warnings=warnings,
+    )
+    assert filtered == []
+    assert suppression_counts.get("low_signal_periodic_log_bursts") == len(bursts)
+    assert any("periodic low-severity" in warning for warning in warnings)
+
+
+def test_filter_log_bursts_for_precision_rca_keeps_high_signal(monkeypatch):
+    monkeypatch.setattr("config.settings.quality_gating_profile", "precision_strict_v1")
+    bursts = [
+        LogBurst(
+            window_start=1000.0 + (i * 60.0),
+            window_end=1010.0 + (i * 60.0),
+            rate_per_second=0.5,
+            baseline_rate=0.1,
+            ratio=5.0,
+            severity=Severity.high,
+        )
+        for i in range(4)
+    ]
+    patterns = [
+        LogPattern(
+            pattern="timeout while calling dependency",
+            count=4,
+            first_seen=1000.0,
+            last_seen=1180.0,
+            rate_per_minute=1.0,
+            entropy=0.2,
+            severity=Severity.high,
+            sample="timeout while calling dependency",
+        )
+    ]
+    suppression_counts: dict[str, int] = {}
+    warnings: list[str] = []
+    filtered = _filter_log_bursts_for_precision_rca(
+        log_bursts=bursts,
+        log_patterns=patterns,
+        suppression_counts=suppression_counts,
+        warnings=warnings,
+    )
+    assert len(filtered) == len(bursts)
+    assert suppression_counts == {}
+    assert warnings == []

@@ -109,14 +109,42 @@ SLO_TOTAL_QUERY_TEMPLATE = (
 
 # default metric queries used by various API routes when none are supplied
 DEFAULT_METRIC_QUERIES = [
+    # Trace/service RCA signals
     "sum(rate(traces_spanmetrics_calls_total[5m])) by (service)",
     "histogram_quantile(0.99, sum(rate(traces_spanmetrics_latency_bucket[5m])) by (le, service))",
     "sum(rate(traces_spanmetrics_calls_total{status_code='STATUS_CODE_ERROR'}[5m])) by (service)",
     "sum(rate(traces_service_graph_request_failed_total[5m])) by (client, server)",
     "sum(rate(traces_service_graph_request_total[5m])) by (client, server)",
-    "sum(rate(system_cpu_time_seconds_total[5m])) by (cpu)",
-    "system_memory_usage_bytes",
-    "system_filesystem_usage_bytes",
+    # Process-focused RCA signals
+    "sum(rate(process_cpu_time_seconds_total[5m])) by (service_name, process_executable_name, process_pid)",
+    "max(process_memory_usage_bytes) by (service_name, process_executable_name, process_pid)",
+    # Mimir system/process dashboard signals
+    "sum by(instance) (process_cpu_time_seconds_total)",
+    "sum by(instance) (process_disk_io_bytes_total)",
+    "sum by(instance) (process_memory_usage_bytes)",
+    "sum by(instance) (process_memory_virtual_bytes)",
+    "sum by(instance) (system_cpu_load_average_15m)",
+    "sum by(instance) (system_cpu_load_average_1m)",
+    "sum by(instance) (system_cpu_load_average_5m)",
+    "sum by(instance) (system_cpu_time_seconds_total)",
+    "sum by(instance) (system_disk_io_bytes_total)",
+    "sum by(instance) (system_disk_io_time_seconds_total)",
+    "sum by(instance) (system_disk_merged_total)",
+    "sum by(instance) (system_disk_operation_time_seconds_total)",
+    "sum by(instance) (system_disk_operations_total)",
+    "sum by(instance) (system_disk_pending_operations)",
+    "sum by(instance) (system_disk_weighted_io_time_seconds_total)",
+    "sum by(instance) (system_filesystem_inodes_usage)",
+    "sum by(instance) (system_filesystem_usage_bytes)",
+    "sum by(instance) (system_memory_usage_bytes)",
+    "sum by(instance) (system_network_connections)",
+    "sum by(instance) (system_network_dropped_total)",
+    "sum by(instance) (system_network_errors_total)",
+    "sum by(instance) (system_network_io_bytes_total)",
+    "sum by(instance) (system_network_packets_total)",
+    "sum by(instance) (system_paging_faults_total)",
+    "sum by(instance) (system_paging_operations_total)",
+    "sum by(instance) (system_paging_usage_bytes)",
 ]
 
 SLO_ERROR_QUERY = 'sum(rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m]))'
@@ -234,7 +262,7 @@ class Settings(BaseSettings):
 
     # correlation/temporal scoring
     max_lag_seconds: float = 90.0
-    correlation_window_seconds: float = 45.0
+    correlation_window_seconds: float = float(os.getenv("BECERTAIN_CORRELATION_WINDOW_SECONDS", "45.0"))
     correlation_weight_time: float = 0.30
     correlation_weight_latency: float = 0.35
     correlation_weight_errors: float = 0.35
@@ -264,7 +292,7 @@ class Settings(BaseSettings):
     rca_errorprop_max: float = 0.95
     rca_baseline_base: float = 0.5
     rca_baseline_affected_factor: float = 0.1
-    rca_min_confidence_display: float = 0.12
+    rca_min_confidence_display: float = float(os.getenv("BECERTAIN_RCA_MIN_CONFIDENCE_DISPLAY", "0.12"))
 
     # analyzer tuning
     analyzer_sensitivity_factor: float = 0.75
@@ -272,9 +300,9 @@ class Settings(BaseSettings):
     analyzer_max_parallel_cpu_tasks: int = 4
     analyzer_granger_max_series: int = 20
     analyzer_granger_min_samples: int = 20
-    analyzer_fetch_timeout_seconds: float = 10.0
-    analyzer_metrics_timeout_seconds: float = 15.0
-    analyzer_causal_timeout_seconds: float = 6.0
+    analyzer_fetch_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_FETCH_TIMEOUT_SECONDS", "10.0"))
+    analyzer_metrics_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_METRICS_TIMEOUT_SECONDS", "15.0"))
+    analyzer_causal_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_CAUSAL_TIMEOUT_SECONDS", "6.0"))
     analyzer_forecast_min_window_seconds: float = float(
         os.getenv("BECERTAIN_ANALYZER_FORECAST_MIN_WINDOW_SECONDS", "900")
     )
@@ -289,6 +317,9 @@ class Settings(BaseSettings):
     quality_gating_profile: str = os.getenv("BECERTAIN_QUALITY_GATING_PROFILE", "precision_strict_v1")
     quality_max_anomaly_density_per_metric_per_hour: float = float(
         os.getenv("BECERTAIN_QUALITY_MAX_ANOMALY_DENSITY_PER_METRIC_PER_HOUR", "0.75")
+    )
+    quality_max_change_point_density_per_metric_per_hour: float = float(
+        os.getenv("BECERTAIN_QUALITY_MAX_CHANGE_POINT_DENSITY_PER_METRIC_PER_HOUR", "2.0")
     )
     quality_max_root_causes_without_multisignal: int = int(
         os.getenv("BECERTAIN_QUALITY_MAX_ROOT_CAUSES_WITHOUT_MULTISIGNAL", "1")
@@ -396,7 +427,7 @@ class Settings(BaseSettings):
     ml_cluster_min_samples: int = 2
 
     # RCA heuristics not covered earlier
-    rca_event_confidence_threshold: float = 0.3
+    rca_event_confidence_threshold: float = float(os.getenv("BECERTAIN_RCA_EVENT_CONFIDENCE_THRESHOLD", "0.3"))
     rca_deploy_window_seconds: float = 300.0
     rca_score_cap: float = 0.99
     rca_slice_limit: int = 2

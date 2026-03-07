@@ -65,3 +65,19 @@ def test_iter_series_uses_label_based_fallback_when_no_metric_name_or_hint():
     assert rows
     assert rows[0][0].startswith("series_service")
     assert "service=checkout" in rows[0][0]
+
+
+def test_iter_series_includes_process_labels_when_present():
+    raw = _resp(
+        {
+            "__name__": "process_cpu_time_seconds_total",
+            "service_name": "cache",
+            "process_executable_name": "redis-server",
+            "process_pid": "274",
+        },
+        [[1, "1.0"], [2, "1.5"]],
+    )
+    rows = list(iter_series(raw))
+    assert rows
+    name = rows[0][0]
+    assert "process_executable_name=redis-server" in name

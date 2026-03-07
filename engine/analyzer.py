@@ -431,17 +431,90 @@ def _compute_anomaly_density(metric_anomalies: list, duration_seconds: float) ->
     return {name: round(count / hours, 4) for name, count in counts.items()}
 
 
+def _is_precision_profile() -> bool:
+    profile = str(getattr(settings, "quality_gating_profile", "precision_strict_v1")).strip()
+    return profile.lower().startswith("precision")
+
+
+def _safe_float(value: object) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(parsed):
+        return None
+    return parsed
+
+
+def _is_strongly_periodic_log_bursts(log_bursts: list) -> bool:
+    if len(log_bursts) < 4:
+        return False
+    starts = [
+        _safe_float(getattr(burst, "window_start", getattr(burst, "start", None)))
+        for burst in log_bursts
+    ]
+    starts = sorted(value for value in starts if value is not None)
+    if len(starts) < 4:
+        return False
+    deltas = [starts[idx] - starts[idx - 1] for idx in range(1, len(starts))]
+    deltas = [delta for delta in deltas if delta > 0]
+    if len(deltas) < 3:
+        return False
+    median = float(np.median(deltas))
+    if median < 20.0 or median > 180.0:
+        return False
+    std = float(np.std(deltas))
+    cv = std / median if median > 0 else float("inf")
+    if cv > 0.25:
+        return False
+    band = median * 0.2
+    in_band = sum(1 for delta in deltas if abs(delta - median) <= band)
+    return (in_band / len(deltas)) >= 0.75
+
+
+def _filter_log_bursts_for_precision_rca(
+    *,
+    log_bursts: list,
+    log_patterns: list,
+    suppression_counts: dict[str, int],
+    warnings: list[str],
+) -> list:
+    if not log_bursts:
+        return log_bursts
+    if not _is_precision_profile():
+        return log_bursts
+    if not log_patterns:
+        return log_bursts
+    highest_pattern_severity = max(
+        (getattr(pattern, "severity", Severity.low).weight() for pattern in log_patterns),
+        default=Severity.low.weight(),
+    )
+    if highest_pattern_severity > Severity.low.weight():
+        return log_bursts
+    if not _is_strongly_periodic_log_bursts(log_bursts):
+        return log_bursts
+    suppressed = len(log_bursts)
+    suppression_counts["low_signal_periodic_log_bursts"] = (
+        suppression_counts.get("low_signal_periodic_log_bursts", 0) + suppressed
+    )
+    warnings.append(
+        f"Quality gate suppressed {suppressed} periodic low-severity log burst(s) from RCA corroboration."
+    )
+    return []
+
+
 def _apply_precision_quality_gates(
     *,
     metric_anomalies: list,
+    change_points: List[ChangePoint],
     root_causes: list[RootCauseModel],
     ranked_causes: list,
     duration_seconds: float,
     suppression_counts: dict[str, int],
     warnings: list[str],
-) -> tuple[list, list[RootCauseModel], list, AnalysisQuality]:
+) -> tuple[list, List[ChangePoint], list[RootCauseModel], list, AnalysisQuality]:
     profile = str(getattr(settings, "quality_gating_profile", "precision_strict_v1")).strip() or "precision_strict_v1"
-    is_precision = profile.lower().startswith("precision")
+    is_precision = _is_precision_profile()
     hours = max(float(duration_seconds) / 3600.0, 1.0 / 60.0)
 
     if is_precision and metric_anomalies:
@@ -478,6 +551,42 @@ def _apply_precision_quality_gates(
                 warnings.append(
                     f"Quality gate suppressed {suppressed} metric anomaly(ies) above density cap "
                     f"{max_density}/metric/hour."
+                )
+    if is_precision and change_points:
+        max_density_cp = max(
+            0.0,
+            float(getattr(settings, "quality_max_change_point_density_per_metric_per_hour", 0.0)),
+        )
+        if max_density_cp > 0:
+            keep_per_metric_cp = max(1, int(math.ceil(max_density_cp * hours)))
+            by_metric_cp: dict[str, list[ChangePoint]] = defaultdict(list)
+            for item in change_points:
+                metric_name = str(getattr(item, "metric_name", "metric")).strip() or "metric"
+                by_metric_cp[metric_name].append(item)
+            filtered_cp: List[ChangePoint] = []
+            suppressed_cp = 0
+            for items in by_metric_cp.values():
+                if len(items) <= keep_per_metric_cp:
+                    filtered_cp.extend(items)
+                    continue
+                ranked_cp = sorted(
+                    items,
+                    key=lambda c: (
+                        float(getattr(c, "magnitude", 0.0)),
+                        float(getattr(c, "timestamp", 0.0)),
+                    ),
+                    reverse=True,
+                )
+                filtered_cp.extend(ranked_cp[:keep_per_metric_cp])
+                suppressed_cp += len(items) - keep_per_metric_cp
+            change_points = sorted(filtered_cp, key=lambda c: (c.timestamp, c.metric_name))
+            if suppressed_cp > 0:
+                suppression_counts["density_suppressed_change_points"] = (
+                    suppression_counts.get("density_suppressed_change_points", 0) + suppressed_cp
+                )
+                warnings.append(
+                    f"Quality gate suppressed {suppressed_cp} change point(s) above density cap "
+                    f"{max_density_cp}/metric/hour."
                 )
 
     if root_causes:
@@ -544,7 +653,7 @@ def _apply_precision_quality_gates(
             getattr(settings, "quality_confidence_calibration_version", "calib_2026_02_25")
         ),
     )
-    return metric_anomalies, root_causes, ranked_causes, quality
+    return metric_anomalies, change_points, root_causes, ranked_causes, quality
 
 
 async def _process_one_metric_series(
@@ -900,12 +1009,19 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     log.debug("analyzer stage=slo duration=%.4fs", time.perf_counter() - slo_started)
 
     correlate_started = time.perf_counter()
+    rca_log_bursts = _filter_log_bursts_for_precision_rca(
+        log_bursts=log_bursts,
+        log_patterns=log_patterns,
+        suppression_counts=suppression_counts,
+        warnings=warnings,
+    )
+    # Keep raw links for investigation UX; filtered bursts are used for RCA correlation/scoring only.
     log_metric_links = link_logs_to_metrics(metric_anomalies, log_bursts)
     # fetch tenant-specific weights used to compute confidence
     state = await registry.get_state(tenant_id)
     correlated_events = correlate(
         metric_anomalies,
-        log_bursts,
+        rca_log_bursts,
         service_latency,
         window_seconds=req.correlation_window_seconds,
         weight_fn=state.weighted_confidence,
@@ -947,14 +1063,14 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     bayesian_scores = bayesian_score(
         has_deployment_event=bool(deployment_events),
         has_metric_spike=bool(metric_anomalies),
-        has_log_burst=bool(log_bursts),
+        has_log_burst=bool(rca_log_bursts),
         has_latency_spike=bool(service_latency),
         has_error_propagation=bool(error_propagation),
     )
 
     root_causes = rca.generate(
         metric_anomalies,
-        log_bursts,
+        rca_log_bursts,
         log_patterns,
         service_latency,
         error_propagation,
@@ -1000,8 +1116,9 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         granger_results=fresh_granger,
         warnings=warnings,
     )
-    metric_anomalies, pydantic_root_causes, ranked_causes, quality = _apply_precision_quality_gates(
+    metric_anomalies, change_points, pydantic_root_causes, ranked_causes, quality = _apply_precision_quality_gates(
         metric_anomalies=metric_anomalies,
+        change_points=change_points,
         root_causes=pydantic_root_causes,
         ranked_causes=ranked_causes,
         duration_seconds=float(req.end - req.start),

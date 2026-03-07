@@ -11,6 +11,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from typing import List, Optional
 
 from api.responses import (
@@ -26,6 +27,20 @@ from engine.rca.scoring import (
 )
 from engine.enums import Severity, RcaCategory
 from config import settings
+
+_METRIC_LABEL_RE = re.compile(r"\{([^}]*)\}")
+_PROCESS_NAME_KEYS = (
+    "process.executable.name",
+    "process_executable_name",
+    "process.command",
+    "process_command",
+    "process.command_line",
+    "process_command_line",
+    "process.name",
+    "process_name",
+    "process",
+)
+_PROCESS_PID_KEYS = ("process.pid", "process_pid", "pid")
 
 
 @dataclass
@@ -90,6 +105,47 @@ def _signals_from_event(event: CorrelatedEvent) -> List[str]:
     if not signals:
         return ["metrics"]
     return list(dict.fromkeys(signals))
+
+
+def _extract_metric_labels(metric_name: str) -> dict[str, str]:
+    text = str(metric_name or "")
+    match = _METRIC_LABEL_RE.search(text)
+    if not match:
+        return {}
+    raw_labels = match.group(1).strip()
+    if not raw_labels:
+        return {}
+    labels: dict[str, str] = {}
+    for token in raw_labels.split(","):
+        if "=" not in token:
+            continue
+        key, value = token.split("=", 1)
+        k = str(key).strip()
+        v = str(value).strip().strip('"').strip("'")
+        if k and v:
+            labels[k] = v
+    return labels
+
+
+def _process_entity_from_metric_name(metric_name: str) -> str:
+    labels = _extract_metric_labels(metric_name)
+    process_name = ""
+    for key in _PROCESS_NAME_KEYS:
+        value = labels.get(key)
+        if value:
+            process_name = str(value).strip()
+            break
+    if not process_name:
+        return ""
+    process_pid = ""
+    for key in _PROCESS_PID_KEYS:
+        value = labels.get(key)
+        if value:
+            process_pid = str(value).strip()
+            break
+    if process_pid:
+        return f"{process_name}(pid={process_pid})"
+    return process_name
 
 
 def _corroboration_summary(signals: List[str]) -> str:
@@ -174,14 +230,21 @@ def generate(
                 if service_deploys:
                     deploy_event = min(service_deploys, key=lambda d: abs(d.timestamp - event.window_start))
 
-        metric_names = list({a.metric_name for a in event.metric_anomalies})[:2]
-        svc_names = list({s.service for s in event.service_latency})[:2]
+        metric_names = sorted({a.metric_name for a in event.metric_anomalies})[:2]
+        svc_names = sorted({s.service for s in event.service_latency})[:2]
+        process_entities_all = [
+            _process_entity_from_metric_name(a.metric_name)
+            for a in event.metric_anomalies
+        ]
+        process_entities = sorted({item for item in process_entities_all if item})[:2]
 
         parts = []
         if deploy_event:
             parts.append(f"deployment of {deploy_event.service} v{deploy_event.version}")
         if metric_names:
             parts.append(f"metric anomaly in {', '.join(metric_names)}")
+        if process_entities:
+            parts.append(f"process hotspot in {', '.join(process_entities)}")
         if svc_names:
             parts.append(f"latency spike in {', '.join(svc_names)}")
         if event.log_bursts:
@@ -197,6 +260,7 @@ def generate(
             category=category,
             evidence=[
                 f"metrics={len(event.metric_anomalies)}",
+                f"process_entities={len(process_entities)}",
                 f"log_bursts={len(event.log_bursts)}",
                 f"latency_services={len(event.service_latency)}",
             ],
