@@ -1,20 +1,12 @@
-"""
-VictoriaMetrics Connector
-
-Copyright (c) 2026 Stefan Kumarasinghe
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-"""
-import httpx
 from typing import Any, Dict, Optional
 
+import httpx
+
+from config import HEALTH_PATH, DATASOURCE_TIMEOUT
+from connectors.common import query_backend_json
+from datasources.base import MetricsConnector
 from datasources.retry import retry
 
-from datasources.base import MetricsConnector
-from datasources.helpers import fetch_json
-from config import HEALTH_PATH, DATASOURCE_TIMEOUT
 
 class VictoriaMetricsConnector(MetricsConnector):
     health_path = HEALTH_PATH
@@ -36,14 +28,11 @@ class VictoriaMetricsConnector(MetricsConnector):
         end: int,
         step: str,
     ) -> Dict[str, Any]:
-        url = f"{self.base_url}/api/v1/query_range"
         params: Dict[str, Any] = {"query": query, "start": start, "end": end, "step": step}
-        return await fetch_json(
-            url,
+        return await query_backend_json(
+            self,
+            path="/api/v1/query_range",
             params=params,
-            headers=self._headers(),
-            timeout=self.timeout,
-            client=self.client,
             invalid_msg="VictoriaMetrics query failed",
             timeout_msg="VictoriaMetrics query timed out",
             unavailable_msg="Cannot reach VictoriaMetrics at",

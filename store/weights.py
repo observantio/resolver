@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import Any, Dict, Optional
 
 from store.client import redis_get, redis_set, redis_delete
@@ -37,7 +38,7 @@ async def load(tenant_id: str) -> Optional[Dict[str, Any]]:
                 except (TypeError, ValueError):
                     update_count = 0
             return {"weights": weights, "update_count": max(0, update_count)}
-    except Exception as exc:
+    except (TypeError, ValueError, JSONDecodeError) as exc:
         log.debug("Weights load failed %s: %s", tenant_id, exc)
     return None
 
@@ -45,11 +46,8 @@ async def save(tenant_id: str, weight_map: Dict[str, float], update_count: int) 
     payload = {"weights": weight_map, "update_count": update_count}
     try:
         await redis_set(keys.weights(tenant_id), json.dumps(payload), ttl=WEIGHTS_TTL)
-    except Exception as exc:
+    except (TypeError, ValueError) as exc:
         log.debug("Weights save failed %s: %s", tenant_id, exc)
 
 async def delete(tenant_id: str) -> None:
-    try:
-        await redis_delete(keys.weights(tenant_id))
-    except Exception as exc:
-        log.debug("Weights delete failed %s: %s", tenant_id, exc)
+    await redis_delete(keys.weights(tenant_id))

@@ -30,23 +30,23 @@ def handle_exceptions(func: F) -> F:
 
     if inspect.iscoroutinefunction(func):
         @wraps(func)
-        async def async_wrapper(*args: Any, **kwargs: Any) -> Any: 
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(*args, **kwargs)
             except HTTPException:
                 raise
-            except Exception as exc:  
+            except Exception as exc:
                 raise HTTPException(status_code=500, detail=str(exc)) from exc
 
         return cast(F, async_wrapper)
 
     @wraps(func)
-    def sync_wrapper(*args: Any, **kwargs: Any) -> Any:  
+    def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except HTTPException:
             raise
-        except Exception as exc: 
+        except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return cast(F, sync_wrapper)

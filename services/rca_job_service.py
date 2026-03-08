@@ -15,7 +15,6 @@ import binascii
 import hashlib
 import json
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -23,12 +22,22 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, or_, select
 
 from api.responses import JobStatus
+from api.responses.jobs import AnalyzeJobSummary as JobView
 from api.requests import AnalyzeRequest
 from services.analyze_service import run_analysis
 from services.security_service import InternalContext
 from config import settings
 from database import get_db_session
 from db_models import RcaJob, RcaReport
+
+
+_JOB_EXECUTION_ERRORS = (
+    asyncio.TimeoutError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
 
 
 def _utcnow() -> datetime:
@@ -53,21 +62,6 @@ def _duration_ms(start: Any, end: Any) -> int:
     start_dt = _coerce_datetime(start)
     end_dt = _coerce_datetime(end)
     return max(0, int((end_dt - start_dt).total_seconds() * 1000))
-
-
-@dataclass
-class JobView:
-    job_id: str
-    report_id: str
-    status: JobStatus
-    created_at: datetime
-    tenant_id: str
-    requested_by: str
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    error: Optional[str] = None
-    summary_preview: Optional[str] = None
 
 
 def _to_view(row: RcaJob) -> JobView:
@@ -216,7 +210,7 @@ class RcaJobService:
                 except asyncio.CancelledError:
                     await asyncio.to_thread(self._mark_cancelled, job_id, _utcnow(), "Cancelled by report owner")
                     raise
-                except Exception as exc:
+                except _JOB_EXECUTION_ERRORS as exc:
                     await asyncio.to_thread(self._mark_failed, job_id, _utcnow(), str(exc))
         finally:
             async with self._lock:

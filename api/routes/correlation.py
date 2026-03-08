@@ -10,31 +10,22 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 import asyncio
-import re
 from typing import Any, Dict
+
 from fastapi import APIRouter, Depends
+
+from api.requests import CorrelateRequest
 from api.routes.common import get_provider
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from engine import anomaly, logs
 from config import DEFAULT_METRIC_QUERIES
+from engine import anomaly, logs
 from engine.correlation import correlate, link_logs_to_metrics
-from engine.registry import get_registry
 from engine.fetcher import fetch_metrics
-from api.requests import CorrelateRequest
+from engine.log_query import build_log_query
+from engine.registry import get_registry
+from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Correlation"])
-
-
-def _build_log_query(services: list[str] | None, requested_log_query: str | None) -> str:
-    requested = (requested_log_query or "").strip()
-    if requested:
-        return re.sub(r'=~"\.\*"', '=~".+"', requested)
-    if services:
-        escaped = [re.escape(s) for s in services if s]
-        if escaped:
-            return '{service_name=~"' + "|".join(escaped) + '"}'
-    return '{service_name=~".+"}'
 
 
 @router.post(
@@ -45,7 +36,7 @@ def _build_log_query(services: list[str] | None, requested_log_query: str | None
 @handle_exceptions
 async def correlate_signals(req: CorrelateRequest) -> Dict[str, Any]:
     req = enforce_request_tenant(req)
-    log_query = _build_log_query(req.services, req.log_query)
+    log_query = build_log_query(req.services, req.log_query)
     provider = get_provider(req.tenant_id)
     all_queries = list(dict.fromkeys((req.metric_queries or []) + DEFAULT_METRIC_QUERIES))
 

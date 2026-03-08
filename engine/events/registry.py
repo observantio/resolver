@@ -11,20 +11,9 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import List
 
-
-@dataclass(frozen=True)
-class DeploymentEvent:
-    service: str
-    timestamp: float
-    version: str
-    author: str = ""
-    environment: str = "production"
-    source: str = "unknown"
-    metadata: Dict[str, str] = field(default_factory=dict)
-
+from engine.events.models import DeploymentEvent
 
 class EventRegistry:
     def __init__(self) -> None:

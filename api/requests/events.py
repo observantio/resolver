@@ -10,15 +10,6 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from engine.events.models import DeploymentEvent
 
-
-class DeploymentEventRequest(BaseModel):
-    tenant_id: str
-    service: str
-    timestamp: float
-    version: str
-    author: str = ""
-    environment: str = "production"
-    source: str = "api"
-    metadata: dict = Field(default_factory=dict)
+DeploymentEventRequest = DeploymentEvent

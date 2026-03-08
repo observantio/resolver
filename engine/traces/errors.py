@@ -13,10 +13,11 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, List
 
-from engine.enums import Severity
-from engine.topology import DependencyGraph
 from api.responses import ErrorPropagation
 from config import settings
+from engine.enums import Severity
+from engine.topology import DependencyGraph
+from engine.traces.common import iter_trace_spans, span_has_error
 
 
 def detect_propagation(tempo_response: Dict[str, Any]) -> List[ErrorPropagation]:
@@ -30,19 +31,9 @@ def detect_propagation(tempo_response: Dict[str, Any]) -> List[ErrorPropagation]
         service_total[service] += 1
         has_error = False
 
-        span_sets = []
-        if isinstance(trace.get("spanSet"), dict):
-            span_sets.append(trace.get("spanSet"))
-        if isinstance(trace.get("spanSets"), list):
-            span_sets.extend([s for s in trace.get("spanSets") if isinstance(s, dict)])
-        for span_set in span_sets:
-            for span in span_set.get("spans", []):
-                attrs = {a.get("key", ""): a.get("value", {}) for a in span.get("attributes", [])}
-                status_code = attrs.get("status.code", {}).get("stringValue", "").upper()
-                if status_code in ("STATUS_CODE_ERROR", "ERROR"):
-                    has_error = True
-                    break
-            if has_error:
+        for span in iter_trace_spans(trace):
+            if span_has_error(span):
+                has_error = True
                 break
 
         if has_error:

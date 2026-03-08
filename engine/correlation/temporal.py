@@ -11,6 +11,7 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 import re
 from typing import List, Set, Callable
 
@@ -84,7 +85,7 @@ def _safe_float(value) -> float | None:
         if value is None:
             return None
         number = float(value)
-        return number if number == number else None
+        return None if math.isnan(number) else number
     except (TypeError, ValueError):
         return None
 

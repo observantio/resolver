@@ -11,19 +11,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import List
+
 from config import settings
-
-
-@dataclass(frozen=True)
-class BudgetStatus:
-    service: str
-    target_availability: float
-    current_availability: float
-    budget_used_pct: float
-    remaining_minutes: float
-    on_track: bool
+from engine.slo.models import BudgetStatus
 
 
 def remaining_minutes(

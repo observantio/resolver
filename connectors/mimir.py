@@ -1,21 +1,13 @@
-"""
-Mimir connector implementation for querying metrics from a Mimir instance.
-
-Copyright (c) 2026 Stefan Kumarasinghe
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-"""
-
-import httpx
 from typing import Any, Dict, Optional
 
+import httpx
+
+from config import DATASOURCE_TIMEOUT, HEALTH_PATH
+from connectors.common import query_backend_json
+from datasources.base import MetricsConnector
+from datasources.helpers import fetch_text
 from datasources.retry import retry
 
-from datasources.base import MetricsConnector
-from datasources.helpers import fetch_json, fetch_text
-from config import HEALTH_PATH, DATASOURCE_TIMEOUT
 
 class MimirConnector(MetricsConnector):
     health_path = HEALTH_PATH
@@ -50,14 +42,11 @@ class MimirConnector(MetricsConnector):
         end: int,
         step: str,
     ) -> Dict[str, Any]:
-        url = f"{self.base_url}/prometheus/api/v1/query_range"
         params: Dict[str, Any] = {"query": query, "start": start, "end": end, "step": step}
-        return await fetch_json(
-            url,
+        return await query_backend_json(
+            self,
+            path="/prometheus/api/v1/query_range",
             params=params,
-            headers=self._headers(),
-            timeout=self.timeout,
-            client=self.client,
             invalid_msg="Mimir query failed",
             timeout_msg="Mimir query timed out",
             unavailable_msg="Cannot reach Mimir at",

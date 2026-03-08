@@ -133,21 +133,10 @@ def analyze(tempo_response: Dict[str, Any], apdex_t_ms: float | None = None) -> 
             current_end = bucket["window_end"]
             bucket["window_end"] = end_s if current_end is None else max(float(current_end), end_s)
 
-        span_sets = []
-        if isinstance(trace.get("spanSet"), dict):
-            span_sets.append(trace.get("spanSet"))
-        if isinstance(trace.get("spanSets"), list):
-            span_sets.extend([s for s in trace.get("spanSets") if isinstance(s, dict)])
-        for span_set in span_sets:
-            for span in span_set.get("spans", []):
-                attrs = {a.get("key", ""): a.get("value", {}) for a in span.get("attributes", [])}
-                status_code = attrs.get("status.code", {}).get("stringValue", "").upper()
-                if status_code in ("STATUS_CODE_ERROR", "ERROR"):
-                    bucket["errors"] += 1
-                    break
-            else:
-                continue
-            break
+        from engine.traces.common import iter_trace_spans, span_has_error
+
+        if any(span_has_error(span) for span in iter_trace_spans(trace)):
+            bucket["errors"] += 1
 
     results: List[ServiceLatency] = []
 
@@ -163,7 +152,7 @@ def analyze(tempo_response: Dict[str, Any], apdex_t_ms: float | None = None) -> 
         sev = _severity(p99, error_rate, apdex_score)
 
         if sev == Severity.low:
-            continue 
+            continue
 
         results.append(ServiceLatency(
             service=service,

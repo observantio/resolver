@@ -1,22 +1,13 @@
-"""
-Loki connector implementation for querying logs from a Loki instance.
-
-Copyright (c) 2026 Stefan Kumarasinghe
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-"""
-
-import httpx
 import re
 from typing import Any, Dict, Optional
 
+import httpx
+
+from config import DATASOURCE_TIMEOUT, HEALTH_PATH
+from connectors.common import query_backend_json
+from datasources.base import LogsConnector
 from datasources.retry import retry
 
-from datasources.base import LogsConnector
-from datasources.helpers import fetch_json
-from config import HEALTH_PATH, DATASOURCE_TIMEOUT
 
 class LokiConnector(LogsConnector):
     health_path = HEALTH_PATH
@@ -47,16 +38,13 @@ class LokiConnector(LogsConnector):
         end: int,
         limit: Optional[int] = None,
     ) -> Dict[str, Any]:
-        url = f"{self.base_url}/loki/api/v1/query_range"
         params: Dict[str, Any] = {"query": self._normalize_query(query), "start": start, "end": end}
         if limit is not None:
             params["limit"] = limit
-        return await fetch_json(
-            url,
+        return await query_backend_json(
+            self,
+            path="/loki/api/v1/query_range",
             params=params,
-            headers=self._headers(),
-            timeout=self.timeout,
-            client=self.client,
             invalid_msg="Loki query failed",
             timeout_msg="Loki query timed out",
             unavailable_msg="Cannot reach Loki at",

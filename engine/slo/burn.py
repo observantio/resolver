@@ -10,21 +10,11 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import List, Tuple
 
 from engine.enums import Severity
+from engine.slo.models import SloBurnAlert
 from config import settings
-
-
-@dataclass(frozen=True)
-class SloBurnAlert:
-    service: str
-    window_label: str
-    error_rate: float
-    burn_rate: float
-    budget_consumed_pct: float
-    severity: Severity
 
 
 def _get_windows() -> List[Tuple[str, float, float, Severity]]:
@@ -32,11 +22,11 @@ def _get_windows() -> List[Tuple[str, float, float, Severity]]:
     for label, window_s, thr, sev in settings.slo_burn_windows:
         try:
             sev_enum = sev if isinstance(sev, Severity) else Severity(sev)
-        except Exception:
+        except ValueError:
             if isinstance(sev, str):
                 try:
                     sev_enum = Severity[sev]
-                except Exception:
+                except KeyError:
                     sev_enum = Severity.low
             else:
                 sev_enum = Severity.low

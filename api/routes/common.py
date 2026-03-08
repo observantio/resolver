@@ -16,9 +16,13 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Awaitable, TypeVar
+
 from fastapi import HTTPException
+
+from config import DEFAULT_METRIC_QUERIES
 from datasources.data_config import DataSourceSettings
 from datasources.provider import DataSourceProvider
+from engine.fetcher import fetch_metrics
 from services.security_service import get_context_tenant
 
 
@@ -46,10 +50,20 @@ async def close_providers() -> None:
 async def safe_call(coro: Awaitable[_T], status_code: int = 502) -> _T:
     try:
         return await coro
-    except Exception as exc: 
+    except Exception as exc:
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 def to_nanoseconds(ts: int) -> int:
 
     return ts * 1_000_000_000
+
+
+def coerce_query_value(value, cast):
+    raw = value.default if hasattr(value, "default") else value
+    return cast(raw)
+
+
+async def fetch_requested_metrics(provider: DataSourceProvider, req):
+    queries = list(dict.fromkeys((getattr(req, "metric_queries", None) or []) + DEFAULT_METRIC_QUERIES))
+    return await safe_call(fetch_metrics(provider, queries, req.start, req.end, req.step))

@@ -10,24 +10,6 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from engine.enums import Severity
+from engine.slo.models import BudgetStatus, SloBurnAlert
 
-from .base import NpModel
-
-
-class SloBurnAlert(NpModel):
-    service: str
-    window_label: str
-    error_rate: float
-    burn_rate: float
-    budget_consumed_pct: float
-    severity: Severity
-
-
-class BudgetStatus(NpModel):
-    service: str
-    target_availability: float
-    current_availability: float
-    budget_used_pct: float
-    remaining_minutes: float
-    on_track: bool
+__all__ = ["SloBurnAlert", "BudgetStatus"]

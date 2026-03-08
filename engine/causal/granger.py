@@ -30,7 +30,7 @@ class GrangerResult:
 
 
 def _ols(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float]:
-    coeffs, residuals, _, _ = np.linalg.lstsq(X, y, rcond=None)
+    coeffs, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
     predicted = X @ coeffs
     ss_res = float(np.sum((y - predicted) ** 2))
     return coeffs, ss_res

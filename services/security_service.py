@@ -176,7 +176,7 @@ def enforce_request_tenant(model: Any) -> Any:
         return model.copy(update={"tenant_id": tenant})
     try:
         model.tenant_id = tenant
-    except Exception as exc:
+    except (AttributeError, TypeError) as exc:
         log.warning("Failed to apply tenant context to request model %s: %s", type(model).__name__, exc)
     return model
 

@@ -19,6 +19,7 @@ import time
 from collections import defaultdict
 from typing import Dict, List, Tuple, cast
 
+import httpx
 import numpy as np
 
 from datasources.provider import DataSourceProvider
@@ -48,6 +49,14 @@ from engine.enums import Severity, Signal
 
 log = logging.getLogger(__name__)
 _TRACE_COUNT_FALLBACK_CAP = 10_000
+_RECOVERABLE_ANALYSIS_ERRORS = (
+    asyncio.TimeoutError,
+    httpx.HTTPError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
 
 
 def _overall_severity(*groups) -> Severity:
@@ -93,15 +102,9 @@ def _summary(report: AnalysisReport) -> str:
 
 
 def _build_log_query(services: list[str] | None, requested_log_query: str | None) -> str:
-    requested = (requested_log_query or "").strip()
-    if requested:
-        # Loki rejects selectors with empty-compatible regex.
-        return re.sub(r'=~"\.\*"', '=~".+"', requested)
-    if services:
-        escaped = [re.escape(s) for s in services if s]
-        if escaped:
-            return '{service_name=~"' + "|".join(escaped) + '"}'
-    return '{service_name=~".+"}'
+    from engine.log_query import build_log_query
+
+    return build_log_query(services, requested_log_query)
 
 
 _SERVICE_LABEL_KEYS = ("service", "service_name", "service.name", "job")
@@ -668,7 +671,7 @@ async def _process_one_metric_series(
     try:
         # result is persisted by store; value not used later
         _ = await baseline_store.compute_and_persist(req.tenant_id, metric_name, ts, vals, z_threshold)
-    except Exception:
+    except _RECOVERABLE_ANALYSIS_ERRORS:
         # fallback compute also only triggers side‑effects
         _ = baseline_compute(ts, vals, z_threshold=z_threshold)
 
@@ -860,7 +863,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         warnings.append(msg)
         log.warning(msg)
         metric_anomalies, change_points, forecasts, degradation_signals, series_map = [], [], [], [], {}
-    except Exception as exc:
+    except _RECOVERABLE_ANALYSIS_ERRORS as exc:
         msg = f"Metrics unavailable: {exc}"
         warnings.append(msg)
         log.warning(msg)
@@ -925,7 +928,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
                         start=req.start * 1_000_000_000,
                         end=req.end * 1_000_000_000,
                     )
-                except Exception as exc:
+                except _RECOVERABLE_ANALYSIS_ERRORS as exc:
                     log.debug("Logs fallback selector failed query=%s error=%s", selector, exc)
                     continue
                 if isinstance(fallback_logs, dict) and fallback_logs.get("data", {}).get("result"):
@@ -980,7 +983,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
                     warnings.append("Trace ID fallback count: 10000+ traces in selected window.")
                 elif count > 0:
                     warnings.append(f"Trace ID fallback count: {count} traces in selected window.")
-            except Exception as exc:
+            except _RECOVERABLE_ANALYSIS_ERRORS as exc:
                 warnings.append(f"Trace ID fallback count unavailable: {exc}")
     elif isinstance(traces_raw, Exception):
         msg = f"Traces unavailable: {traces_raw}"
@@ -1045,7 +1048,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
             granger_store.save_and_merge(tenant_id, primary_service or "global", fresh_granger),
             timeout=1.0,
         )
-    except Exception as exc:
+    except _RECOVERABLE_ANALYSIS_ERRORS as exc:
         warnings.append(f"Failed to persist granger results: {exc}")
 
     causal_graph = CausalGraph()
@@ -1091,7 +1094,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
             current = hypothesis_to_ranked.get(hypothesis)
             if current is None or float(getattr(item, "final_score", 0.0)) > float(getattr(current, "final_score", 0.0)):
                 hypothesis_to_ranked[hypothesis] = item
-        except Exception as exc:
+        except (AttributeError, TypeError, ValueError) as exc:
             suppression_counts["invalid_root_cause_drops"] = suppression_counts.get("invalid_root_cause_drops", 0) + 1
             warnings.append(f"Dropped invalid root cause model during normalization: {exc}")
     ranked_causes = ranked_valid

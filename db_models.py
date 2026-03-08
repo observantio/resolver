@@ -11,12 +11,14 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, func
+
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
 
 class RcaJob(Base):
     __tablename__ = "rca_jobs"
@@ -25,7 +27,11 @@ class RcaJob(Base):
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)
     requested_by: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -55,7 +61,11 @@ class RcaReport(Base):
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)
     owner_user_id: Mapped[str] = mapped_column(String(128), nullable=False)
     result_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     job = relationship("RcaJob", back_populates="report")

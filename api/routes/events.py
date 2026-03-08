@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from engine.events.registry import DeploymentEvent
+from engine.events.models import DeploymentEvent
 from api.routes.exception import handle_exceptions
 from services.security_service import enforce_request_tenant, get_context_tenant, require_permission_dependency
 from engine.registry import get_registry
@@ -36,15 +36,7 @@ async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None
 
     await get_registry().register_event(
         tid,
-        DeploymentEvent(
-            service=req.service,
-            timestamp=req.timestamp,
-            version=req.version,
-            author=req.author,
-            environment=req.environment,
-            source=req.source,
-            metadata=req.metadata,
-        ),
+        DeploymentEvent.model_validate(req.model_dump()),
     )
     return {"status": "registered", "service": req.service, "version": req.version}
 

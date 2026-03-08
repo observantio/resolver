@@ -10,22 +10,18 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, Query
-from api.routes.common import get_provider, safe_call
-from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from engine import anomaly
-from config import DEFAULT_METRIC_QUERIES, FORECAST_THRESHOLDS
-from engine.fetcher import fetch_metrics
-from engine.forecast import analyze_degradation, forecast
+
 from api.requests import CorrelateRequest
+from api.routes.common import coerce_query_value, fetch_requested_metrics, get_provider
+from api.routes.exception import handle_exceptions
+from engine import anomaly
+from config import FORECAST_THRESHOLDS
+from engine.forecast import analyze_degradation, forecast
+from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Forecast"])
-
-
-def _coerce_query_value(value: Any, cast: Any) -> Any:
-    raw = value.default if hasattr(value, "default") else value
-    return cast(raw)
 
 
 @router.post(
@@ -38,14 +34,10 @@ async def metric_trajectory(
     req: CorrelateRequest,
     limit: int = Query(default=100, ge=1, le=2000),
 ) -> Dict[str, Any]:
-    limit = _coerce_query_value(limit, int)
+    limit = coerce_query_value(limit, int)
     req = enforce_request_tenant(req)
     provider = get_provider(req.tenant_id)
-    all_queries = list(dict.fromkeys((req.metric_queries or []) + DEFAULT_METRIC_QUERIES))
-
-    metrics_raw = await safe_call(
-        fetch_metrics(provider, all_queries, req.start, req.end, req.step)
-    )
+    metrics_raw = await fetch_requested_metrics(provider, req)
 
     results: List[Dict[str, Any]] = []
     for query_string, resp in metrics_raw:

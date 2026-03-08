@@ -17,6 +17,7 @@ from contextlib import contextmanager
 from typing import Iterator, Optional
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import Session, sessionmaker
@@ -101,7 +102,7 @@ def connection_test() -> bool:
         with _engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return True
-    except Exception:
+    except SQLAlchemyError:
         return False
 
 

@@ -30,13 +30,13 @@ def retry(
 
         if is_async:
             @wraps(func)
-            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:  
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 _attempt = 0
                 _delay = delay
                 while True:
                     try:
                         return await func(*args, **kwargs)
-                    except exceptions: 
+                    except exceptions:
                         _attempt += 1
                         if _attempt >= attempts:
                             raise
@@ -47,13 +47,13 @@ def retry(
 
         else:
             @wraps(func)
-            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:  
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 _attempt = 0
                 _delay = delay
                 while True:
                     try:
                         return func(*args, **kwargs)
-                    except exceptions: 
+                    except exceptions:
                         _attempt += 1
                         if _attempt >= attempts:
                             raise

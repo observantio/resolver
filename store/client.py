@@ -16,6 +16,11 @@ import logging
 import time
 from typing import Any, Optional
 
+try:
+    from redis.exceptions import RedisError
+except ImportError:
+    RedisError = OSError
+
 log = logging.getLogger(__name__)
 
 _redis_client: Any = None
@@ -30,7 +35,7 @@ try:
     _MAX_FALLBACK_SIZE = int(settings.store_fallback_max_items)
     _REDIS_RETRY_COOLDOWN_SECONDS = float(settings.store_redis_retry_cooldown_seconds)
     _REDIS_OP_TIMEOUT_SECONDS = 0.5
-except Exception:
+except (ImportError, AttributeError, TypeError, ValueError):
     _MAX_FALLBACK_SIZE = 10_000
     _REDIS_RETRY_COOLDOWN_SECONDS = 10.0
     _REDIS_OP_TIMEOUT_SECONDS = 0.5
@@ -67,7 +72,7 @@ async def get_redis() -> Any:
             _using_fallback = False
             log.info("Redis connected: %s", REDIS_URL)
             return _redis_client
-        except Exception as exc:
+        except (ImportError, ModuleNotFoundError, RedisError, asyncio.TimeoutError, OSError) as exc:
             _retry_after_monotonic = time.monotonic() + max(0.0, _REDIS_RETRY_COOLDOWN_SECONDS)
             if not _using_fallback:
                 log.warning("Redis unavailable (%s) — using in-memory fallback", exc)
@@ -81,7 +86,7 @@ async def redis_get(key: str) -> Optional[str]:
         return _fallback.get(key)
     try:
         return await asyncio.wait_for(client.get(key), timeout=_REDIS_OP_TIMEOUT_SECONDS)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis GET error %s: %s", key, exc)
         return _fallback.get(key)
 
@@ -97,7 +102,7 @@ async def redis_set(key: str, value: str, ttl: Optional[int] = None) -> None:
             await asyncio.wait_for(client.setex(key, ttl, value), timeout=_REDIS_OP_TIMEOUT_SECONDS)
         else:
             await asyncio.wait_for(client.set(key, value), timeout=_REDIS_OP_TIMEOUT_SECONDS)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis SET error %s: %s", key, exc)
         if len(_fallback) < _MAX_FALLBACK_SIZE:
             _fallback[key] = value
@@ -111,7 +116,7 @@ async def redis_delete(key: str) -> None:
         return
     try:
         await asyncio.wait_for(client.delete(key), timeout=_REDIS_OP_TIMEOUT_SECONDS)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis DEL error %s: %s", key, exc)
         _fallback.pop(key, None)
         _fallback_lists.pop(key, None)
@@ -133,7 +138,7 @@ async def redis_rpush(key: str, value: str, ttl: Optional[int] = None, max_len: 
         if ttl:
             pipe.expire(key, ttl)
         await asyncio.wait_for(pipe.execute(), timeout=_REDIS_OP_TIMEOUT_SECONDS)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis RPUSH error %s: %s", key, exc)
         lst = _fallback_lists.setdefault(key, [])
         lst.append(value)
@@ -147,7 +152,7 @@ async def redis_lrange(key: str) -> list[str]:
         return list(_fallback_lists.get(key, []))
     try:
         return await asyncio.wait_for(client.lrange(key, 0, -1), timeout=_REDIS_OP_TIMEOUT_SECONDS)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis LRANGE error %s: %s", key, exc)
         return list(_fallback_lists.get(key, []))
 
@@ -161,7 +166,7 @@ async def redis_scan(pattern: str) -> list[str]:
             return [key async for key in client.scan_iter(pattern)]
 
         return await asyncio.wait_for(_scan_keys(), timeout=1.0)
-    except Exception as exc:
+    except (RedisError, asyncio.TimeoutError, OSError) as exc:
         log.debug("Redis SCAN error %s: %s", pattern, exc)
         return [k for k in _fallback if fnmatch.fnmatch(k, pattern)]
 

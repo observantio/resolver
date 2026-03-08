@@ -1,5 +1,5 @@
 """
-Test Suite for SLO Burn and Budget Calculations 
+Test Suite for SLO Burn and Budget Calculations
 
 Copyright (c) 2026 Stefan Kumarasinghe
 

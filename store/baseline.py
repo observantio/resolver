@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import List, Optional
 
 from engine.baseline.compute import Baseline, compute
@@ -63,7 +64,7 @@ async def load(tenant_id: str, metric_name: str) -> Optional[Baseline]:
         raw = await redis_get(keys.baseline(tenant_id, metric_name))
         if raw:
             return _from_json(raw)
-    except Exception as exc:
+    except (TypeError, ValueError, KeyError, JSONDecodeError) as exc:
         log.debug("Baseline load failed %s/%s: %s", tenant_id, metric_name, exc)
     return None
 
@@ -71,7 +72,7 @@ async def load(tenant_id: str, metric_name: str) -> Optional[Baseline]:
 async def save(tenant_id: str, metric_name: str, baseline: Baseline) -> None:
     try:
         await redis_set(keys.baseline(tenant_id, metric_name), _to_json(baseline), ttl=BASELINE_TTL)
-    except Exception as exc:
+    except (TypeError, ValueError) as exc:
         log.debug("Baseline save failed %s/%s: %s", tenant_id, metric_name, exc)
 
 

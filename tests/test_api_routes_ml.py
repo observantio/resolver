@@ -16,7 +16,7 @@ from engine.enums import Signal
 
 class DummyState:
     def __init__(self):
-        
+
         self.weights_serializable = {"metrics": 0.3, "logs": 0.35, "traces": 0.35}
         self.update_count = 0
 
@@ -27,9 +27,9 @@ class DummyRegistry:
         self.state = DummyState()
 
     async def update_weight(self, tenant_id, signal, was_correct):
-        
+
         self.calls.append((tenant_id, signal, was_correct))
-        
+
         self.state.update_count += 1
         self.state.weights_serializable = {"metrics": 0.5}
         return self.state
@@ -38,7 +38,7 @@ class DummyRegistry:
         return self.state
 
     async def reset_weights(self, tenant_id):
-        
+
         self.state.update_count = 0
         self.state.weights_serializable = {"metrics": 0.3, "logs": 0.35, "traces": 0.35}
         return self.state
@@ -62,7 +62,7 @@ async def test_signal_feedback_invalid(monkeypatch):
 
     with pytest.raises(Exception) as excinfo:
         await ml_route.signal_feedback("tenantA", "unknown", True)
-    
+
     assert "Unknown signal" in str(excinfo.value)
 
 

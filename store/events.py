@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+from json import JSONDecodeError
 from typing import List
 
 from store.client import redis_lrange, redis_rpush, redis_delete
@@ -37,18 +38,15 @@ async def load(tenant_id: str) -> List[dict]:
     try:
         items = await redis_lrange(keys.events(tenant_id))
         return [json.loads(item) for item in items]
-    except Exception as exc:
+    except (TypeError, ValueError, JSONDecodeError) as exc:
         log.debug("Events load failed %s: %s", tenant_id, exc)
     return []
 
 async def append(tenant_id: str, event) -> None:
     try:
         await redis_rpush(keys.events(tenant_id), _serialise(event), ttl=EVENTS_TTL, max_len=_MAX_EVENTS)
-    except Exception as exc:
+    except (TypeError, ValueError) as exc:
         log.debug("Events append failed %s: %s", tenant_id, exc)
 
 async def clear(tenant_id: str) -> None:
-    try:
-        await redis_delete(keys.events(tenant_id))
-    except Exception as exc:
-        log.debug("Events clear failed %s: %s", tenant_id, exc)
+    await redis_delete(keys.events(tenant_id))

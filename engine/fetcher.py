@@ -15,6 +15,8 @@ import logging
 import re
 from typing import Any, Dict, List, Tuple
 
+import httpx
+
 from datasources.provider import DataSourceProvider
 from config import settings
 
@@ -39,7 +41,7 @@ async def _scrape_and_fill(
 
     try:
         text = await scrape_func()
-    except Exception as exc:
+    except (httpx.HTTPError, asyncio.TimeoutError, OSError, TypeError, ValueError) as exc:
         log.warning("scrape_and_fill: scrape failed: %s", exc)
         return []
 

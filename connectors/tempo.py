@@ -1,21 +1,12 @@
-"""
-Tempo Connector 
-
-Copyright (c) 2026 Stefan Kumarasinghe
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-"""
-
-import httpx
 from typing import Any, Dict, Optional
 
+import httpx
+
+from config import DATASOURCE_TIMEOUT, HEALTH_PATH
+from connectors.common import query_backend_json
+from datasources.base import TracesConnector
 from datasources.retry import retry
 
-from datasources.base import TracesConnector
-from datasources.helpers import fetch_json
-from config import DATASOURCE_TIMEOUT, HEALTH_PATH
 
 class TempoConnector(TracesConnector):
     health_path = HEALTH_PATH
@@ -37,16 +28,13 @@ class TempoConnector(TracesConnector):
         end: int,
         limit: Optional[int] = None,
     ) -> Dict[str, Any]:
-        url = f"{self.base_url}/api/search"
         params: Dict[str, Any] = {"start": start, "end": end, **filters}
         if limit is not None:
             params["limit"] = limit
-        return await fetch_json(
-            url,
+        return await query_backend_json(
+            self,
+            path="/api/search",
             params=params,
-            headers=self._headers(),
-            timeout=self.timeout,
-            client=self.client,
             invalid_msg="Tempo query failed",
             timeout_msg="Tempo query timed out",
             unavailable_msg="Cannot reach Tempo at",

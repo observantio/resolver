@@ -24,18 +24,18 @@ def test_linear_fit_and_r2():
 
 
 def test_forecast_insufficient(monkeypatch):
-    
+
     monkeypatch.setattr(settings, "forecast_trajectory_min_length", 5)
     assert forecast("m", [0, 1, 2, 3], [1, 2, 3, 4], threshold=10) is None
 
-    
+
     monkeypatch.setattr(settings, "forecast_trajectory_min_length", 3)
     assert forecast("m", [0, 1, 2, 3], [1, 2, 3, 4], threshold=10) is not None
 
 
 def test_forecast_no_r2():
     ts = list(range(10))
-    vals = [1] * 10  
+    vals = [1] * 10
     assert forecast("m", ts, vals, threshold=2) is None
 
 
@@ -50,16 +50,16 @@ def test_forecast_breach():
 
 def test_forecast_r2_threshold(monkeypatch):
     ts = list(range(10))
-    
+
     vals = [i + (2 if i == 5 else 0) for i in range(10)]
-    
-    
+
+
     threshold = 25
     horizon = 10
 
-    
+
     monkeypatch.setattr(settings, "forecast_trajectory_r2_threshold", 0.99)
     assert forecast("m", ts, vals, threshold=threshold, horizon_seconds=horizon) is None
-    
+
     monkeypatch.setattr(settings, "forecast_trajectory_r2_threshold", 0.0)
     assert forecast("m", ts, vals, threshold=threshold, horizon_seconds=horizon) is not None

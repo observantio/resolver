@@ -61,13 +61,13 @@ async def wait_for(
                     log.info("%s ready (attempt %d, status %d)", name, attempt, resp.status_code)
                     return
                 log.debug("%s probe returned %d (attempt %d)", name, resp.status_code, attempt)
-            except Exception as exc:
+            except (httpx.RequestError, asyncio.TimeoutError) as exc:
                 log.debug("%s not reachable (attempt %d): %s", name, attempt, exc)
             await asyncio.sleep(2)
     raise BackendStartupTimeout(f"{name} did not become ready within {timeout}s")
 
 
-async def _wait_for_all_bg(settings: DataSourceSettings, tenant_id: str) -> None:
+async def _wait_for_all_bg(data_settings: DataSourceSettings, tenant_id: str) -> None:
     global _backend_ready, _backend_status
     scope = {"X-Scope-OrgID": tenant_id}
     checks: list[tuple[str, str, dict, tuple[int, ...]]] = []
@@ -80,46 +80,46 @@ async def _wait_for_all_bg(settings: DataSourceSettings, tenant_id: str) -> None
     )
 
     # Logs
-    if settings.logs_backend == LOGS_BACKEND_LOKI:
+    if data_settings.logs_backend == LOGS_BACKEND_LOKI:
         checks.append((
             LOGS_BACKEND_LOKI,
-            f"{settings.loki_url}/loki/api/v1/labels",
+            f"{data_settings.loki_url}/loki/api/v1/labels",
             scope,
             (200, 404),
         ))
 
     # Metrics
-    if settings.metrics_backend == METRICS_BACKEND_MIMIR:
+    if data_settings.metrics_backend == METRICS_BACKEND_MIMIR:
         checks.append((
             METRICS_BACKEND_MIMIR,
-            f"{settings.mimir_url}/prometheus/api/v1/query?query=vector%281%29",
+            f"{data_settings.mimir_url}/prometheus/api/v1/query?query=vector%281%29",
             scope,
             (200,),
         ))
-    elif settings.metrics_backend == METRICS_BACKEND_VICTORIAMETRICS:
+    elif data_settings.metrics_backend == METRICS_BACKEND_VICTORIAMETRICS:
         checks.append((
             METRICS_BACKEND_VICTORIAMETRICS,
-            f"{settings.victoriametrics_url}/api/v1/label/__name__/values",
+            f"{data_settings.victoriametrics_url}/api/v1/label/__name__/values",
             scope,
             (200,),
         ))
 
     # Traces
-    if settings.traces_backend == TRACES_BACKEND_TEMPO:
+    if data_settings.traces_backend == TRACES_BACKEND_TEMPO:
         checks.append((
             TRACES_BACKEND_TEMPO,
-            f"{settings.tempo_url}/api/echo",
+            f"{data_settings.tempo_url}/api/echo",
             scope,
             (200,),
         ))
 
-    log.info("Backend readiness check starting (timeout=%ds) ...", settings.startup_timeout)
+    log.info("Backend readiness check starting (timeout=%ds) ...", data_settings.startup_timeout)
 
     for name, url, hdrs, ok in checks:
         _backend_status[name] = "waiting"
 
     results = await asyncio.gather(
-        *[wait_for(name, url, settings.startup_timeout, headers=hdrs, accept_status=ok)
+                *[wait_for(name, url, data_settings.startup_timeout, headers=hdrs, accept_status=ok)
           for name, url, hdrs, ok in checks],
         return_exceptions=True,
     )
@@ -142,7 +142,7 @@ async def _wait_for_all_bg(settings: DataSourceSettings, tenant_id: str) -> None
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if settings.database_url:
         init_database(settings.database_url)
         init_db()

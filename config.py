@@ -51,11 +51,11 @@ def _parse_context_algorithms(raw: Optional[str]) -> list[str]:
 
 
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-BASELINE_TTL: int = int(os.getenv("BASELINE_TTL", "86400"))   
-GRANGER_TTL: int = int(os.getenv("GRANGER_TTL", "604800")) 
-EVENTS_TTL: int = int(os.getenv("EVENTS_TTL", "2592000"))  
-WEIGHTS_TTL: int = int(os.getenv("WEIGHTS_TTL", "604800")) 
-BLEND_ALPHA: float = float(os.getenv("BLEND_ALPHA", "0.1")) 
+BASELINE_TTL: int = int(os.getenv("BASELINE_TTL", "86400"))
+GRANGER_TTL: int = int(os.getenv("GRANGER_TTL", "604800"))
+EVENTS_TTL: int = int(os.getenv("EVENTS_TTL", "2592000"))
+WEIGHTS_TTL: int = int(os.getenv("WEIGHTS_TTL", "604800"))
+BLEND_ALPHA: float = float(os.getenv("BLEND_ALPHA", "0.1"))
 
 LOGS_BACKEND_LOKI = "loki"
 METRICS_BACKEND_MIMIR = "mimir"
@@ -164,7 +164,7 @@ SEVERITY_WEIGHTS: dict[str, int] = {
     "critical": 8,
 }
 
-DATASOURCE_TIMEOUT = 30  
+DATASOURCE_TIMEOUT = 30
 HEALTH_PATH = "/ready"
 
 DEFAULT_WEIGHTS: Dict[str, float] = {
@@ -173,7 +173,7 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "traces": 0.35,
 }
 
-REGISTRY_ALPHA: float = float(os.getenv("REGISTRY_ALPHA", "0.2")) 
+REGISTRY_ALPHA: float = float(os.getenv("REGISTRY_ALPHA", "0.2"))
 
 class Settings(BaseSettings):
     logs_backend: str = BECERTAIN_LOGS_BACKEND

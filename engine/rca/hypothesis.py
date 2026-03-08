@@ -199,6 +199,7 @@ def generate(
     for event in (correlated_events or []):
         if event.confidence < settings.rca_event_confidence_threshold:
             continue
+        event_window_start = event.window_start
 
         category = categorize(event, deployments)
         base_score = score_correlated_event(event)
@@ -214,7 +215,7 @@ def generate(
         else:
             nearby_deploys = [d for d in deployments if window_start <= d.timestamp <= window_end]
         if nearby_deploys:
-            deploy_event = min(nearby_deploys, key=lambda d: abs(d.timestamp - event.window_start))
+            deploy_event = min(nearby_deploys, key=lambda d, anchor=event_window_start: abs(d.timestamp - anchor))
 
         affected: List[str] = []
         root_svc = ""
@@ -228,7 +229,7 @@ def generate(
                     if window_start <= d.timestamp <= window_end
                 ]
                 if service_deploys:
-                    deploy_event = min(service_deploys, key=lambda d: abs(d.timestamp - event.window_start))
+                    deploy_event = min(service_deploys, key=lambda d, anchor=event_window_start: abs(d.timestamp - anchor))
 
         metric_names = sorted({a.metric_name for a in event.metric_anomalies})[:2]
         svc_names = sorted({s.service for s in event.service_latency})[:2]

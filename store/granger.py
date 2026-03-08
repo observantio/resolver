@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from json import JSONDecodeError
 from typing import Dict, List
 
 from store.client import redis_get, redis_set
@@ -29,7 +30,7 @@ async def load(tenant_id: str, service: str) -> List[dict]:
         raw = await redis_get(keys.granger(tenant_id, service))
         if raw:
             return json.loads(raw)
-    except Exception as exc:
+    except (TypeError, ValueError, JSONDecodeError) as exc:
         log.debug("Granger load failed %s/%s: %s", tenant_id, service, exc)
     return []
 
@@ -57,7 +58,7 @@ async def save_and_merge(tenant_id: str, service: str, fresh_results: list) -> L
     merged = sorted(stored.values(), key=lambda x: x["strength"], reverse=True)
     try:
         await redis_set(keys.granger(tenant_id, service), json.dumps(merged), ttl=GRANGER_TTL)
-    except Exception as exc:
+    except (TypeError, ValueError) as exc:
         log.debug("Granger save failed %s/%s: %s", tenant_id, service, exc)
     return merged
 

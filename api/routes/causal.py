@@ -9,18 +9,19 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 
 from __future__ import annotations
 
-from typing import Any, Dict
 import numpy as np
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, Query
+
 from api.requests import AnalyzeRequest, CorrelateRequest
-from api.routes.common import get_provider, safe_call
+from api.routes.common import coerce_query_value, fetch_requested_metrics, get_provider
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from config import DEFAULT_METRIC_QUERIES, DEFAULT_SERVICE_NAME
+from config import DEFAULT_SERVICE_NAME
 from engine import anomaly
 from engine.causal import CausalGraph, bayesian_score, test_all_pairs
-from engine.fetcher import fetch_metrics
 from engine.registry import get_registry
+from services.security_service import enforce_request_tenant, require_permission_dependency
 from store import granger as granger_store
 
 router = APIRouter(tags=["Causal"])
@@ -41,13 +42,6 @@ def _select_top_variance_series(series_map: Dict[str, list], max_series: int) ->
     ranked.sort(key=lambda item: item[1], reverse=True)
     selected = {name for name, _ in ranked[:max_series]}
     return {name: values for name, values in series_map.items() if name in selected}
-
-
-def _coerce_query_value(value, cast):
-    # Tests may call route functions directly, bypassing FastAPI dependency injection.
-    if hasattr(value, "default"):
-        value = value.default
-    return cast(value)
 
 
 def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> Dict[str, list[str]]:
@@ -72,17 +66,13 @@ async def granger_causality(
     max_series: int = Query(default=25, ge=2, le=200),
     include_raw: bool = Query(default=False),
 ) -> Dict[str, Any]:
-    limit = _coerce_query_value(limit, int)
-    min_strength = _coerce_query_value(min_strength, float)
-    max_series = _coerce_query_value(max_series, int)
-    include_raw = _coerce_query_value(include_raw, bool)
+    limit = coerce_query_value(limit, int)
+    min_strength = coerce_query_value(min_strength, float)
+    max_series = coerce_query_value(max_series, int)
+    include_raw = coerce_query_value(include_raw, bool)
     req = enforce_request_tenant(req)
     provider = get_provider(req.tenant_id)
-    all_queries = list(dict.fromkeys((req.metric_queries or []) + DEFAULT_METRIC_QUERIES))
-
-    metrics_raw = await safe_call(
-        fetch_metrics(provider, all_queries, req.start, req.end, req.step)
-    )
+    metrics_raw = await fetch_requested_metrics(provider, req)
 
     series_map: Dict[str, list] = {}
     for query_string, resp in metrics_raw:
