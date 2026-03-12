@@ -24,6 +24,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
   "mypy>=1.18.2",
+  "types-PyYAML>=6.0.12.20250915",
   "pylint>=3.3.0",
   "pytest>=9.0.0",
   "pytest-asyncio>=1.3.0",
