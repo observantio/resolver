@@ -94,3 +94,23 @@ async def test_analyze_route_includes_additive_schema_fields(monkeypatch):
     assert payload["root_causes"][0]["corroboration_summary"]
     assert payload["root_causes"][0]["suppression_diagnostics"]["gating_profile"] == "precision_strict_v1"
     assert payload["root_causes"][0]["selection_score_components"]["final_score"] == 0.81
+
+
+@pytest.mark.asyncio
+async def test_analyze_config_template_route(monkeypatch):
+    monkeypatch.setattr(
+        analyze_route.analysis_config_service,
+        "template_response",
+        lambda: {
+            "version": 1,
+            "defaults": {"request": {"step": "15s"}},
+            "template_yaml": "version: 1\nrequest:\n  step: 15s\n",
+            "file_name": "becertain-rca-defaults.yaml",
+        },
+    )
+
+    response = await analyze_route.analyze_config_template()
+
+    assert response.version == 1
+    assert response.defaults["request"]["step"] == "15s"
+    assert response.file_name == "becertain-rca-defaults.yaml"

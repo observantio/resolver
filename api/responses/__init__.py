@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .anomalies import MetricAnomaly
     from .base import NpModel
     from .jobs import (
+        AnalyzeConfigTemplateResponse,
         AnalyzeJobCreateResponse,
         AnalyzeJobListResponse,
         AnalyzeJobResultResponse,
@@ -44,6 +45,7 @@ _EXPORT_MODULES = {
     "AnalysisQuality": ".analysis",
     "AnalysisReport": ".analysis",
     "JobStatus": ".jobs",
+    "AnalyzeConfigTemplateResponse": ".jobs",
     "AnalyzeJobCreateResponse": ".jobs",
     "AnalyzeJobSummary": ".jobs",
     "AnalyzeJobListResponse": ".jobs",
@@ -65,6 +67,7 @@ __all__ = [
     "AnalysisQuality",
     "AnalysisReport",
     "JobStatus",
+    "AnalyzeConfigTemplateResponse",
     "AnalyzeJobCreateResponse",
     "AnalyzeJobSummary",
     "AnalyzeJobListResponse",

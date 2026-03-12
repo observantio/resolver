@@ -15,8 +15,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from api.routes.exception import handle_exceptions
 from api.requests import AnalyzeRequest
-from api.responses import AnalysisReport
+from api.responses import AnalysisReport, AnalyzeConfigTemplateResponse
 from services.analyze_service import run_analysis
+from services.analysis_config_service import analysis_config_service
 from services.security_service import require_permission_dependency
 
 router = APIRouter(tags=["RCA"])
@@ -31,3 +32,13 @@ router = APIRouter(tags=["RCA"])
 @handle_exceptions
 async def analyze(req: AnalyzeRequest) -> AnalysisReport:
     return await run_analysis(req)
+
+
+@router.get(
+    "/analyze/config-template",
+    response_model=AnalyzeConfigTemplateResponse,
+    summary="Default RCA YAML config template",
+    dependencies=[Depends(require_permission_dependency("create:rca"))],
+)
+async def analyze_config_template() -> AnalyzeConfigTemplateResponse:
+    return AnalyzeConfigTemplateResponse.model_validate(analysis_config_service.template_response())

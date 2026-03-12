@@ -18,6 +18,7 @@ from ._time_range import TimeRangeRequest
 
 
 class AnalyzeRequest(TimeRangeRequest):
+    config_yaml: Optional[str] = None
     sensitivity: Optional[float] = Field(default=3.0, ge=1.0, le=6.0)
     apdex_threshold_ms: float = 500.0
     slo_target: float = Field(default=0.999, ge=0.0, le=1.0)

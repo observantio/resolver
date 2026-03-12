@@ -98,6 +98,29 @@ async def test_create_job_route(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_create_job_route_preserves_config_yaml(monkeypatch):
+    monkeypatch.setattr(jobs_route, "_require_permission", lambda name: None)
+    monkeypatch.setattr(jobs_route, "_required_context", _ctx)
+
+    async def fake_create_job(payload, ctx):
+        assert ctx.tenant_id == "tenant-a"
+        assert "settings:" in str(payload.config_yaml)
+        return _job_view(JobStatus.QUEUED)
+
+    monkeypatch.setattr(jobs_route.rca_job_service, "create_job", fake_create_job)
+    payload = AnalyzeJobCreateRequest(
+        tenant_id="tenant-request",
+        start=10,
+        end=20,
+        config_yaml="version: 1\nsettings:\n  mad_threshold: 8.0\n",
+    )
+
+    response = await jobs_route.create_job(payload)
+
+    assert response.job_id == "job-1"
+
+
+@pytest.mark.asyncio
 async def test_list_jobs_route(monkeypatch):
     monkeypatch.setattr(jobs_route, "_require_permission", lambda name: None)
     monkeypatch.setattr(jobs_route, "_required_context", _ctx)

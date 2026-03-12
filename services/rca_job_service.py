@@ -26,6 +26,7 @@ from api.responses import JobStatus
 from api.responses.jobs import AnalyzeJobSummary as JobView
 from api.requests import AnalyzeRequest
 from services.analyze_service import run_analysis
+from services.analysis_config_service import analysis_config_service
 from services.security_service import InternalContext
 from config import settings
 from custom_types.json import JSONDict
@@ -169,8 +170,13 @@ class RcaJobService:
 
     async def create_job(self, *, payload: AnalyzeRequest, ctx: InternalContext) -> JobView:
         now = _utcnow()
-        materialized_payload = payload.model_dump()
-        materialized_payload["tenant_id"] = ctx.tenant_id
+        tenant_payload = payload.model_copy(update={"tenant_id": ctx.tenant_id})
+        analysis_config_service.prepare_request(
+            tenant_payload,
+            explicit_fields=set(payload.model_fields_set),
+        )
+        materialized_payload = tenant_payload.model_dump(exclude_none=True)
+        materialized_payload["explicit_request_fields"] = sorted(set(payload.model_fields_set))
         job_id = str(uuid.uuid4())
         report_id = str(uuid.uuid4())
 
@@ -205,9 +211,16 @@ class RcaJobService:
                 started_at = _utcnow()
                 await asyncio.to_thread(self._mark_running, job_id, started_at)
                 try:
-                    req = AnalyzeRequest.model_validate(row.request_payload)
-                    timeout = float(settings.analyze_timeout_seconds)
-                    result_model = await asyncio.wait_for(run_analysis(req), timeout=timeout)
+                    request_payload = dict(row.request_payload)
+                    explicit_fields_raw = request_payload.pop("explicit_request_fields", [])
+                    explicit_fields_iterable = explicit_fields_raw if isinstance(explicit_fields_raw, list) else []
+                    explicit_fields = {str(item) for item in explicit_fields_iterable if str(item)}
+                    req = AnalyzeRequest.model_validate(request_payload)
+                    prepared = analysis_config_service.prepare_request(req, explicit_fields=explicit_fields)
+                    result_model = await asyncio.wait_for(
+                        run_analysis(req, explicit_fields=explicit_fields, prepared=prepared),
+                        timeout=prepared.timeout_seconds,
+                    )
                     result = result_model.model_dump() if hasattr(result_model, "model_dump") else dict(result_model)
                     finished_at = _utcnow()
                     await asyncio.to_thread(self._mark_completed, job_id, finished_at, result)

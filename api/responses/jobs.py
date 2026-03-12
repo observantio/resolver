@@ -78,3 +78,10 @@ class AnalyzeReportDeleteResponse(BaseModel):
     report_id: str
     status: JobStatus = Field(default=JobStatus.DELETED)
     deleted: bool = True
+
+
+class AnalyzeConfigTemplateResponse(BaseModel):
+    version: int
+    defaults: JSONDict
+    template_yaml: str
+    file_name: str
