@@ -33,12 +33,19 @@ def test_causal_graph_basic():
 
 
 def test_granger_pair_and_all():
-    cause = list(range(15))
-    effect = [0, 0] + list(range(13))
+    import numpy as np
+
+    rng = np.random.default_rng(1234)
+    cause = rng.standard_normal(200).tolist()
+    effect_arr = np.roll(cause, 1) + rng.standard_normal(200) * 0.1
+    effect_arr[0] = 0.0
+    effect = effect_arr.tolist()
+
     res = granger_pair_analysis("c", cause, "e", effect, max_lag=1)
     assert isinstance(res, GrangerResult)
     assert res.cause_metric == "c"
     assert res.effect_metric == "e"
-    allr = granger_multiple_pairs({"c": cause, "e": effect})
+
+    allr = granger_multiple_pairs({"c": cause, "e": effect}, max_lag=1)
     assert allr
     assert any(result.cause_metric == "c" and result.effect_metric == "e" for result in allr)
