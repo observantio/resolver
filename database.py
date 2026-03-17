@@ -1,5 +1,5 @@
 """
-Database initialization and session management for Be Certain.
+Database initialization and session management for Resolver.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
@@ -39,7 +39,7 @@ def _ensure_postgres_database_exists(database_url: str) -> None:
         return
 
     if not re.fullmatch(r"[A-Za-z0-9_]+", target_db):
-        raise RuntimeError(f"Invalid database name in BECERTAIN_DATABASE_URL: {target_db!r}")
+        raise RuntimeError(f"Invalid database name in RESOLVER_DATABASE_URL: {target_db!r}")
 
     admin_url = url.set(database="postgres")
     admin_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT", pool_pre_ping=True)
@@ -64,10 +64,10 @@ def init_database(database_url: str) -> None:
     _engine = create_engine(
         database_url,
         pool_pre_ping=True,
-        pool_size=int(os.getenv("BECERTAIN_DB_POOL_SIZE", "10")),
-        max_overflow=int(os.getenv("BECERTAIN_DB_MAX_OVERFLOW", "20")),
-        pool_timeout=int(os.getenv("BECERTAIN_DB_POOL_TIMEOUT", "30")),
-        pool_recycle=int(os.getenv("BECERTAIN_DB_POOL_RECYCLE", "1800")),
+        pool_size=int(os.getenv("RESOLVER_DB_POOL_SIZE", "10")),
+        max_overflow=int(os.getenv("RESOLVER_DB_MAX_OVERFLOW", "20")),
+        pool_timeout=int(os.getenv("RESOLVER_DB_POOL_TIMEOUT", "30")),
+        pool_recycle=int(os.getenv("RESOLVER_DB_POOL_RECYCLE", "1800")),
     )
     _session_factory = sessionmaker(bind=_engine, autocommit=False, autoflush=False, expire_on_commit=False)
 
@@ -90,9 +90,9 @@ def get_db_session() -> Iterator[Session]:
 def init_db() -> None:
     if _engine is None:
         raise RuntimeError("Database not initialized")
-    logger.info("Initializing BeCertain database tables...")
+    logger.info("Initializing Resolver database tables...")
     Base.metadata.create_all(bind=_engine)
-    logger.info("BeCertain database tables created successfully")
+    logger.info("Resolver database tables created successfully")
 
 
 def connection_test() -> bool:

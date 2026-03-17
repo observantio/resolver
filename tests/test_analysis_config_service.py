@@ -23,7 +23,7 @@ def test_analysis_config_template_response_contains_defaults() -> None:
     template = analysis_config_service.template_response()
 
     assert template["version"] == ANALYSIS_CONFIG_VERSION
-    assert template["file_name"] == "becertain-rca-defaults.yaml"
+    assert template["file_name"] == "resolver-rca-defaults.yaml"
     assert "request:" in template["template_yaml"]
     assert "constants:" in template["template_yaml"]
     assert "settings:" in template["template_yaml"]

@@ -105,7 +105,7 @@ async def test_analyze_config_template_route(monkeypatch):
             "version": 1,
             "defaults": {"request": {"step": "15s"}},
             "template_yaml": "version: 1\nrequest:\n  step: 15s\n",
-            "file_name": "becertain-rca-defaults.yaml",
+            "file_name": "resolver-rca-defaults.yaml",
         },
     )
 
@@ -113,4 +113,4 @@ async def test_analyze_config_template_route(monkeypatch):
 
     assert response.version == 1
     assert response.defaults["request"]["step"] == "15s"
-    assert response.file_name == "becertain-rca-defaults.yaml"
+    assert response.file_name == "resolver-rca-defaults.yaml"

@@ -1,8 +1,8 @@
-name: Publish BeCertain Image
+name: Publish Resolver Image
 
 on:
   workflow_run:
-    workflows: ["BeCertain CI"]
+    workflows: ["Resolver CI"]
     types: [completed]
 
 jobs:
@@ -52,12 +52,12 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push becertain
+      - name: Build and Push Resolver
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/observantio/becertain:stable
-            ghcr.io/observantio/becertain:${{ github.event.workflow_run.id }}
+            ghcr.io/observantio/resolver:stable
+            ghcr.io/observantio/resolver:${{ github.event.workflow_run.id }}

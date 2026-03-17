@@ -154,8 +154,8 @@ async def test_specific_connectors_build_expected_requests(monkeypatch):
 def _set_security_defaults() -> None:
     security_service.settings.expected_service_token = "internal-service-token"
     security_service.settings.context_verify_key = "very-secret-signing-key"
-    security_service.settings.context_issuer = "beobservant-main"
-    security_service.settings.context_audience = "becertain"
+    security_service.settings.context_issuer = "watchdog-main"
+    security_service.settings.context_audience = "resolver"
     security_service.settings.context_algorithms = "HS256"
     security_service.settings.context_replay_ttl_seconds = 180
     with security_service._jti_seen_lock:
@@ -201,11 +201,11 @@ def test_security_service_remaining_edges(monkeypatch):
     with pytest.raises(HTTPException):
         security_service._decode_context_token("bad-token")
 
-    expired = jwt.encode({"iss": "beobservant-main", "aud": "becertain", "iat": 1, "exp": 1, "jti": "jti-1", "tenant_id": "tenant"}, security_service.settings.context_verify_key, algorithm="HS256")
+    expired = jwt.encode({"iss": "watchdog-main", "aud": "resolver", "iat": 1, "exp": 1, "jti": "jti-1", "tenant_id": "tenant"}, security_service.settings.context_verify_key, algorithm="HS256")
     with pytest.raises(HTTPException):
         security_service._decode_context_token(expired)
 
-    token = jwt.encode({"iss": "beobservant-main", "aud": "becertain", "iat": 2, "exp": 1, "jti": "jti-2", "tenant_id": "tenant"}, security_service.settings.context_verify_key, algorithm="HS256")
+    token = jwt.encode({"iss": "watchdog-main", "aud": "resolver", "iat": 2, "exp": 1, "jti": "jti-2", "tenant_id": "tenant"}, security_service.settings.context_verify_key, algorithm="HS256")
     with pytest.raises(HTTPException):
         security_service._decode_context_token(token)
 
@@ -249,7 +249,7 @@ def test_security_service_remaining_edges(monkeypatch):
     finally:
         security_service.reset_internal_context(token_var)
 
-    payload = {"iss": "beobservant-main", "aud": "becertain", "iat": 1_700_000_000, "exp": 4_700_000_000, "jti": "jti-3", "tenant_id": "tenant", "org_id": "org", "user_id": "u1", "username": "alice", "permissions": ["read"], "group_ids": ["g1"], "role": "user", "is_superuser": False}
+    payload = {"iss": "watchdog-main", "aud": "resolver", "iat": 1_700_000_000, "exp": 4_700_000_000, "jti": "jti-3", "tenant_id": "tenant", "org_id": "org", "user_id": "u1", "username": "alice", "permissions": ["read"], "group_ids": ["g1"], "role": "user", "is_superuser": False}
     headers = _context_headers(payload)
     auth_ctx = security_service.authenticate_internal_headers(headers)
     assert auth_ctx.tenant_id == "tenant"

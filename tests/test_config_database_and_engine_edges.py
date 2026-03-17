@@ -29,7 +29,7 @@ baseline_compute_module = importlib.import_module("engine.baseline.compute")
 
 
 def _reload_config_module():
-    for module_name in ("config", "BeCertain.config"):
+    for module_name in ("config", "Resolvers.config"):
         if module_name in sys.modules:
             del sys.modules[module_name]
     return importlib.import_module("config")
@@ -38,13 +38,13 @@ def _reload_config_module():
 def _base_production_env() -> dict[str, str]:
     return {
         "APP_ENV": "production",
-        "BECERTAIN_DATABASE_URL": "postgresql://safeuser:safePass_123@db:5432/becertain",
-        "BECERTAIN_EXPECTED_SERVICE_TOKEN": "becertain_expected_service_token_prod_12345",
-        "BECERTAIN_CONTEXT_VERIFY_KEY": "becertain_context_verify_key_prod_1234567890",
-        "BECERTAIN_CONTEXT_ISSUER": "beobservant-main",
-        "BECERTAIN_CONTEXT_AUDIENCE": "becertain",
-        "BECERTAIN_CONTEXT_ALGORITHMS": "HS256",
-        "BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS": "180",
+        "RESOLVER_DATABASE_URL": "postgresql://safeuser:safePass_123@db:5432/resolver",
+        "RESOLVER_EXPECTED_SERVICE_TOKEN": "resolver_expected_service_token_prod_12345",
+        "RESOLVER_CONTEXT_VERIFY_KEY": "resolver_context_verify_key_prod_1234567890",
+        "RESOLVER_CONTEXT_ISSUER": "watchdog-main",
+        "RESOLVER_CONTEXT_AUDIENCE": "resolver",
+        "RESOLVER_CONTEXT_ALGORITHMS": "HS256",
+        "RESOLVER_CONTEXT_REPLAY_TTL_SECONDS": "180",
     }
 
 
@@ -93,25 +93,25 @@ def test_config_security_validation_edges():
     assert module._parse_context_algorithms("hs256, hs384") == ["HS256", "HS384"]
 
     env = _base_production_env()
-    env["BECERTAIN_DATABASE_URL"] = ""
+    env["RESOLVER_DATABASE_URL"] = ""
     with patch.dict(os.environ, env, clear=False):
         with pytest.raises(ValueError, match="DATABASE_URL"):
             _reload_config_module()
 
     env = _base_production_env()
-    env["BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS"] = "0"
+    env["RESOLVER_CONTEXT_REPLAY_TTL_SECONDS"] = "0"
     with patch.dict(os.environ, env, clear=False):
         with pytest.raises(ValueError, match="REPLAY_TTL"):
             _reload_config_module()
 
     env = _base_production_env()
-    env["BECERTAIN_CONTEXT_ISSUER"] = ""
+    env["RESOLVER_CONTEXT_ISSUER"] = ""
     with patch.dict(os.environ, env, clear=False):
         with pytest.raises(ValueError, match="CONTEXT_ISSUER"):
             _reload_config_module()
 
     env = _base_production_env()
-    env["BECERTAIN_CONTEXT_AUDIENCE"] = ""
+    env["RESOLVER_CONTEXT_AUDIENCE"] = ""
     with patch.dict(os.environ, env, clear=False):
         with pytest.raises(ValueError, match="CONTEXT_AUDIENCE"):
             _reload_config_module()
@@ -304,13 +304,13 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
         return SimpleNamespace(dispose=lambda: disposed_admin.append(False))
 
     monkeypatch.setattr(database_module, "create_engine", fake_create_engine)
-    database_module._ensure_postgres_database_exists("postgresql://user:pass@db:5432/becertain")
-    assert created_sql == ['CREATE DATABASE "becertain"']
+    database_module._ensure_postgres_database_exists("postgresql://user:pass@db:5432/resolver")
+    assert created_sql == ['CREATE DATABASE "resolver"']
     assert disposed_admin == [True]
 
     created_sql.clear()
     exists_toggle["value"] = True
-    database_module._ensure_postgres_database_exists("postgresql://user:pass@db:5432/becertain")
+    database_module._ensure_postgres_database_exists("postgresql://user:pass@db:5432/resolver")
     assert created_sql == []
 
     with pytest.raises(RuntimeError, match="Invalid database name"):

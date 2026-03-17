@@ -1,5 +1,5 @@
 """
-Entry point for the Be Certain Analysis Engine API server.
+Entry point for the Resolver Analysis Engine API server.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
@@ -171,7 +171,7 @@ async def _cleanup_loop() -> None:
 
 
 app = FastAPI(
-    title="beCertain Analysis Engine",
+    title="Resolver Analysis Engine",
     description="AI-powered root cause analysis and anomaly detection over logs, metrics, and traces.",
     version="1.0.0",
     lifespan=lifespan,

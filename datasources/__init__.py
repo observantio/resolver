@@ -1,5 +1,5 @@
 """
-Datasources for Be Certain to interact with various data sources like Mimir, Tempo, and VictoriaMetrics.
+Datasources for Resolver to interact with various data sources like Mimir, Tempo, and VictoriaMetrics.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 

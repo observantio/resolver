@@ -27,7 +27,7 @@ from starlette.responses import Response
 
 from config import ALLOWED_CONTEXT_ALGORITHMS, settings
 
-_context_var: ContextVar["InternalContext | None"] = ContextVar("becertain_internal_context", default=None)
+_context_var: ContextVar["InternalContext | None"] = ContextVar("resolver_internal_context", default=None)
 log = logging.getLogger(__name__)
 _jti_seen_lock = threading.Lock()
 _jti_seen_cache: dict[str, float] = {}

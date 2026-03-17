@@ -1,18 +1,18 @@
-This is a refined version of your **BeCertain** Code of Conduct. I’ve utilized clean typography, clear visual hierarchy, and subtle iconography to ensure it feels both authoritative and welcoming.
+This is a refined version of your **Resolver** Code of Conduct. I’ve utilized clean typography, clear visual hierarchy, and subtle iconography to ensure it feels both authoritative and welcoming.
 
 ---
 
 # 🛡️ Server Code of Conduct
 
-### Project: BeCertain
+### Project: Resolver
 
-This document outlines the standards and expectations for all contributors to the `BeCertain` service. We are committed to fostering an environment that prioritizes technical excellence, mutual respect, and operational safety.
+This document outlines the standards and expectations for all contributors to the `resolver` service. We are committed to fostering an environment that prioritizes technical excellence, mutual respect, and operational safety.
 
 ---
 
 ## 📍 Scope
 
-This Code of Conduct applies to all collaboration within the `BeCertain` ecosystem, including:
+This Code of Conduct applies to all collaboration within the `resolver` ecosystem, including:
 
 * **Technical Assets:** Source code, issues, pull requests, reviews, and documentation.
 * **Communication:** Chat platforms, comments, and incident-response channels.
@@ -72,7 +72,7 @@ Maintainers reserve the right to take corrective action, which may include:
 * Removal of content (comments, code, or documentation).
 * Suspension or permanent removal from all collaboration spaces.
 
-> **Our Goal:** These measures are in place not to punish, but to ensure that `BeCertain` remains a safe, effective, and high-performance environment for everyone.
+> **Our Goal:** These measures are in place not to punish, but to ensure that `resolver` remains a safe, effective, and high-performance environment for everyone.
 
 ---
 

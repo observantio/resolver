@@ -15,27 +15,27 @@ from config import (
     METRICS_BACKEND_MIMIR,
     METRICS_BACKEND_VICTORIAMETRICS,
     TRACES_BACKEND_TEMPO,
-    BECERTAIN_LOGS_BACKEND,
-    BECERTAIN_LOGS_LOKI_URL,
-    BECERTAIN_METRICS_BACKEND,
-    BECERTAIN_METRICS_MIMIR_URL,
-    BECERTAIN_METRICS_VICTORIAMETRICS_URL,
-    BECERTAIN_TRACES_BACKEND,
-    BECERTAIN_TRACES_TEMPO_URL,
-    BECERTAIN_CONNECTOR_TIMEOUT,
-    BECERTAIN_STARTUP_TIMEOUT,
+    RESOLVER_LOGS_BACKEND,
+    RESOLVER_LOGS_LOKI_URL,
+    RESOLVER_METRICS_BACKEND,
+    RESOLVER_METRICS_MIMIR_URL,
+    RESOLVER_METRICS_VICTORIAMETRICS_URL,
+    RESOLVER_TRACES_BACKEND,
+    RESOLVER_TRACES_TEMPO_URL,
+    RESOLVER_CONNECTOR_TIMEOUT,
+    RESOLVER_STARTUP_TIMEOUT,
 )
 
 class DataSourceSettings(BaseSettings):
-    logs_backend: str = BECERTAIN_LOGS_BACKEND
-    metrics_backend: str = BECERTAIN_METRICS_BACKEND
-    traces_backend: str = BECERTAIN_TRACES_BACKEND
-    loki_url: str = BECERTAIN_LOGS_LOKI_URL
-    mimir_url: str = BECERTAIN_METRICS_MIMIR_URL
-    tempo_url: str = BECERTAIN_TRACES_TEMPO_URL
-    victoriametrics_url: Optional[str] = BECERTAIN_METRICS_VICTORIAMETRICS_URL
-    connector_timeout: int = BECERTAIN_CONNECTOR_TIMEOUT
-    startup_timeout: int = BECERTAIN_STARTUP_TIMEOUT
+    logs_backend: str = RESOLVER_LOGS_BACKEND
+    metrics_backend: str = RESOLVER_METRICS_BACKEND
+    traces_backend: str = RESOLVER_TRACES_BACKEND
+    loki_url: str = RESOLVER_LOGS_LOKI_URL
+    mimir_url: str = RESOLVER_METRICS_MIMIR_URL
+    tempo_url: str = RESOLVER_TRACES_TEMPO_URL
+    victoriametrics_url: Optional[str] = RESOLVER_METRICS_VICTORIAMETRICS_URL
+    connector_timeout: int = RESOLVER_CONNECTOR_TIMEOUT
+    startup_timeout: int = RESOLVER_STARTUP_TIMEOUT
     @field_validator("loki_url", "mimir_url", "tempo_url", "victoriametrics_url", mode="before")
     @classmethod
     def strip_trailing_slash(cls, v: Optional[str]) -> Optional[str]:
@@ -65,4 +65,4 @@ class DataSourceSettings(BaseSettings):
             raise ValueError(f"Unsupported traces backend: {value!r}")
         return value
 
-    model_config = {"env_prefix": "BECERTAIN_", "extra": "ignore"}
+    model_config = {"env_prefix": "RESOLVER_", "extra": "ignore"}
