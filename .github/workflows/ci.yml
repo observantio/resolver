@@ -1,4 +1,4 @@
-name: BeCertain CI
+name: Resolver CI
 
 on:
   pull_request:
@@ -32,9 +32,9 @@ jobs:
     env:
       APP_ENV: development
       ENVIRONMENT: development
-      BECERTAIN_DATABASE_URL: postgresql://ci_user:ci_password_123@localhost:5432/becertain
-      BECERTAIN_EXPECTED_SERVICE_TOKEN: ci_becertain_expected_service_token_123456789
-      BECERTAIN_CONTEXT_VERIFY_KEY: ci_becertain_context_verify_key_12345678901234567890
+      RESOLVER_DATABASE_URL: postgresql://ci_user:ci_password_123@localhost:5432/resolver
+      RESOLVER_EXPECTED_SERVICE_TOKEN: ci_resolver_expected_service_token_123456789
+      RESOLVER_CONTEXT_VERIFY_KEY: ci_resolver_context_verify_key_12345678901234567890
       PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4

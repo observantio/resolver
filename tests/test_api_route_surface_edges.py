@@ -466,11 +466,11 @@ async def test_wait_for_all_bg_with_victoria_and_cleanup_loop(monkeypatch):
 def test_dunder_main_runs_uvicorn_with_ssl(monkeypatch):
     captured = {}
 
-    monkeypatch.setenv("BECERTAIN_SSL_ENABLED", "true")
-    monkeypatch.setenv("BECERTAIN_SSL_CERTFILE", "/tmp/cert.pem")
-    monkeypatch.setenv("BECERTAIN_SSL_KEYFILE", "/tmp/key.pem")
-    monkeypatch.setenv("BECERTAIN_HOST", "0.0.0.0")
-    monkeypatch.setenv("BECERTAIN_PORT", "9443")
+    monkeypatch.setenv("RESOLVER_SSL_ENABLED", "true")
+    monkeypatch.setenv("RESOLVER_SSL_CERTFILE", "/tmp/cert.pem")
+    monkeypatch.setenv("RESOLVER_SSL_KEYFILE", "/tmp/key.pem")
+    monkeypatch.setenv("RESOLVER_HOST", "0.0.0.0")
+    monkeypatch.setenv("RESOLVER_PORT", "9443")
     import config as config_module
 
     importlib.reload(config_module)

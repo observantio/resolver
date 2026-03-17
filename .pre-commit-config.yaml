@@ -1,36 +1,36 @@
 repos:
   - repo: local
     hooks:
-      - id: becertain-unit-tests
-        name: BeCertain unit tests
+      - id: resolver-unit-tests
+        name: Resolver unit tests
         language: system
         entry: bash -lc 'python -m pytest -q'
         pass_filenames: false
         always_run: true
 
-      - id: becertain-mypy
-        name: BeCertain mypy
+      - id: resolver-mypy
+        name: Resolver mypy
         language: system
         entry: >-
           bash -lc 'APP_ENV=development
           ENVIRONMENT=development
-          BECERTAIN_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/becertain
-          BECERTAIN_EXPECTED_SERVICE_TOKEN=ci_becertain_expected_service_token_123456789
-          BECERTAIN_CONTEXT_VERIFY_KEY=ci_becertain_context_verify_key_12345678901234567890
+          RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver
+          RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
+          RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
           mypy --config-file "$PWD/mypy.ini" .'
         pass_filenames: false
         always_run: true
 
-      - id: becertain-pylint
-        name: BeCertain pylint
+      - id: resolver-pylint
+        name: Resolver pylint
         language: system
         entry: >-
           bash -lc 'APP_ENV=development
           ENVIRONMENT=development
-          BECERTAIN_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/becertain
-          BECERTAIN_EXPECTED_SERVICE_TOKEN=ci_becertain_expected_service_token_123456789
-          BECERTAIN_CONTEXT_VERIFY_KEY=ci_becertain_context_verify_key_12345678901234567890
+          RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver
+          RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
+          RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
           pylint --rcfile "$PWD/.pylintrc" $(find . -maxdepth 1 -mindepth 1 \( -type d -o -name "*.py" \) ! -name tests ! -name __pycache__ ! -name build ! -name dist ! -name tmp ! -name vendor | sort)'
         pass_filenames: false

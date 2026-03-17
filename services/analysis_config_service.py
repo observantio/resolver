@@ -285,7 +285,7 @@ class AnalysisConfigService:
             "version": ANALYSIS_CONFIG_VERSION,
             "defaults": defaults,
             "template_yaml": yaml.safe_dump(defaults, sort_keys=False, allow_unicode=False),
-            "file_name": "becertain-rca-defaults.yaml",
+            "file_name": "resolver-rca-defaults.yaml",
         }
 
     def _parse_document(self, raw_yaml: str | None) -> _ConfigDocumentModel:

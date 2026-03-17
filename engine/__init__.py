@@ -1,5 +1,5 @@
 """
-Engine Packages for Be Certain Analysis Engine
+Engine Packages for Resolver Analysis Engine
 
 Copyright (c) 2026 Stefan Kumarasinghe
 

@@ -1,5 +1,5 @@
 """
-All database models for Be Certain are defined in this module. This includes the RcaJob and RcaReport models, which represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's DeclarativeBase, allowing for easy interaction with the database using Python objects.
+All database models for Resolver are defined in this module. This includes the RcaJob and RcaReport models, which represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's DeclarativeBase, allowing for easy interaction with the database using Python objects.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 

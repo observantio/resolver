@@ -1,5 +1,5 @@
 """
-Change point subpackage for the Be Certain engine.
+Change point subpackage for the Resolver engine.
 
 This module re-exports the :class:`ChangePoint` dataclass and the
 :func:`detect` function from :mod:`engine.changepoint.cusum`, giving consumers

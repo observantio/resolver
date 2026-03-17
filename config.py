@@ -1,5 +1,5 @@
 """
-Constants and configuration for Be Certain.
+Constants and configuration for Resolver.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
@@ -63,40 +63,40 @@ METRICS_BACKEND_VICTORIAMETRICS = "victoriametrics"
 TRACES_BACKEND_TEMPO = "tempo"
 
 
-BECERTAIN_LOGS_BACKEND = os.getenv("BECERTAIN_LOGS_BACKEND", LOGS_BACKEND_LOKI).lower()
-BECERTAIN_LOGS_LOKI_URL = os.getenv("BECERTAIN_LOGS_LOKI_URL", "http://loki:3100").rstrip("/")
-BECERTAIN_LOGS_LOKI_LABELS = os.getenv("BECERTAIN_LOGS_LOKI_LABELS", "")
-BECERTAIN_LOGS_LOKI_TIMEOUT = int(os.getenv("BECERTAIN_LOGS_LOKI_TIMEOUT", "30"))
-BECERTAIN_LOGS_LOKI_BATCH_SIZE = int(os.getenv("BECERTAIN_LOGS_LOKI_BATCH_SIZE", "1000"))
+RESOLVER_LOGS_BACKEND = os.getenv("RESOLVER_LOGS_BACKEND", LOGS_BACKEND_LOKI).lower()
+RESOLVER_LOGS_LOKI_URL = os.getenv("RESOLVER_LOGS_LOKI_URL", "http://loki:3100").rstrip("/")
+RESOLVER_LOGS_LOKI_LABELS = os.getenv("RESOLVER_LOGS_LOKI_LABELS", "")
+RESOLVER_LOGS_LOKI_TIMEOUT = int(os.getenv("RESOLVER_LOGS_LOKI_TIMEOUT", "30"))
+RESOLVER_LOGS_LOKI_BATCH_SIZE = int(os.getenv("RESOLVER_LOGS_LOKI_BATCH_SIZE", "1000"))
 
-BECERTAIN_METRICS_BACKEND = os.getenv("BECERTAIN_METRICS_BACKEND", METRICS_BACKEND_MIMIR).lower()
-BECERTAIN_METRICS_MIMIR_URL = os.getenv("BECERTAIN_METRICS_MIMIR_URL", "http://mimir:9009").rstrip("/")
-BECERTAIN_METRICS_VICTORIAMETRICS_URL = os.getenv("BECERTAIN_METRICS_VICTORIAMETRICS_URL", "").rstrip("/")
+RESOLVER_METRICS_BACKEND = os.getenv("RESOLVER_METRICS_BACKEND", METRICS_BACKEND_MIMIR).lower()
+RESOLVER_METRICS_MIMIR_URL = os.getenv("RESOLVER_METRICS_MIMIR_URL", "http://mimir:9009").rstrip("/")
+RESOLVER_METRICS_VICTORIAMETRICS_URL = os.getenv("RESOLVER_METRICS_VICTORIAMETRICS_URL", "").rstrip("/")
 
-BECERTAIN_TRACES_BACKEND = os.getenv("BECERTAIN_TRACES_BACKEND", TRACES_BACKEND_TEMPO).lower()
-BECERTAIN_TRACES_TEMPO_URL = os.getenv("BECERTAIN_TRACES_TEMPO_URL", "http://tempo:3200").rstrip("/")
+RESOLVER_TRACES_BACKEND = os.getenv("RESOLVER_TRACES_BACKEND", TRACES_BACKEND_TEMPO).lower()
+RESOLVER_TRACES_TEMPO_URL = os.getenv("RESOLVER_TRACES_TEMPO_URL", "http://tempo:3200").rstrip("/")
 
-BECERTAIN_CONNECTOR_TIMEOUT = int(os.getenv("BECERTAIN_CONNECTOR_TIMEOUT", "10"))
-BECERTAIN_STARTUP_TIMEOUT = int(os.getenv("BECERTAIN_STARTUP_TIMEOUT", "120"))
-BECERTAIN_HOST = os.getenv("BECERTAIN_HOST", "127.0.0.1")
-BECERTAIN_PORT = int(os.getenv("BECERTAIN_PORT", "4322"))
-BECERTAIN_EXPECTED_SERVICE_TOKEN = os.getenv("BECERTAIN_EXPECTED_SERVICE_TOKEN", "")
-BECERTAIN_CONTEXT_VERIFY_KEY = os.getenv("BECERTAIN_CONTEXT_VERIFY_KEY", "")
-BECERTAIN_CONTEXT_ISSUER = os.getenv("BECERTAIN_CONTEXT_ISSUER", "beobservant-main")
-BECERTAIN_CONTEXT_AUDIENCE = os.getenv("BECERTAIN_CONTEXT_AUDIENCE", "becertain")
-BECERTAIN_CONTEXT_ALGORITHMS = os.getenv("BECERTAIN_CONTEXT_ALGORITHMS", "HS256")
-BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS = int(os.getenv("BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS", "180"))
-BECERTAIN_SSL_ENABLED = _to_bool(os.getenv("BECERTAIN_SSL_ENABLED"), default=False)
-BECERTAIN_SSL_CERTFILE = os.getenv("BECERTAIN_SSL_CERTFILE", "")
-BECERTAIN_SSL_KEYFILE = os.getenv("BECERTAIN_SSL_KEYFILE", "")
-BECERTAIN_DATABASE_URL = os.getenv("BECERTAIN_DATABASE_URL", "")
-BECERTAIN_ANALYZE_MAX_CONCURRENCY = int(os.getenv("BECERTAIN_ANALYZE_MAX_CONCURRENCY", "2"))
-BECERTAIN_ANALYZE_TIMEOUT_SECONDS = int(os.getenv("BECERTAIN_ANALYZE_TIMEOUT_SECONDS", "90"))
-BECERTAIN_ANALYZE_REPORT_RETENTION_DAYS = int(os.getenv("BECERTAIN_ANALYZE_REPORT_RETENTION_DAYS", "7"))
-BECERTAIN_ANALYZE_JOB_TTL_DAYS = int(os.getenv("BECERTAIN_ANALYZE_JOB_TTL_DAYS", "30"))
+RESOLVER_CONNECTOR_TIMEOUT = int(os.getenv("RESOLVER_CONNECTOR_TIMEOUT", "10"))
+RESOLVER_STARTUP_TIMEOUT = int(os.getenv("RESOLVER_STARTUP_TIMEOUT", "120"))
+RESOLVER_HOST = os.getenv("RESOLVER_HOST", "127.0.0.1")
+RESOLVER_PORT = int(os.getenv("RESOLVER_PORT", "4322"))
+RESOLVER_EXPECTED_SERVICE_TOKEN = os.getenv("RESOLVER_EXPECTED_SERVICE_TOKEN", "")
+RESOLVER_CONTEXT_VERIFY_KEY = os.getenv("RESOLVER_CONTEXT_VERIFY_KEY", "")
+RESOLVER_CONTEXT_ISSUER = os.getenv("RESOLVER_CONTEXT_ISSUER", "watchdog-main")
+RESOLVER_CONTEXT_AUDIENCE = os.getenv("RESOLVER_CONTEXT_AUDIENCE", "resolver")
+RESOLVER_CONTEXT_ALGORITHMS = os.getenv("RESOLVER_CONTEXT_ALGORITHMS", "HS256")
+RESOLVER_CONTEXT_REPLAY_TTL_SECONDS = int(os.getenv("RESOLVER_CONTEXT_REPLAY_TTL_SECONDS", "180"))
+RESOLVER_SSL_ENABLED = _to_bool(os.getenv("RESOLVER_SSL_ENABLED"), default=False)
+RESOLVER_SSL_CERTFILE = os.getenv("RESOLVER_SSL_CERTFILE", "")
+RESOLVER_SSL_KEYFILE = os.getenv("RESOLVER_SSL_KEYFILE", "")
+RESOLVER_DATABASE_URL = os.getenv("RESOLVER_DATABASE_URL", "")
+RESOLVER_ANALYZE_MAX_CONCURRENCY = int(os.getenv("RESOLVER_ANALYZE_MAX_CONCURRENCY", "2"))
+RESOLVER_ANALYZE_TIMEOUT_SECONDS = int(os.getenv("RESOLVER_ANALYZE_TIMEOUT_SECONDS", "90"))
+RESOLVER_ANALYZE_REPORT_RETENTION_DAYS = int(os.getenv("RESOLVER_ANALYZE_REPORT_RETENTION_DAYS", "7"))
+RESOLVER_ANALYZE_JOB_TTL_DAYS = int(os.getenv("RESOLVER_ANALYZE_JOB_TTL_DAYS", "30"))
 
-# tenant defaults
-BECERTAIN_DEFAULT_TENANT_ID = os.getenv("BECERTAIN_DEFAULT_TENANT_ID", "Av45ZchZsQdKjN8XyG")
+
+RESOLVER_DEFAULT_TENANT_ID = os.getenv("RESOLVER_DEFAULT_TENANT_ID", "Av45ZchZsQdKjN8XyG")
 
 DEFAULT_SERVICE_NAME = "default_service"
 
@@ -176,51 +176,51 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
 REGISTRY_ALPHA: float = float(os.getenv("REGISTRY_ALPHA", "0.2"))
 
 class Settings(BaseSettings):
-    logs_backend: str = BECERTAIN_LOGS_BACKEND
-    loki_url: str = BECERTAIN_LOGS_LOKI_URL
-    loki_labels: str = BECERTAIN_LOGS_LOKI_LABELS
-    loki_timeout: int = BECERTAIN_LOGS_LOKI_TIMEOUT
-    loki_batch_size: int = BECERTAIN_LOGS_LOKI_BATCH_SIZE
+    logs_backend: str = RESOLVER_LOGS_BACKEND
+    loki_url: str = RESOLVER_LOGS_LOKI_URL
+    loki_labels: str = RESOLVER_LOGS_LOKI_LABELS
+    loki_timeout: int = RESOLVER_LOGS_LOKI_TIMEOUT
+    loki_batch_size: int = RESOLVER_LOGS_LOKI_BATCH_SIZE
 
-    metrics_backend: str = BECERTAIN_METRICS_BACKEND
-    mimir_url: str = BECERTAIN_METRICS_MIMIR_URL
+    metrics_backend: str = RESOLVER_METRICS_BACKEND
+    mimir_url: str = RESOLVER_METRICS_MIMIR_URL
     victoriametrics_url: Optional[str] = (
-        BECERTAIN_METRICS_VICTORIAMETRICS_URL or None
+        RESOLVER_METRICS_VICTORIAMETRICS_URL or None
     )
 
-    traces_backend: str = BECERTAIN_TRACES_BACKEND
-    tempo_url: str = BECERTAIN_TRACES_TEMPO_URL
+    traces_backend: str = RESOLVER_TRACES_BACKEND
+    tempo_url: str = RESOLVER_TRACES_TEMPO_URL
 
-    connector_timeout: int = BECERTAIN_CONNECTOR_TIMEOUT
-    startup_timeout: int = BECERTAIN_STARTUP_TIMEOUT
-    host: str = BECERTAIN_HOST
-    port: int = BECERTAIN_PORT
-    expected_service_token: str = BECERTAIN_EXPECTED_SERVICE_TOKEN
-    context_verify_key: str = BECERTAIN_CONTEXT_VERIFY_KEY
-    context_issuer: str = BECERTAIN_CONTEXT_ISSUER
-    context_audience: str = BECERTAIN_CONTEXT_AUDIENCE
-    context_algorithms: str = BECERTAIN_CONTEXT_ALGORITHMS
-    context_replay_ttl_seconds: int = BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS
-    ssl_enabled: bool = BECERTAIN_SSL_ENABLED
-    ssl_certfile: str = BECERTAIN_SSL_CERTFILE
-    ssl_keyfile: str = BECERTAIN_SSL_KEYFILE
-    database_url: str = BECERTAIN_DATABASE_URL
-    analyze_max_concurrency: int = BECERTAIN_ANALYZE_MAX_CONCURRENCY
-    analyze_timeout_seconds: int = BECERTAIN_ANALYZE_TIMEOUT_SECONDS
-    analyze_report_retention_days: int = BECERTAIN_ANALYZE_REPORT_RETENTION_DAYS
-    analyze_job_ttl_days: int = BECERTAIN_ANALYZE_JOB_TTL_DAYS
+    connector_timeout: int = RESOLVER_CONNECTOR_TIMEOUT
+    startup_timeout: int = RESOLVER_STARTUP_TIMEOUT
+    host: str = RESOLVER_HOST
+    port: int = RESOLVER_PORT
+    expected_service_token: str = RESOLVER_EXPECTED_SERVICE_TOKEN
+    context_verify_key: str = RESOLVER_CONTEXT_VERIFY_KEY
+    context_issuer: str = RESOLVER_CONTEXT_ISSUER
+    context_audience: str = RESOLVER_CONTEXT_AUDIENCE
+    context_algorithms: str = RESOLVER_CONTEXT_ALGORITHMS
+    context_replay_ttl_seconds: int = RESOLVER_CONTEXT_REPLAY_TTL_SECONDS
+    ssl_enabled: bool = RESOLVER_SSL_ENABLED
+    ssl_certfile: str = RESOLVER_SSL_CERTFILE
+    ssl_keyfile: str = RESOLVER_SSL_KEYFILE
+    database_url: str = RESOLVER_DATABASE_URL
+    analyze_max_concurrency: int = RESOLVER_ANALYZE_MAX_CONCURRENCY
+    analyze_timeout_seconds: int = RESOLVER_ANALYZE_TIMEOUT_SECONDS
+    analyze_report_retention_days: int = RESOLVER_ANALYZE_REPORT_RETENTION_DAYS
+    analyze_job_ttl_days: int = RESOLVER_ANALYZE_JOB_TTL_DAYS
 
     slo_error_query_template: str = SLO_ERROR_QUERY_TEMPLATE
     slo_total_query_template: str = SLO_TOTAL_QUERY_TEMPLATE
 
     # default tenant (used by main and tests)
-    default_tenant_id: str = BECERTAIN_DEFAULT_TENANT_ID
+    default_tenant_id: str = RESOLVER_DEFAULT_TENANT_ID
 
     # Precision-first business defaults: favor signal quality over recall.
-    mad_threshold: float = float(os.getenv("BECERTAIN_MAD_THRESHOLD", "4.0"))
-    zscore_threshold: float = float(os.getenv("BECERTAIN_ZSCORE_THRESHOLD", "3.0"))
-    cusum_threshold: float = float(os.getenv("BECERTAIN_CUSUM_THRESHOLD", "6.0"))
-    min_samples: int = int(os.getenv("BECERTAIN_MIN_SAMPLES", "12"))
+    mad_threshold: float = float(os.getenv("RESOLVER_MAD_THRESHOLD", "4.0"))
+    zscore_threshold: float = float(os.getenv("RESOLVER_ZSCORE_THRESHOLD", "3.0"))
+    cusum_threshold: float = float(os.getenv("RESOLVER_CUSUM_THRESHOLD", "6.0"))
+    min_samples: int = int(os.getenv("RESOLVER_MIN_SAMPLES", "12"))
 
     burst_ratio_thresholds: List[Tuple[float, str]] = [
         (10.0, "critical"),
@@ -262,7 +262,7 @@ class Settings(BaseSettings):
 
     # correlation/temporal scoring
     max_lag_seconds: float = 90.0
-    correlation_window_seconds: float = float(os.getenv("BECERTAIN_CORRELATION_WINDOW_SECONDS", "45.0"))
+    correlation_window_seconds: float = float(os.getenv("RESOLVER_CORRELATION_WINDOW_SECONDS", "45.0"))
     correlation_weight_time: float = 0.30
     correlation_weight_latency: float = 0.35
     correlation_weight_errors: float = 0.35
@@ -292,7 +292,7 @@ class Settings(BaseSettings):
     rca_errorprop_max: float = 0.95
     rca_baseline_base: float = 0.5
     rca_baseline_affected_factor: float = 0.1
-    rca_min_confidence_display: float = float(os.getenv("BECERTAIN_RCA_MIN_CONFIDENCE_DISPLAY", "0.12"))
+    rca_min_confidence_display: float = float(os.getenv("RESOLVER_RCA_MIN_CONFIDENCE_DISPLAY", "0.12"))
 
     # analyzer tuning
     analyzer_sensitivity_factor: float = 0.75
@@ -300,43 +300,41 @@ class Settings(BaseSettings):
     analyzer_max_parallel_cpu_tasks: int = 4
     analyzer_granger_max_series: int = 20
     analyzer_granger_min_samples: int = 20
-    analyzer_fetch_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_FETCH_TIMEOUT_SECONDS", "10.0"))
-    analyzer_metrics_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_METRICS_TIMEOUT_SECONDS", "15.0"))
-    analyzer_causal_timeout_seconds: float = float(os.getenv("BECERTAIN_ANALYZER_CAUSAL_TIMEOUT_SECONDS", "6.0"))
+    analyzer_fetch_timeout_seconds: float = float(os.getenv("RESOLVER_ANALYZER_FETCH_TIMEOUT_SECONDS", "10.0"))
+    analyzer_metrics_timeout_seconds: float = float(os.getenv("RESOLVER_ANALYZER_METRICS_TIMEOUT_SECONDS", "15.0"))
+    analyzer_causal_timeout_seconds: float = float(os.getenv("RESOLVER_ANALYZER_CAUSAL_TIMEOUT_SECONDS", "6.0"))
     analyzer_forecast_min_window_seconds: float = float(
-        os.getenv("BECERTAIN_ANALYZER_FORECAST_MIN_WINDOW_SECONDS", "900")
+        os.getenv("RESOLVER_ANALYZER_FORECAST_MIN_WINDOW_SECONDS", "900")
     )
     analyzer_degradation_min_window_seconds: float = float(
-        os.getenv("BECERTAIN_ANALYZER_DEGRADATION_MIN_WINDOW_SECONDS", "900")
+        os.getenv("RESOLVER_ANALYZER_DEGRADATION_MIN_WINDOW_SECONDS", "900")
     )
-    analyzer_max_metric_anomalies: int = int(os.getenv("BECERTAIN_ANALYZER_MAX_METRIC_ANOMALIES", "180"))
-    analyzer_max_change_points: int = int(os.getenv("BECERTAIN_ANALYZER_MAX_CHANGE_POINTS", "140"))
-    analyzer_max_granger_pairs: int = int(os.getenv("BECERTAIN_ANALYZER_MAX_GRANGER_PAIRS", "60"))
-    analyzer_max_clusters: int = int(os.getenv("BECERTAIN_ANALYZER_MAX_CLUSTERS", "20"))
-    analyzer_max_root_causes: int = int(os.getenv("BECERTAIN_ANALYZER_MAX_ROOT_CAUSES", "8"))
-    quality_gating_profile: str = os.getenv("BECERTAIN_QUALITY_GATING_PROFILE", "precision_strict_v1")
+    analyzer_max_metric_anomalies: int = int(os.getenv("RESOLVER_ANALYZER_MAX_METRIC_ANOMALIES", "180"))
+    analyzer_max_change_points: int = int(os.getenv("RESOLVER_ANALYZER_MAX_CHANGE_POINTS", "140"))
+    analyzer_max_granger_pairs: int = int(os.getenv("RESOLVER_ANALYZER_MAX_GRANGER_PAIRS", "60"))
+    analyzer_max_clusters: int = int(os.getenv("RESOLVER_ANALYZER_MAX_CLUSTERS", "20"))
+    analyzer_max_root_causes: int = int(os.getenv("RESOLVER_ANALYZER_MAX_ROOT_CAUSES", "8"))
+    quality_gating_profile: str = os.getenv("RESOLVER_QUALITY_GATING_PROFILE", "precision_strict_v1")
     quality_max_anomaly_density_per_metric_per_hour: float = float(
-        os.getenv("BECERTAIN_QUALITY_MAX_ANOMALY_DENSITY_PER_METRIC_PER_HOUR", "0.75")
+        os.getenv("RESOLVER_QUALITY_MAX_ANOMALY_DENSITY_PER_METRIC_PER_HOUR", "0.75")
     )
     quality_max_change_point_density_per_metric_per_hour: float = float(
-        os.getenv("BECERTAIN_QUALITY_MAX_CHANGE_POINT_DENSITY_PER_METRIC_PER_HOUR", "2.0")
+        os.getenv("RESOLVER_QUALITY_MAX_CHANGE_POINT_DENSITY_PER_METRIC_PER_HOUR", "2.0")
     )
     quality_max_root_causes_without_multisignal: int = int(
-        os.getenv("BECERTAIN_QUALITY_MAX_ROOT_CAUSES_WITHOUT_MULTISIGNAL", "1")
+        os.getenv("RESOLVER_QUALITY_MAX_ROOT_CAUSES_WITHOUT_MULTISIGNAL", "1")
     )
     quality_min_corroboration_signals: int = int(
-        os.getenv("BECERTAIN_QUALITY_MIN_CORROBORATION_SIGNALS", "2")
+        os.getenv("RESOLVER_QUALITY_MIN_CORROBORATION_SIGNALS", "2")
     )
     quality_confidence_calibration_version: str = os.getenv(
-        "BECERTAIN_QUALITY_CONFIDENCE_CALIBRATION_VERSION",
+        "RESOLVER_QUALITY_CONFIDENCE_CALIBRATION_VERSION",
         "calib_2026_02_25_precision_default",
     )
 
-    # event registry window
+
     events_window_seconds: float = 300.0
 
-    # Bayesian scoring priors/likelihoods
-    # keys must correspond to the values of RcaCategory (e.g. "traffic_surge")
     bayesian_priors: Dict[str, float] = {
         "deployment": 0.35,
         "resource_exhaustion": 0.20,
@@ -427,7 +425,7 @@ class Settings(BaseSettings):
     ml_cluster_min_samples: int = 2
 
     # RCA heuristics not covered earlier
-    rca_event_confidence_threshold: float = float(os.getenv("BECERTAIN_RCA_EVENT_CONFIDENCE_THRESHOLD", "0.3"))
+    rca_event_confidence_threshold: float = float(os.getenv("RESOLVER_RCA_EVENT_CONFIDENCE_THRESHOLD", "0.3"))
     rca_deploy_window_seconds: float = 300.0
     rca_score_cap: float = 0.99
     rca_slice_limit: int = 2
@@ -506,7 +504,7 @@ class Settings(BaseSettings):
     store_fallback_max_items: int = 10_000
 
     model_config = {
-        "env_prefix": "BECERTAIN_",
+        "env_prefix": "RESOLVER_",
         "extra": "ignore",
     }
 
@@ -516,34 +514,34 @@ class Settings(BaseSettings):
         unsupported = sorted(set(algorithms) - ALLOWED_CONTEXT_ALGORITHMS)
         if unsupported:
             raise ValueError(
-                f"BECERTAIN_CONTEXT_ALGORITHMS contains unsupported values: {', '.join(unsupported)}; "
+                f"RESOLVER_CONTEXT_ALGORITHMS contains unsupported values: {', '.join(unsupported)}; "
                 f"allowed values: {', '.join(sorted(ALLOWED_CONTEXT_ALGORITHMS))}"
             )
         if self.context_replay_ttl_seconds <= 0:
-            raise ValueError("BECERTAIN_CONTEXT_REPLAY_TTL_SECONDS must be greater than 0")
+            raise ValueError("RESOLVER_CONTEXT_REPLAY_TTL_SECONDS must be greater than 0")
 
         if not _is_production_env():
             return self
 
         if not self.database_url:
-            raise ValueError("BECERTAIN_DATABASE_URL is required in production")
+            raise ValueError("RESOLVER_DATABASE_URL is required in production")
 
         expected_service_token = str(self.expected_service_token or "").strip()
         if len(expected_service_token) < 24 or _is_weak_secret(expected_service_token):
             raise ValueError(
-                "BECERTAIN_EXPECTED_SERVICE_TOKEN must be a strong non-placeholder secret of at least 24 characters in production"
+                "RESOLVER_EXPECTED_SERVICE_TOKEN must be a strong non-placeholder secret of at least 24 characters in production"
             )
 
         context_verify_key = str(self.context_verify_key or "").strip()
         if len(context_verify_key) < 32 or _is_weak_secret(context_verify_key):
             raise ValueError(
-                "BECERTAIN_CONTEXT_VERIFY_KEY must be a strong non-placeholder secret of at least 32 characters in production"
+                "RESOLVER_CONTEXT_VERIFY_KEY must be a strong non-placeholder secret of at least 32 characters in production"
             )
 
         if not str(self.context_issuer or "").strip():
-            raise ValueError("BECERTAIN_CONTEXT_ISSUER must be set in production")
+            raise ValueError("RESOLVER_CONTEXT_ISSUER must be set in production")
         if not str(self.context_audience or "").strip():
-            raise ValueError("BECERTAIN_CONTEXT_AUDIENCE must be set in production")
+            raise ValueError("RESOLVER_CONTEXT_AUDIENCE must be set in production")
         return self
 
 
@@ -551,4 +549,4 @@ settings = Settings()
 
 # Keep both import paths bound to one module object during mixed-project test runs.
 sys.modules["config"] = sys.modules[__name__]
-sys.modules["BeCertain.config"] = sys.modules[__name__]
+sys.modules["Resolvers.config"] = sys.modules[__name__]
