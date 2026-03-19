@@ -6,7 +6,8 @@ repos:
         language: system
         entry: bash -lc 'python -m pytest -q'
         pass_filenames: false
-        always_run: true
+        files: \.py$
+        types: [python]
 
       - id: resolver-mypy
         name: Resolver mypy
@@ -18,9 +19,9 @@ repos:
           RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
           RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
-          mypy --config-file "$PWD/mypy.ini" .'
-        pass_filenames: false
-        always_run: true
+          mypy --config-file "$PWD/mypy.ini" "$@"' --
+        files: \.py$
+        types: [python]
 
       - id: resolver-pylint
         name: Resolver pylint
@@ -32,6 +33,6 @@ repos:
           RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
           RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
-          pylint --rcfile "$PWD/.pylintrc" $(find . -maxdepth 1 -mindepth 1 \( -type d -o -name "*.py" \) ! -name tests ! -name __pycache__ ! -name build ! -name dist ! -name tmp ! -name vendor | sort)'
-        pass_filenames: false
-        always_run: true
+          pylint --rcfile "$PWD/.pylintrc" "$@"' --
+        files: \.py$
+        types: [python]
