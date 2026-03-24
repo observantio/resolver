@@ -73,3 +73,14 @@ def test_compute_series_distribution_stats_typical_series():
     assert out.iqr >= 0.0
     assert out.mad >= 0.0
     assert out.min <= out.max
+
+
+def test_sample_moment_edge_cases_for_skewness_and_kurtosis():
+    from engine.anomaly.stats import _sample_skewness, _sample_excess_kurtosis
+
+    import numpy as np
+
+    assert _sample_skewness(np.array([1.0, 1.0])) == 0.0
+    assert _sample_skewness(np.array([1.0, 1.0, 1.0])) == 0.0
+    assert _sample_excess_kurtosis(np.array([1.0, 1.0, 1.0])) == 0.0
+    assert _sample_excess_kurtosis(np.array([1.0, 1.0, 1.0, 1.0])) == 0.0
