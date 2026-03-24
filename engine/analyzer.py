@@ -26,6 +26,7 @@ import numpy as np
 from custom_types.json import JSONDict
 from datasources.provider import DataSourceProvider
 from engine import anomaly, logs, rca, traces
+from engine.anomaly.stats import compute_series_distribution_stats
 from engine.anomaly.series import WrappedMimirResponse
 from engine.baseline import compute as baseline_compute
 from engine.causal import CausalGraph, bayesian_score, test_all_pairs
@@ -52,6 +53,7 @@ from api.responses import (
     LogBurst,
     LogPattern,
     MetricAnomaly,
+    MetricSeriesDistributionStats,
     RootCause as RootCauseModel,
     SloBurnAlert as SloBurnAlertModel,
 )
@@ -735,7 +737,14 @@ async def _process_metrics(
     all_metric_queries: List[str],
     z_threshold: float,
     analysis_window_seconds: float,
-) -> Tuple[list[MetricAnomaly], List[ChangePoint], list[TrajectoryForecast], list[DegradationSignal], Dict[str, List[float]]]:
+) -> Tuple[
+    list[MetricAnomaly],
+    List[ChangePoint],
+    list[TrajectoryForecast],
+    list[DegradationSignal],
+    Dict[str, List[float]],
+    list[MetricSeriesDistributionStats],
+]:
     metrics_raw = await fetch_metrics(provider, all_metric_queries, req.start, req.end, req.step)
     requested_services = _normalize_services(req.services)
     if requested_services:
@@ -750,6 +759,14 @@ async def _process_metrics(
         for query_string, resp in metrics_raw
         for metric_name, ts, vals in anomaly.iter_series(resp, query_hint=query_string)
     ]
+
+    distribution_by_key: dict[str, MetricSeriesDistributionStats] = {}
+    for query_string, metric_name, _ts, vals in series_list:
+        sk = _series_key(query_string, metric_name)
+        row = compute_series_distribution_stats(sk, metric_name, vals)
+        if row is not None:
+            distribution_by_key[sk] = row
+    distribution_stats = list(distribution_by_key.values())
 
     tasks = [
         _process_one_metric_series(
@@ -784,7 +801,7 @@ async def _process_metrics(
         if deg:
             degradation_signals.append(deg)
 
-    return metric_anomalies, change_points, forecasts, degradation_signals, series_map
+    return metric_anomalies, change_points, forecasts, degradation_signals, series_map, distribution_stats
 
 
 def _slo_series_pairs(
@@ -885,7 +902,14 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
 
     metrics_started = time.perf_counter()
     try:
-        metric_anomalies, change_points, forecasts, degradation_signals, series_map = await asyncio.wait_for(
+        (
+            metric_anomalies,
+            change_points,
+            forecasts,
+            degradation_signals,
+            series_map,
+            metric_series_statistics,
+        ) = await asyncio.wait_for(
             _process_metrics(provider, req, all_metric_queries, z_threshold, analysis_window_seconds),
             timeout=float(settings.analyzer_metrics_timeout_seconds),
         )
@@ -896,12 +920,26 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         )
         warnings.append(msg)
         log.warning(msg)
-        metric_anomalies, change_points, forecasts, degradation_signals, series_map = [], [], [], [], {}
+        (
+            metric_anomalies,
+            change_points,
+            forecasts,
+            degradation_signals,
+            series_map,
+            metric_series_statistics,
+        ) = ([], [], [], [], {}, [])
     except _RECOVERABLE_ANALYSIS_ERRORS as exc:
         msg = f"Metrics unavailable: {exc}"
         warnings.append(msg)
         log.warning(msg)
-        metric_anomalies, change_points, forecasts, degradation_signals, series_map = [], [], [], [], {}
+        (
+            metric_anomalies,
+            change_points,
+            forecasts,
+            degradation_signals,
+            series_map,
+            metric_series_statistics,
+        ) = ([], [], [], [], {}, [])
     raw_metric_anomaly_count = len(metric_anomalies)
     raw_change_point_count = len(change_points)
     metric_anomalies = _dedupe_metric_anomalies(metric_anomalies)
@@ -1223,6 +1261,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         overall_severity=severity,
         summary="",
         quality=quality,
+        metric_series_statistics=metric_series_statistics,
     )
     report.summary = _summary(report)
     log.info(

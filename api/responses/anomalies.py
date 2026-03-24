@@ -28,3 +28,5 @@ class MetricAnomaly(NpModel):
     expected_range: Tuple[float, float]
     severity: Severity
     description: str
+    iqr_score: float = 0.0
+    tukey_outlier_class: str = "none"

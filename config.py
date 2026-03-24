@@ -459,6 +459,13 @@ class Settings(BaseSettings):
         (4.5, 0.25),
         (3.5, 0.15),
     ]
+    anomaly_iqr_score_thresholds: List[Tuple[float, float]] = [
+        (4.0, 0.35),
+        (3.0, 0.25),
+        (2.0, 0.15),
+    ]
+    tukey_mild_k: float = float(os.getenv("RESOLVER_TUKEY_MILD_K", "1.5"))
+    tukey_extreme_k: float = float(os.getenv("RESOLVER_TUKEY_EXTREME_K", "3.0"))
     anomaly_iso_weight: float = 0.10
 
     # anomaly detection defaults beyond thresholds

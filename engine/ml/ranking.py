@@ -29,7 +29,6 @@ class RankedCause:
     feature_importance: dict[str, float]
 
 
-
 def _extract_features(cause: RootCause, event: Optional[CorrelatedEvent] = None) -> List[float]:
     return [
         cause.confidence,
@@ -49,6 +48,29 @@ _FEATURE_NAMES = [
     "blast_radius", "has_deployment", "metric_anomaly_count",
     "log_burst_count", "latency_count", "correlation_confidence",
 ]
+
+
+def _ranking_pseudo_labels(causes: List[RootCause]) -> list[int]:
+    """Top half of hypotheses by rule confidence = positive class (avoids trivial single-class RF)."""
+    n = len(causes)
+    order = sorted(range(n), key=lambda i: causes[i].confidence, reverse=True)
+    labels = [0] * n
+    half = max(1, n // 2)
+    for i in range(half):
+        labels[order[i]] = 1
+    return labels
+
+
+def _per_row_importance_share(row: np.ndarray, global_imp: np.ndarray) -> dict[str, float]:
+    w = np.abs(row * global_imp)
+    s = float(np.sum(w)) + 1e-12
+    return dict(zip(_FEATURE_NAMES, (w / s).tolist()))
+
+
+def _per_row_feature_shares(row: np.ndarray) -> dict[str, float]:
+    w = np.abs(row)
+    s = float(np.sum(w)) + 1e-12
+    return dict(zip(_FEATURE_NAMES, (w / s).tolist()))
 
 
 class RandomForestClassifierModel(Protocol):
@@ -94,11 +116,12 @@ def rank(
 
     X = np.array(feature_matrix, dtype=float)
 
+    importances_global: np.ndarray | None = None
     try:
         random_forest_classifier: RandomForestClassifierFactory = import_module("sklearn.ensemble").RandomForestClassifier
 
         if len(causes) >= 4:
-            labels = [1 if c.confidence >= settings.ranking_label_threshold else 0 for c in causes]
+            labels = _ranking_pseudo_labels(causes)
             if len(set(labels)) > 1:
                 rf = random_forest_classifier(
                     n_estimators=settings.ranking_rf_n_estimators,
@@ -107,29 +130,32 @@ def rank(
                 )
                 rf.fit(X, labels)
                 ml_scores = rf.predict_proba(X)[:, 1]
-                importances = dict(zip(_FEATURE_NAMES, rf.feature_importances_))
+                importances_global = rf.feature_importances_
             else:
                 ml_scores = np.array([c.confidence for c in causes])
-                importances = {n: 1.0 / len(_FEATURE_NAMES) for n in _FEATURE_NAMES}
         else:
             ml_scores = np.array([c.confidence for c in causes])
-            importances = {n: 1.0 / len(_FEATURE_NAMES) for n in _FEATURE_NAMES}
     except ImportError:
         ml_scores = np.array([c.confidence for c in causes])
-        importances = {n: 1.0 / len(_FEATURE_NAMES) for n in _FEATURE_NAMES}
+        importances_global = None
 
     results: List[RankedCause] = []
-    for cause, ml_score in zip(causes, ml_scores):
+    for i, cause in enumerate(causes):
+        ms = float(ml_scores[i])
+        if importances_global is not None:
+            row_imp = _per_row_importance_share(X[i], importances_global)
+        else:
+            row_imp = _per_row_feature_shares(X[i])
         final = round(
             settings.ranking_confidence_blend * cause.confidence
-            + settings.ranking_ml_blend * float(ml_score),
+            + settings.ranking_ml_blend * ms,
             3,
         )
         results.append(RankedCause(
             root_cause=cause,
-            ml_score=round(float(ml_score), 3),
+            ml_score=round(ms, 3),
             final_score=final,
-            feature_importance=importances,
+            feature_importance=row_imp,
         ))
 
     return sorted(results, key=lambda r: r.final_score, reverse=True)

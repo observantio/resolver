@@ -57,6 +57,60 @@ class RootCause:
     corroboration_summary: str = ""
 
 
+def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:
+    """Higher tuple = more important for narrative selection (matches report intent)."""
+    sev = getattr(anomaly, "severity", None)
+    try:
+        weight = float(sev.weight()) if sev is not None else 0.0
+    except (AttributeError, TypeError):
+        weight = 0.0
+    z = abs(float(getattr(anomaly, "z_score", 0.0)))
+    mad = abs(float(getattr(anomaly, "mad_score", 0.0)))
+    return (weight, z, mad)
+
+
+def _metric_names_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: int = 2) -> List[str]:
+    """
+    Pick metric names to cite in the hypothesis from a correlated event.
+
+    We keep the strongest anomaly per metric_name, then rank names by severity / |z| / |MAD|.
+    Alphabetical order was misleading (e.g. pid=160 before pid=520145 regardless of impact).
+    """
+    best_by_name: dict[str, MetricAnomaly] = {}
+    for anomaly in metric_anomalies:
+        name = str(getattr(anomaly, "metric_name", "") or "").strip()
+        if not name:
+            continue
+        prev = best_by_name.get(name)
+        if prev is None or _anomaly_impact_rank(anomaly) > _anomaly_impact_rank(prev):
+            best_by_name[name] = anomaly
+    ordered = sorted(
+        best_by_name.keys(),
+        key=lambda n: (_anomaly_impact_rank(best_by_name[n]), n),
+        reverse=True,
+    )
+    return ordered[:limit]
+
+
+def _process_entities_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: int = 2) -> List[str]:
+    """Top process hotspots by anomaly strength, not lexicographic entity string."""
+    best_by_entity: dict[str, tuple[tuple[float, float, float], MetricAnomaly]] = {}
+    for anomaly in metric_anomalies:
+        entity = _process_entity_from_metric_name(getattr(anomaly, "metric_name", ""))
+        if not entity:
+            continue
+        rank = _anomaly_impact_rank(anomaly)
+        prev = best_by_entity.get(entity)
+        if prev is None or rank > prev[0]:
+            best_by_entity[entity] = (rank, anomaly)
+    ordered = sorted(
+        best_by_entity.keys(),
+        key=lambda e: best_by_entity[e][0],
+        reverse=True,
+    )
+    return ordered[:limit]
+
+
 def _evidence_score(entries: List[str]) -> float:
     total = 0.0
     for entry in entries:
@@ -238,13 +292,9 @@ def generate(
                 if service_deploys:
                     deploy_event = min(service_deploys, key=_deployment_distance)
 
-        metric_names = sorted({a.metric_name for a in event.metric_anomalies})[:2]
+        metric_names = _metric_names_for_hypothesis(event.metric_anomalies, limit=2)
         svc_names = sorted({s.service for s in event.service_latency})[:2]
-        process_entities_all = [
-            _process_entity_from_metric_name(a.metric_name)
-            for a in event.metric_anomalies
-        ]
-        process_entities = sorted({item for item in process_entities_all if item})[:2]
+        process_entities = _process_entities_for_hypothesis(event.metric_anomalies, limit=2)
 
         parts = []
         if deploy_event:

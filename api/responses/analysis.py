@@ -32,6 +32,24 @@ from .slo import SloBurnAlert
 from .rca import RootCause
 
 
+class MetricSeriesDistributionStats(NpModel):
+    series_key: str = ""
+    metric_name: str
+    sample_count: int
+    mean: float
+    std: float
+    min: float
+    max: float
+    median: float
+    q1: float
+    q3: float
+    iqr: float
+    mad: float
+    skewness: float
+    kurtosis: float
+    coefficient_of_variation: float
+
+
 class AnalysisQuality(NpModel):
     anomaly_density: Dict[str, float] = Field(default_factory=dict)
     suppression_counts: Dict[str, int] = Field(default_factory=dict)
@@ -63,3 +81,4 @@ class AnalysisReport(NpModel):
     overall_severity: Severity
     summary: str
     quality: Optional[AnalysisQuality] = None
+    metric_series_statistics: List[MetricSeriesDistributionStats] = Field(default_factory=list)

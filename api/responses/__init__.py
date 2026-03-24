@@ -14,7 +14,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .analysis import AnalysisQuality, AnalysisReport
+    from .analysis import AnalysisQuality, AnalysisReport, MetricSeriesDistributionStats
     from .anomalies import MetricAnomaly
     from .base import NpModel
     from .jobs import (
@@ -44,6 +44,7 @@ _EXPORT_MODULES = {
     "BudgetStatus": ".slo",
     "AnalysisQuality": ".analysis",
     "AnalysisReport": ".analysis",
+    "MetricSeriesDistributionStats": ".analysis",
     "JobStatus": ".jobs",
     "AnalyzeConfigTemplateResponse": ".jobs",
     "AnalyzeJobCreateResponse": ".jobs",
@@ -66,6 +67,7 @@ __all__ = [
     "BudgetStatus",
     "AnalysisQuality",
     "AnalysisReport",
+    "MetricSeriesDistributionStats",
     "JobStatus",
     "AnalyzeConfigTemplateResponse",
     "AnalyzeJobCreateResponse",

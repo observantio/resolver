@@ -187,6 +187,8 @@ async def test_analyzer_run_non_empty_path_and_tenant_isolation(monkeypatch):
         assert report.root_causes[0].corroboration_summary
     assert captured["baseline_tenants"] == {"tenant-one"}
     assert captured["granger_tenants"] == {"tenant-one"}
+    assert report.metric_series_statistics
+    assert all(getattr(row, "series_key", "") for row in report.metric_series_statistics)
 
 
 @pytest.mark.asyncio
@@ -404,7 +406,7 @@ async def test_analyzer_retries_logs_with_global_selector_when_service_filter_re
     monkeypatch.setattr(analyzer, "get_registry", lambda: DummyRegistry())
 
     async def fake_process_metrics(provider, req, all_metric_queries, z_threshold, analysis_window_seconds):
-        return [], [], [], [], {}
+        return [], [], [], [], {}, []
 
     monkeypatch.setattr(analyzer, "_process_metrics", fake_process_metrics)
 
@@ -429,6 +431,7 @@ async def test_analyzer_caps_predictive_only_critical_to_medium(monkeypatch):
             [SimpleNamespace(severity=Severity.critical)],
             [SimpleNamespace(severity=Severity.critical)],
             {},
+            [],
         )
 
     monkeypatch.setattr(analyzer, "_process_metrics", fake_process_metrics)

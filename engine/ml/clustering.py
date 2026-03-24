@@ -20,16 +20,6 @@ from api.responses import MetricAnomaly
 from config import settings
 
 
-class DBSCANModel:
-    def fit_predict(self, data: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
-
-
-class DBSCANFactory:
-    def __call__(self, *, eps: float, min_samples: int, metric: str) -> DBSCANModel:
-        raise NotImplementedError
-
-
 @dataclass
 class AnomalyCluster:
     cluster_id: int
@@ -49,15 +39,11 @@ def _feature_matrix(anomalies: List[MetricAnomaly]) -> np.ndarray:
     return np.column_stack([ts_norm, val_norm])
 
 
-def cluster(
+def _cluster_one_metric(
     anomalies: List[MetricAnomaly],
-    eps: float | None = None,
-    min_samples: int | None = None,
+    eps: float,
+    min_samples: int,
 ) -> List[AnomalyCluster]:
-    if eps is None:
-        eps = settings.ml_cluster_eps
-    if min_samples is None:
-        min_samples = settings.ml_cluster_min_samples
     if len(anomalies) < min_samples:
         return []
 
@@ -87,6 +73,41 @@ def cluster(
         ))
 
     return sorted(result, key=lambda c: c.size, reverse=True)
+
+
+def cluster(
+    anomalies: List[MetricAnomaly],
+    eps: float | None = None,
+    min_samples: int | None = None,
+) -> List[AnomalyCluster]:
+    if not anomalies:
+        return []
+    if eps is None:
+        eps = settings.ml_cluster_eps
+    if min_samples is None:
+        min_samples = settings.ml_cluster_min_samples
+
+    by_metric: dict[str, List[MetricAnomaly]] = {}
+    for a in anomalies:
+        by_metric.setdefault(a.metric_name or "", []).append(a)
+
+    combined: List[AnomalyCluster] = []
+    next_cluster_id = 0
+    for _metric_key in sorted(by_metric.keys()):
+        part = _cluster_one_metric(by_metric[_metric_key], eps, min_samples)
+        for c in part:
+            combined.append(AnomalyCluster(
+                cluster_id=next_cluster_id,
+                members=c.members,
+                centroid_timestamp=c.centroid_timestamp,
+                centroid_value=c.centroid_value,
+                metric_names=c.metric_names,
+                size=c.size,
+                is_noise=c.is_noise,
+            ))
+            next_cluster_id += 1
+
+    return sorted(combined, key=lambda c: c.size, reverse=True)
 
 
 def _fallback_cluster(anomalies: List[MetricAnomaly]) -> List[AnomalyCluster]:

@@ -114,6 +114,49 @@ def test_generate_deduplicates_same_hypothesis_events():
     assert causes[0].corroboration_summary
 
 
+def test_hypothesis_prefers_high_impact_metrics_over_alphabetical():
+    """Cited metrics should follow severity/z-score, not string sort on series names."""
+    low_first_alpha = MetricAnomaly(
+        metric_id="a",
+        metric_name="process_cpu_time_seconds_total{process_pid=160}",
+        timestamp=1,
+        value=1,
+        change_type=ChangeType.spike,
+        z_score=1.0,
+        mad_score=1.0,
+        isolation_score=0.0,
+        expected_range=(0, 1),
+        severity=Severity.low,
+        description="",
+    )
+    critical_later_alpha = MetricAnomaly(
+        metric_id="b",
+        metric_name="process_cpu_time_seconds_total{process_pid=520145}",
+        timestamp=1,
+        value=9,
+        change_type=ChangeType.spike,
+        z_score=10.0,
+        mad_score=50.0,
+        isolation_score=0.0,
+        expected_range=(0, 1),
+        severity=Severity.critical,
+        description="",
+    )
+    ev = CorrelatedEvent(
+        window_start=1,
+        window_end=2,
+        metric_anomalies=[low_first_alpha, critical_later_alpha],
+        log_bursts=[],
+        service_latency=[],
+        confidence=0.8,
+    )
+    causes = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
+    assert causes
+    hyp = causes[0].hypothesis
+    assert "520145" in hyp
+    assert hyp.index("520145") < hyp.index("160")
+
+
 def test_generate_includes_process_entity_from_metric_labels():
     anomaly = MetricAnomaly(
         metric_id="m",
