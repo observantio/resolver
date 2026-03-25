@@ -74,7 +74,6 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
     from config import (
         LOGS_BACKEND_LOKI,
         METRICS_BACKEND_MIMIR,
-        METRICS_BACKEND_VICTORIAMETRICS,
         TRACES_BACKEND_TEMPO,
     )
 
@@ -92,13 +91,6 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
         checks.append((
             METRICS_BACKEND_MIMIR,
             f"{data_settings.mimir_url}/prometheus/api/v1/query?query=vector%281%29",
-            scope,
-            (200,),
-        ))
-    elif data_settings.metrics_backend == METRICS_BACKEND_VICTORIAMETRICS:
-        checks.append((
-            METRICS_BACKEND_VICTORIAMETRICS,
-            f"{data_settings.victoriametrics_url}/api/v1/label/__name__/values",
             scope,
             (200,),
         ))

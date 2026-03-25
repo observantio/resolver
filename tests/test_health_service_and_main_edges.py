@@ -136,7 +136,6 @@ async def test_main_background_helpers(monkeypatch):
         traces_backend=TRACES_BACKEND_TEMPO,
         loki_url="http://loki",
         mimir_url="http://mimir",
-        victoriametrics_url="http://vm",
         tempo_url="http://tempo",
         startup_timeout=3,
     )

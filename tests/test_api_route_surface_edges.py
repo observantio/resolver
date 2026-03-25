@@ -415,16 +415,15 @@ async def test_lifespan_runs_database_setup_and_cleanup(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_wait_for_all_bg_with_victoria_and_cleanup_loop(monkeypatch):
+async def test_wait_for_all_bg_with_mimir_and_cleanup_loop(monkeypatch):
     calls = []
 
     settings = types.SimpleNamespace(
         logs_backend="none",
-        metrics_backend="victoriametrics",
+        metrics_backend="mimir",
         traces_backend="none",
         loki_url="http://loki",
         mimir_url="http://mimir",
-        victoriametrics_url="http://vm",
         tempo_url="http://tempo",
         startup_timeout=2,
     )
@@ -453,8 +452,8 @@ async def test_wait_for_all_bg_with_victoria_and_cleanup_loop(monkeypatch):
 
     assert calls == [
         (
-            "victoriametrics",
-            "http://vm/api/v1/label/__name__/values",
+            "mimir",
+            "http://mimir/prometheus/api/v1/query?query=vector%281%29",
             {"X-Scope-OrgID": "tenant-a"},
             (200,),
         ),

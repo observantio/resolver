@@ -106,12 +106,10 @@ def test_datasource_settings_factory_and_retry(monkeypatch):
         loki_url="https://loki/",
         mimir_url="https://mimir/",
         tempo_url="https://tempo/",
-        victoriametrics_url="https://victoria/",
     )
     assert settings.loki_url == "https://loki"
     assert settings.mimir_url == "https://mimir"
     assert settings.tempo_url == "https://tempo"
-    assert settings.victoriametrics_url == "https://victoria"
 
     with pytest.raises(ValueError):
         DataSourceSettings(logs_backend="bad")
@@ -123,7 +121,6 @@ def test_datasource_settings_factory_and_retry(monkeypatch):
     monkeypatch.setattr("datasources.factory.LokiConnector", lambda url, tenant_id, timeout=None: ("loki", url, tenant_id, timeout))
     monkeypatch.setattr("datasources.factory.MimirConnector", lambda url, tenant_id, timeout=None: ("mimir", url, tenant_id, timeout))
     monkeypatch.setattr("datasources.factory.TempoConnector", lambda url, tenant_id, timeout=None: ("tempo", url, tenant_id, timeout))
-    monkeypatch.setattr("datasources.factory.VictoriaMetricsConnector", lambda url, tenant_id, timeout=None: ("victoria", url, tenant_id, timeout))
 
     cfg = type("Cfg", (), {
         "logs_backend": "loki",
@@ -132,18 +129,12 @@ def test_datasource_settings_factory_and_retry(monkeypatch):
         "loki_url": "https://loki",
         "mimir_url": "https://mimir",
         "tempo_url": "https://tempo",
-        "victoriametrics_url": "https://victoria",
         "connector_timeout": 5,
     })()
     assert DataSourceFactory.create_logs(cfg, "tenant")[0] == "loki"
     assert DataSourceFactory.create_metrics(cfg, "tenant")[0] == "mimir"
     assert DataSourceFactory.create_traces(cfg, "tenant")[0] == "tempo"
 
-    cfg.metrics_backend = "victoriametrics"
-    assert DataSourceFactory.create_metrics(cfg, "tenant")[0] == "victoria"
-    cfg.victoriametrics_url = None
-    with pytest.raises(ValueError):
-        DataSourceFactory.create_metrics(cfg, "tenant")
     cfg.metrics_backend = "bad"
     with pytest.raises(ValueError):
         DataSourceFactory.create_metrics(cfg, "tenant")

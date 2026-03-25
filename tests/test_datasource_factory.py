@@ -1,5 +1,5 @@
 """
-Datasource factory tests focused on validating that connector timeouts are correctly passed through from the factory to all underlying connectors, ensuring consistent timeout behavior across all data source interactions. This includes testing that the configured timeout value is correctly applied to Loki, Mimir, Tempo, and VictoriaMetrics connectors when they are instantiated by the factory.
+Datasource factory tests focused on validating that connector timeouts are correctly passed through from the factory to all underlying connectors, ensuring consistent timeout behavior across all data source interactions.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
@@ -15,7 +15,6 @@ from types import SimpleNamespace
 from config import (
     LOGS_BACKEND_LOKI,
     METRICS_BACKEND_MIMIR,
-    METRICS_BACKEND_VICTORIAMETRICS,
     TRACES_BACKEND_TEMPO,
 )
 from datasources.factory import DataSourceFactory
@@ -46,7 +45,6 @@ def test_factory_passes_connector_timeout_to_all_connectors(monkeypatch):
         traces_backend=TRACES_BACKEND_TEMPO,
         loki_url="http://loki",
         mimir_url="http://mimir",
-        victoriametrics_url="http://victoria",
         tempo_url="http://tempo",
         connector_timeout=42,
     )
@@ -55,21 +53,3 @@ def test_factory_passes_connector_timeout_to_all_connectors(monkeypatch):
     assert DataSourceFactory.create_metrics(cfg, "tenant")[1] == 42
     assert DataSourceFactory.create_traces(cfg, "tenant")[1] == 42
     assert captured == {"logs": 42, "metrics": 42, "traces": 42}
-
-
-def test_factory_passes_timeout_to_victoria_connector(monkeypatch):
-    captured: dict[str, int] = {}
-
-    def fake_victoria(url, tenant_id, timeout=None, headers=None):
-        captured["victoria"] = timeout
-        return ("victoria", timeout)
-
-    monkeypatch.setattr("datasources.factory.VictoriaMetricsConnector", fake_victoria)
-
-    cfg = SimpleNamespace(
-        metrics_backend=METRICS_BACKEND_VICTORIAMETRICS,
-        victoriametrics_url="http://victoria",
-        connector_timeout=13,
-    )
-    assert DataSourceFactory.create_metrics(cfg, "tenant")[1] == 13
-    assert captured["victoria"] == 13

@@ -59,7 +59,6 @@ BLEND_ALPHA: float = float(os.getenv("BLEND_ALPHA", "0.1"))
 
 LOGS_BACKEND_LOKI = "loki"
 METRICS_BACKEND_MIMIR = "mimir"
-METRICS_BACKEND_VICTORIAMETRICS = "victoriametrics"
 TRACES_BACKEND_TEMPO = "tempo"
 
 
@@ -71,7 +70,6 @@ RESOLVER_LOGS_LOKI_BATCH_SIZE = int(os.getenv("RESOLVER_LOGS_LOKI_BATCH_SIZE", "
 
 RESOLVER_METRICS_BACKEND = os.getenv("RESOLVER_METRICS_BACKEND", METRICS_BACKEND_MIMIR).lower()
 RESOLVER_METRICS_MIMIR_URL = os.getenv("RESOLVER_METRICS_MIMIR_URL", "http://mimir:9009").rstrip("/")
-RESOLVER_METRICS_VICTORIAMETRICS_URL = os.getenv("RESOLVER_METRICS_VICTORIAMETRICS_URL", "").rstrip("/")
 
 RESOLVER_TRACES_BACKEND = os.getenv("RESOLVER_TRACES_BACKEND", TRACES_BACKEND_TEMPO).lower()
 RESOLVER_TRACES_TEMPO_URL = os.getenv("RESOLVER_TRACES_TEMPO_URL", "http://tempo:3200").rstrip("/")
@@ -184,9 +182,6 @@ class Settings(BaseSettings):
 
     metrics_backend: str = RESOLVER_METRICS_BACKEND
     mimir_url: str = RESOLVER_METRICS_MIMIR_URL
-    victoriametrics_url: Optional[str] = (
-        RESOLVER_METRICS_VICTORIAMETRICS_URL or None
-    )
 
     traces_backend: str = RESOLVER_TRACES_BACKEND
     tempo_url: str = RESOLVER_TRACES_TEMPO_URL

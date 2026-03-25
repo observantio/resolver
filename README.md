@@ -143,7 +143,6 @@ RESOLVER_TRACES_BACKEND=tempo
 ```env
 RESOLVER_LOGS_LOKI_URL=http://loki:3100
 RESOLVER_METRICS_MIMIR_URL=http://mimir:9009
-RESOLVER_METRICS_VICTORIAMETRICS_URL=
 RESOLVER_TRACES_TEMPO_URL=http://tempo:3200
 ```
 
@@ -254,4 +253,3 @@ Common issues:
 Licensed under the Apache License 2.0.
 
 Preserve the existing attribution and notice headers in redistributed copies.
-

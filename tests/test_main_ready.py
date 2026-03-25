@@ -37,7 +37,6 @@ async def test_wait_for_all_bg_sets_backend_ready_false_on_partial_failure(monke
         traces_backend = TRACES_BACKEND_TEMPO
         loki_url = "http://loki"
         mimir_url = "http://mimir"
-        victoriametrics_url = "http://victoriametrics"
         tempo_url = "http://tempo"
         startup_timeout = 1
 

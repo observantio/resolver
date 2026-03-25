@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from connectors.loki import LokiConnector
 from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
-from connectors.victoria import VictoriaMetricsConnector
 from datasources.base import BaseConnector
 from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTimeout
 from datasources.helpers import fetch_json, fetch_text
@@ -135,20 +134,17 @@ async def test_specific_connectors_build_expected_requests(monkeypatch):
     monkeypatch.setattr("connectors.loki.query_backend_json", fake_query_backend_json)
     monkeypatch.setattr("connectors.mimir.query_backend_json", fake_query_backend_json)
     monkeypatch.setattr("connectors.tempo.query_backend_json", fake_query_backend_json)
-    monkeypatch.setattr("connectors.victoria.query_backend_json", fake_query_backend_json)
     monkeypatch.setattr("connectors.mimir.fetch_text", fake_fetch_text)
 
     loki = LokiConnector("https://loki", "tenant")
     mimir = MimirConnector("https://mimir", "tenant")
     tempo = TempoConnector("https://tempo", "tenant")
-    victoria = VictoriaMetricsConnector("https://victoria", "tenant")
 
     assert LokiConnector._normalize_query("") == '{service=~".+"}'
     assert await loki.query_range("{app=~\".*\"}", 1, 2, limit=100) == {"path": "/loki/api/v1/query_range", "params": {"query": '{app=~".+"}', "start": 1, "end": 2, "limit": 100}}
     assert await mimir.scrape() == "metrics"
     assert await mimir.query_range("up", 1, 2, "60s") == {"path": "/prometheus/api/v1/query_range", "params": {"query": "up", "start": 1, "end": 2, "step": "60s"}}
     assert await tempo.query_range({"service.name": "api"}, 1, 2, limit=5) == {"path": "/api/search", "params": {"start": 1, "end": 2, "service.name": "api", "limit": 5}}
-    assert await victoria.query_range("up", 1, 2, "60s") == {"path": "/api/v1/query_range", "params": {"query": "up", "start": 1, "end": 2, "step": "60s"}}
 
 
 def _set_security_defaults() -> None:

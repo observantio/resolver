@@ -44,7 +44,6 @@ _NON_OVERRIDABLE_SETTINGS = {
     "loki_batch_size",
     "metrics_backend",
     "mimir_url",
-    "victoriametrics_url",
     "traces_backend",
     "tempo_url",
     "connector_timeout",

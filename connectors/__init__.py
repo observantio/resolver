@@ -1,5 +1,5 @@
 """
-Connectors for Resolver to interact with various data sources like Mimir, Tempo, and VictoriaMetrics.
+Connectors for Resolver to interact with data sources like Mimir, Loki, and Tempo.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 

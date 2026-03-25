@@ -13,7 +13,6 @@ from __future__ import annotations
 from connectors.loki import LokiConnector
 from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
-from connectors.victoria import VictoriaMetricsConnector
 from datasources.base import LogsConnector, MetricsConnector, TracesConnector
 from datasources.data_config import DataSourceSettings
 
@@ -28,14 +27,10 @@ class DataSourceFactory:
 
     @staticmethod
     def create_metrics(config: DataSourceSettings, tenant_id: str) -> MetricsConnector:
-        from config import METRICS_BACKEND_MIMIR, METRICS_BACKEND_VICTORIAMETRICS
+        from config import METRICS_BACKEND_MIMIR
 
         if config.metrics_backend == METRICS_BACKEND_MIMIR:
             return MimirConnector(config.mimir_url, tenant_id, timeout=config.connector_timeout)
-        if config.metrics_backend == METRICS_BACKEND_VICTORIAMETRICS:
-            if config.victoriametrics_url is None:
-                raise ValueError("VictoriaMetrics URL is not configured")
-            return VictoriaMetricsConnector(config.victoriametrics_url, tenant_id, timeout=config.connector_timeout)
         raise ValueError("Unsupported metrics backend")
 
     @staticmethod
