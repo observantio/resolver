@@ -67,7 +67,6 @@ async def wait_for(
 
 
 async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
-    global _backend_ready, _backend_status
     scope = {"X-Scope-OrgID": tenant_id}
     checks: list[tuple[str, str, dict[str, str], tuple[int, ...]]] = []
 
@@ -125,11 +124,11 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
             _backend_status[name] = "ready"
 
     if all_ok:
-        _backend_ready = True
+        globals()["_backend_ready"] = True
         log.info("All backends ready — engine fully operational")
     else:
         log.warning("Some backends failed readiness — partial functionality available")
-        _backend_ready = False
+        globals()["_backend_ready"] = False
 
 
 @asynccontextmanager

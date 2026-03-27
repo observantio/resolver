@@ -38,7 +38,7 @@ def _headers(payload):
 
 def _set_security_defaults():
     settings.expected_service_token = "internal-service-token"
-    settings.context_verify_key = "very-secret-signing-key"
+    settings.context_verify_key = "very-secret-signing-key-with-32-bytes"
     settings.context_issuer = "watchdog-main"
     settings.context_audience = "resolver"
     settings.context_algorithms = "HS256"

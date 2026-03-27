@@ -47,23 +47,22 @@ def retry(
 
             return cast(F, async_wrapper)
 
-        else:
-            sync_func = cast(Callable[..., object], func)
+        sync_func = cast(Callable[..., object], func)
 
-            @wraps(func)
-            def sync_wrapper(*args: object, **kwargs: object) -> object:
-                _attempt = 0
-                _delay = delay
-                while True:
-                    try:
-                        return sync_func(*args, **kwargs)
-                    except exceptions:
-                        _attempt += 1
-                        if _attempt >= attempts:
-                            raise
-                        time.sleep(_delay)
-                        _delay *= backoff
+        @wraps(func)
+        def sync_wrapper(*args: object, **kwargs: object) -> object:
+            _attempt = 0
+            _delay = delay
+            while True:
+                try:
+                    return sync_func(*args, **kwargs)
+                except exceptions:
+                    _attempt += 1
+                    if _attempt >= attempts:
+                        raise
+                    time.sleep(_delay)
+                    _delay *= backoff
 
-            return cast(F, sync_wrapper)
+        return cast(F, sync_wrapper)
 
     return decorator

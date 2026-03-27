@@ -165,10 +165,7 @@ class TenantRegistry:
         self, tenant_id: str, signal: Union[Signal, str], was_correct: bool
     ) -> TenantState:
         if isinstance(signal, str):
-            try:
-                signal = Signal(signal)
-            except ValueError:
-                raise
+            signal = Signal(signal)
         state = await self.get_state(tenant_id)
         state.update_weight(signal, was_correct)
         await weight_store.save(tenant_id, state.weights_serializable, state.update_count)

@@ -149,7 +149,7 @@ async def test_specific_connectors_build_expected_requests(monkeypatch):
 
 def _set_security_defaults() -> None:
     security_service.settings.expected_service_token = "internal-service-token"
-    security_service.settings.context_verify_key = "very-secret-signing-key"
+    security_service.settings.context_verify_key = "very-secret-signing-key-with-32-bytes"
     security_service.settings.context_issuer = "watchdog-main"
     security_service.settings.context_audience = "resolver"
     security_service.settings.context_algorithms = "HS256"
@@ -193,7 +193,7 @@ def test_security_service_remaining_edges(monkeypatch):
     security_service.settings.context_verify_key = ""
     with pytest.raises(HTTPException):
         security_service._decode_context_token("x")
-    security_service.settings.context_verify_key = "very-secret-signing-key"
+    security_service.settings.context_verify_key = "very-secret-signing-key-with-32-bytes"
     with pytest.raises(HTTPException):
         security_service._decode_context_token("bad-token")
 

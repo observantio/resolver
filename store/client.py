@@ -68,12 +68,10 @@ except (ImportError, AttributeError, TypeError, ValueError):
 
 
 async def get_redis() -> Optional[RedisClientProtocol]:
-    global _redis_client, _using_fallback, _retry_after_monotonic
-
     if _redis_client is not None:
         return _redis_client
     if time.monotonic() < _retry_after_monotonic:
-        _using_fallback = True
+        globals()["_using_fallback"] = True
         return None
 
     async with _init_lock:
@@ -88,16 +86,16 @@ async def get_redis() -> Optional[RedisClientProtocol]:
                 socket_timeout=0.5,
             ))
             await asyncio.wait_for(client.ping(), timeout=0.5)
-            _redis_client = client
-            _retry_after_monotonic = 0.0
-            _using_fallback = False
+            globals()["_redis_client"] = client
+            globals()["_retry_after_monotonic"] = 0.0
+            globals()["_using_fallback"] = False
             log.info("Redis connected: %s", REDIS_URL)
             return _redis_client
         except (ImportError, ModuleNotFoundError, RedisError, asyncio.TimeoutError, OSError) as exc:
-            _retry_after_monotonic = time.monotonic() + max(0.0, _REDIS_RETRY_COOLDOWN_SECONDS)
+            globals()["_retry_after_monotonic"] = time.monotonic() + max(0.0, _REDIS_RETRY_COOLDOWN_SECONDS)
             if not _using_fallback:
                 log.warning("Redis unavailable (%s) — using in-memory fallback", exc)
-                _using_fallback = True
+                globals()["_using_fallback"] = True
             return None
 
 

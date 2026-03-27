@@ -20,13 +20,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from db_models import Base
 
 logger = logging.getLogger(__name__)
 _engine: Optional[Engine] = None
-_session_factory: Optional[sessionmaker[Session]] = None
 
 
 def _ensure_postgres_database_exists(database_url: str) -> None:
@@ -57,11 +56,10 @@ def _ensure_postgres_database_exists(database_url: str) -> None:
 
 
 def init_database(database_url: str) -> None:
-    global _engine, _session_factory
     if _engine is not None:
         return
     _ensure_postgres_database_exists(database_url)
-    _engine = create_engine(
+    engine = create_engine(
         database_url,
         pool_pre_ping=True,
         pool_size=int(os.getenv("RESOLVER_DB_POOL_SIZE", "10")),
@@ -69,14 +67,14 @@ def init_database(database_url: str) -> None:
         pool_timeout=int(os.getenv("RESOLVER_DB_POOL_TIMEOUT", "30")),
         pool_recycle=int(os.getenv("RESOLVER_DB_POOL_RECYCLE", "1800")),
     )
-    _session_factory = sessionmaker(bind=_engine, autocommit=False, autoflush=False, expire_on_commit=False)
+    globals()["_engine"] = engine
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    if _session_factory is None:
+    if _engine is None:
         raise RuntimeError("Database not initialized")
-    session = _session_factory()
+    session = Session(bind=_engine, autoflush=False, expire_on_commit=False)
     try:
         yield session
         session.commit()
@@ -107,8 +105,6 @@ def connection_test() -> bool:
 
 
 def dispose_database() -> None:
-    global _engine, _session_factory
-    _session_factory = None
     if _engine is not None:
         _engine.dispose()
-        _engine = None
+        globals()["_engine"] = None
