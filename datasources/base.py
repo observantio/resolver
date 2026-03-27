@@ -33,6 +33,9 @@ class BaseConnector(ABC):
     def _headers(self) -> dict[str, str]:
         return {**self.headers, "X-Scope-OrgID": self.tenant_id}
 
+    def request_headers(self) -> dict[str, str]:
+        return self._headers()
+
     async def aclose(self) -> None:
         await self.client.aclose()
 

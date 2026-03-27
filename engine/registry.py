@@ -47,8 +47,11 @@ def _coerce_weights(raw: object) -> Dict[Signal, float]:
         signal: Signal | None = None
         if isinstance(key, Signal):
             signal = key
-        elif isinstance(key, str) and key in Signal._value2member_map_:
-            signal = Signal(key)
+        elif isinstance(key, str):
+            try:
+                signal = Signal(key)
+            except ValueError:
+                signal = None
         if signal is None:
             continue
 

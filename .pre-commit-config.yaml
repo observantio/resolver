@@ -20,7 +20,7 @@ repos:
           RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
           RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
-          mypy --config-file "$PWD/mypy.ini" "$@"' --
+          mypy --config-file "$PWD/pyproject.toml" "$@"' --
         files: \.py$
         exclude: (^|/)tests/
         types: [python]
@@ -35,7 +35,7 @@ repos:
           RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
           RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
           PYTHONPATH=$PWD
-          pylint --rcfile "$PWD/.pylintrc" "$@"' --
+          pylint --rcfile "$PWD/pyproject.toml" "$@"' --
         files: \.py$
         exclude: (^|/)tests/
         types: [python]

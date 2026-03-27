@@ -10,6 +10,15 @@ All notable changes to this project will be documented in this file.
 - Deleted the dedicated VictoriaMetrics connector module (`connectors/victoria.py`) and updated connector exports/import paths accordingly.
 - Updated resolver bootstrap and analysis configuration paths to align with the post-Victoria connector set.
 - Refreshed and expanded resolver test coverage across API surface, datasource factory/helpers, connector security, health checks, and main readiness for the new connector baseline.
+- Updated pre-commit type/lint hooks to use `pyproject.toml` for mypy and pylint configuration.
+- Switched resolver DB session management to a session-factory pattern with stricter initialization validation and disposal cleanup.
+- Added connector header compatibility support by preferring `request_headers()` while keeping `_headers()` as legacy fallback.
+- Improved engine utility robustness in weight coercion and latency timestamp normalization paths.
+
+### Fixed
+
+- Fixed connector/query helper compatibility for connectors exposing only `request_headers()`.
+- Fixed DB-session error-path handling when `_session_factory` is non-callable or missing.
 
 ## [v0.0.1] - 2026-03-20
 

@@ -43,6 +43,27 @@ async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
     assert captured["url"] == "https://backend/query"
     assert captured["headers"] == {"X-Scope-OrgID": "tenant"}
 
+    connector_with_request_headers = type(
+        "C2",
+        (),
+        {
+            "base_url": "https://backend",
+            "timeout": 12,
+            "client": object(),
+            "request_headers": lambda self: {"X-From": "request_headers"},
+        },
+    )()
+    assert await query_backend_json(
+        connector_with_request_headers,
+        path="/query2",
+        params={"q": "up"},
+        invalid_msg="bad",
+        timeout_msg="slow",
+        unavailable_msg="down",
+    ) == {"ok": True}
+    assert captured["url"] == "https://backend/query2"
+    assert captured["headers"] == {"X-From": "request_headers"}
+
     baseline = baseline_store.Baseline(mean=1.0, std=2.0, lower=-5.0, upper=7.0, seasonal_mean=3.0, sample_count=4)
     raw = baseline_store._to_json(baseline)
     restored = baseline_store._from_json(raw)
@@ -176,3 +197,14 @@ def test_datasource_settings_factory_and_retry(monkeypatch):
     monkeypatch.setattr("datasources.retry.asyncio.sleep", fake_asyncio_sleep)
     assert asyncio.run(flaky_async()) == "ok"
     assert async_sleep_calls == [0.5]
+
+
+def test_base_connector_request_headers_passthrough() -> None:
+    from datasources.base import BaseConnector
+
+    class _DummyConnector(BaseConnector):
+        pass
+
+    connector = _DummyConnector("tenant-a", "https://example", headers={"A": "b"})
+    assert connector.request_headers() == {"A": "b", "X-Scope-OrgID": "tenant-a"}
+    asyncio.run(connector.aclose())

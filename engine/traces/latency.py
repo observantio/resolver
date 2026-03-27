@@ -31,24 +31,24 @@ class LatencyBucket(TypedDict):
 
 
 def _to_seconds(value: object) -> float | None:
+    if value is None or not isinstance(value, (int, float, str)):
+        return None
     try:
-        if value is None:
-            return None
-        if not isinstance(value, (int, float, str)):
-            return None
         numeric = float(value)
     except (TypeError, ValueError):
         return None
     if not np.isfinite(numeric):
         return None
+
     # Heuristic conversion for unix timestamps encoded in ns/us/ms.
+    converted = numeric
     if numeric > 1e17:
-        return numeric / 1e9
-    if numeric > 1e14:
-        return numeric / 1e6
-    if numeric > 1e11:
-        return numeric / 1e3
-    return numeric
+        converted = numeric / 1e9
+    elif numeric > 1e14:
+        converted = numeric / 1e6
+    elif numeric > 1e11:
+        converted = numeric / 1e3
+    return converted
 
 
 def _trace_window_seconds(trace: JSONDict, duration_ms: float) -> tuple[float | None, float | None]:

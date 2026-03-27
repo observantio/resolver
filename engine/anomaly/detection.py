@@ -102,6 +102,7 @@ def _cusum_changepoints(arr: np.ndarray, threshold: float | None = None) -> np.n
 
 
 def _change_type(value: float, mean: float, z: float, trend_slope: float) -> ChangeType:
+    _ = (value, mean)
     if abs(trend_slope) > settings.anomaly_drift_slope_threshold:
         return ChangeType.drift
     if z > 0:

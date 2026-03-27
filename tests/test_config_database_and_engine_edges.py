@@ -354,3 +354,18 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
     database_module.dispose_database()
     assert database_module._engine is None
     assert database_module._session_factory is None
+
+
+def test_database_session_factory_must_be_callable() -> None:
+    database_module.dispose_database()
+
+    class _DisposableEngine:
+        def dispose(self) -> None:
+            return None
+
+    database_module._engine = _DisposableEngine()
+    database_module._session_factory = object()
+    with pytest.raises(RuntimeError, match="Database not initialized"):
+        with database_module.get_db_session():
+            pass
+    database_module.dispose_database()

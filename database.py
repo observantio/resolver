@@ -14,18 +14,19 @@ import os
 import re
 import logging
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Callable, Iterator, Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from db_models import Base
 
 logger = logging.getLogger(__name__)
 _engine: Optional[Engine] = None
+_session_factory: Optional[Callable[[], Session]] = None
 
 
 def _ensure_postgres_database_exists(database_url: str) -> None:
@@ -56,7 +57,7 @@ def _ensure_postgres_database_exists(database_url: str) -> None:
 
 
 def init_database(database_url: str) -> None:
-    if _engine is not None:
+    if _engine is not None and _session_factory is not None:
         return
     _ensure_postgres_database_exists(database_url)
     engine = create_engine(
@@ -67,14 +68,19 @@ def init_database(database_url: str) -> None:
         pool_timeout=int(os.getenv("RESOLVER_DB_POOL_TIMEOUT", "30")),
         pool_recycle=int(os.getenv("RESOLVER_DB_POOL_RECYCLE", "1800")),
     )
+    session_factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     globals()["_engine"] = engine
+    globals()["_session_factory"] = session_factory
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    if _engine is None:
+    if _engine is None or _session_factory is None:
         raise RuntimeError("Database not initialized")
-    session = Session(bind=_engine, autoflush=False, expire_on_commit=False)
+    session_factory = _session_factory
+    if not callable(session_factory):
+        raise RuntimeError("Database not initialized")
+    session = session_factory()
     try:
         yield session
         session.commit()
@@ -105,6 +111,7 @@ def connection_test() -> bool:
 
 
 def dispose_database() -> None:
+    globals()["_session_factory"] = None
     if _engine is not None:
         _engine.dispose()
         globals()["_engine"] = None

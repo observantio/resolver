@@ -15,7 +15,7 @@ class _BackendConnector(Protocol):
     timeout: int
     client: httpx.AsyncClient
 
-    def _headers(self) -> dict[str, str]:
+    def request_headers(self) -> dict[str, str]:
         ...
 
 
@@ -28,10 +28,17 @@ async def query_backend_json(
     timeout_msg: str,
     unavailable_msg: str,
 ) -> JSONDict:
+    headers_getter = getattr(connector, "request_headers", None)
+    if callable(headers_getter):
+        headers = headers_getter()
+    else:
+        legacy_headers_getter = getattr(connector, "_headers", None)
+        headers = legacy_headers_getter() if callable(legacy_headers_getter) else {}
+
     return await fetch_json(
         f"{connector.base_url}{path}",
         params=params,
-        headers=connector._headers(),
+        headers=headers,
         timeout=connector.timeout,
         client=connector.client,
         invalid_msg=invalid_msg,

@@ -247,6 +247,7 @@ def generate(
     graph: Optional[DependencyGraph] = None,
     event_registry: Optional[EventRegistry] = None,
 ) -> List[RootCause]:
+    _ = (metric_anomalies, log_bursts, service_latency)
     causes: List[RootCause] = []
     deployments = event_registry.list_all() if event_registry else []
 
