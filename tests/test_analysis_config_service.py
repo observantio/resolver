@@ -5,6 +5,7 @@ Tests for per-job RCA YAML configuration overrides.
 from __future__ import annotations
 
 import copy
+from typing import Any, cast
 
 import pytest
 from fastapi import HTTPException
@@ -20,7 +21,7 @@ from services.analysis_config_service import (
 
 
 def test_analysis_config_template_response_contains_defaults() -> None:
-    template = analysis_config_service.template_response()
+    template = cast(dict[str, Any], analysis_config_service.template_response())
 
     assert template["version"] == ANALYSIS_CONFIG_VERSION
     assert template["file_name"] == "resolver-rca-defaults.yaml"

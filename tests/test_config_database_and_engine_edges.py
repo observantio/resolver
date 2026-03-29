@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+from typing import Any, cast
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -363,8 +364,8 @@ def test_database_session_factory_must_be_callable() -> None:
         def dispose(self) -> None:
             return None
 
-    database_module._engine = _DisposableEngine()
-    database_module._session_factory = object()
+    database_module._engine = cast(Any, _DisposableEngine())
+    database_module._session_factory = cast(Any, object())
     with pytest.raises(RuntimeError, match="Database not initialized"):
         with database_module.get_db_session():
             pass
