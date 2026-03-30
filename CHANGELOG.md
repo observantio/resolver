@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.0.2] - 2026-03-30
+
 ### Changed
 
 - Removed VictoriaMetrics connector support from resolver runtime wiring, including datasource factory/provider paths and related configuration flow.
