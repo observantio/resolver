@@ -181,7 +181,8 @@ RESOLVER_SSL_KEYFILE=
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+pip install -e ".[dev]"
 ```
 
 ### 2. Configure environment
@@ -237,7 +238,7 @@ For multi-service development, prefer the root mono-repo `docker-compose.yml` an
 - `datasources/` abstracts the configured backends.
 - `engine/` contains the detection, correlation, causal, RCA, and topology logic.
 - `store/` contains caching and persistence helpers used by the analysis engine.
-- `pyproject.toml` is the developer-facing entry point for pytest, coverage, and mypy defaults; existing ini files remain in place for compatibility with current hooks.
+- `pyproject.toml` is the developer-facing entry point for pytest, coverage, and mypy defaults.
 
 ## Troubleshooting
 
