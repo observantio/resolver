@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Updated resolver contract-testing scaffolding to align with middleware-based OpenAPI customization flow used across services.
+- Resolved validation gaps identified by Schemathesis and fuzz-style tests; the provided verification scripts now run fully green (100%).
 
 ## [v0.0.2] - 2026-03-30
 
