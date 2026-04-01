@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Added resolver OpenAPI middleware package initialization to support shared middleware discovery/import paths.
+
+### Changed
+
+- Updated resolver contract-testing scaffolding to align with middleware-based OpenAPI customization flow used across services.
+
 ## [v0.0.2] - 2026-03-30
 
 ### Changed
