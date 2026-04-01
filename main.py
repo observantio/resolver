@@ -25,6 +25,7 @@ from fastapi.responses import JSONResponse
 
 from api.routes import router
 from api.routes.common import close_providers
+from middleware.openapi import install_custom_openapi
 from services.security_service import InternalAuthMiddleware
 from config import Settings, settings
 from database import init_database, init_db, dispose_database
@@ -170,6 +171,7 @@ app = FastAPI(
 
 app.add_middleware(InternalAuthMiddleware)
 app.include_router(router, prefix="/api/v1")
+install_custom_openapi(app)
 
 
 @app.get("/api/v1/ready", tags=["health"], summary="Backend readiness probe")
