@@ -9,28 +9,40 @@ paths:
     get:
       tags:
       - Health
-      summary: Health
-      operationId: health_api_v1_health_get
+      summary: Service health probe
+      description: Checks resolver health and reports the active store backend.
+      operationId: health
       responses:
         '200':
-          description: Successful Response
+          description: Current resolver health state and store backend in use.
           content:
             application/json:
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
                 type: object
-                title: Response Health Api V1 Health Get
+                title: Response Health
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/analyze:
     post:
       tags:
       - RCA
       summary: Full cross-signal RCA
-      operationId: analyze_api_v1_analyze_post
+      operationId: analyze
       requestBody:
         content:
           application/json:
@@ -39,7 +51,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -52,33 +64,59 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/analyze/config-template:
     get:
       tags:
       - RCA
       summary: Default RCA YAML config template
-      operationId: analyze_config_template_api_v1_analyze_config_template_get
+      operationId: analyze_config_template
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AnalyzeConfigTemplateResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/anomalies/metrics:
     post:
       tags:
       - Metrics
       summary: Metric Anomalies
-      operationId: metric_anomalies_api_v1_anomalies_metrics_post
+      operationId: metric_anomalies
       requestBody:
         content:
           application/json:
@@ -87,14 +125,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/MetricAnomaly'
                 type: array
-                title: Response Metric Anomalies Api V1 Anomalies Metrics Post
+                title: Response Metric Anomalies
         '422':
           description: Validation Error
           content:
@@ -103,16 +141,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/changepoints:
     post:
       tags:
       - Metrics
       summary: Metric Changepoints
-      operationId: metric_changepoints_api_v1_changepoints_post
+      operationId: metric_changepoints
       requestBody:
         content:
           application/json:
@@ -121,14 +174,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/ChangePoint'
                 type: array
-                title: Response Metric Changepoints Api V1 Changepoints Post
+                title: Response Metric Changepoints
         '422':
           description: Validation Error
           content:
@@ -137,16 +190,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/anomalies/logs/patterns:
     post:
       tags:
       - Logs
       summary: Log Patterns
-      operationId: log_patterns_api_v1_anomalies_logs_patterns_post
+      operationId: log_patterns
       requestBody:
         content:
           application/json:
@@ -155,14 +223,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/LogPattern'
                 type: array
-                title: Response Log Patterns Api V1 Anomalies Logs Patterns Post
+                title: Response Log Patterns
         '422':
           description: Validation Error
           content:
@@ -171,16 +239,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/anomalies/logs/bursts:
     post:
       tags:
       - Logs
       summary: Log Bursts
-      operationId: log_bursts_api_v1_anomalies_logs_bursts_post
+      operationId: log_bursts
       requestBody:
         content:
           application/json:
@@ -189,14 +272,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/LogBurst'
                 type: array
-                title: Response Log Bursts Api V1 Anomalies Logs Bursts Post
+                title: Response Log Bursts
         '422':
           description: Validation Error
           content:
@@ -205,16 +288,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/anomalies/traces:
     post:
       tags:
       - Traces
       summary: Trace Anomalies
-      operationId: trace_anomalies_api_v1_anomalies_traces_post
+      operationId: trace_anomalies
       requestBody:
         content:
           application/json:
@@ -223,14 +321,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 items:
                   $ref: '#/components/schemas/ServiceLatency'
                 type: array
-                title: Response Trace Anomalies Api V1 Anomalies Traces Post
+                title: Response Trace Anomalies
         '422':
           description: Validation Error
           content:
@@ -239,16 +337,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/correlate:
     post:
       tags:
       - Correlation
       summary: Cross-signal temporal correlation without full RCA
-      operationId: correlate_signals_api_v1_correlate_post
+      operationId: correlate_signals
       requestBody:
         content:
           application/json:
@@ -257,14 +370,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
                 type: object
-                title: Response Correlate Signals Api V1 Correlate Post
+                title: Response Correlate Signals
         '422':
           description: Validation Error
           content:
@@ -273,16 +386,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/slo/burn:
     post:
       tags:
       - SLO
       summary: SLO error budget burn rate
-      operationId: slo_burn_api_v1_slo_burn_post
+      operationId: slo_burn
       requestBody:
         content:
           application/json:
@@ -291,14 +419,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
                 type: object
-                title: Response Slo Burn Api V1 Slo Burn Post
+                title: Response Slo Burn
         '422':
           description: Validation Error
           content:
@@ -307,16 +435,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/topology/blast-radius:
     post:
       tags:
       - Topology
       summary: Service dependency blast radius from traces
-      operationId: blast_radius_api_v1_topology_blast_radius_post
+      operationId: blast_radius
       requestBody:
         content:
           application/json:
@@ -325,14 +468,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
                 type: object
-                title: Response Blast Radius Api V1 Topology Blast Radius Post
+                title: Response Blast Radius
         '422':
           description: Validation Error
           content:
@@ -341,25 +484,32 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/events/deployment:
     post:
       tags:
       - Events
       summary: Register a deployment event for RCA correlation
-      operationId: register_deployment_api_v1_events_deployment_post
-      parameters:
-      - name: tenant_id
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Tenant Id
+      operationId: register_deployment
+      parameters: []
       requestBody:
         required: true
         content:
@@ -368,14 +518,14 @@ paths:
               $ref: '#/components/schemas/DeploymentEventRequest'
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   type: string
-                title: Response Register Deployment Api V1 Events Deployment Post
+                title: Response Register Deployment
         '422':
           description: Validation Error
           content:
@@ -384,16 +534,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/events/deployments:
     get:
       tags:
       - Events
       summary: List registered deployment events for a tenant
-      operationId: list_deployments_api_v1_events_deployments_get
+      operationId: list_deployments
       parameters:
       - name: tenant_id
         in: query
@@ -403,7 +568,7 @@ paths:
           title: Tenant Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -412,7 +577,7 @@ paths:
                   type: object
                   additionalProperties:
                     $ref: '#/components/schemas/JSONValue'
-                title: Response List Deployments Api V1 Events Deployments Get
+                title: Response List Deployments
         '422':
           description: Validation Error
           content:
@@ -421,13 +586,24 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
     delete:
       tags:
       - Events
       summary: Clear all deployment events for a tenant
-      operationId: clear_deployments_api_v1_events_deployments_delete
+      operationId: clear_deployments
       parameters:
       - name: tenant_id
         in: query
@@ -437,14 +613,14 @@ paths:
           title: Tenant Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   type: string
-                title: Response Clear Deployments Api V1 Events Deployments Delete
+                title: Response Clear Deployments
         '422':
           description: Validation Error
           content:
@@ -453,16 +629,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/forecast/trajectory:
     post:
       tags:
       - Forecast
       summary: Time-to-failure and degradation trajectory per metric
-      operationId: metric_trajectory_api_v1_forecast_trajectory_post
+      operationId: metric_trajectory
       parameters:
       - name: limit
         in: query
@@ -481,14 +672,14 @@ paths:
               $ref: '#/components/schemas/CorrelateRequest'
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
-                title: Response Metric Trajectory Api V1 Forecast Trajectory Post
+                title: Response Metric Trajectory
         '422':
           description: Validation Error
           content:
@@ -497,16 +688,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/causal/granger:
     post:
       tags:
       - Causal
       summary: Granger causality between metrics (bounded by default)
-      operationId: granger_causality_api_v1_causal_granger_post
+      operationId: granger_causality
       parameters:
       - name: limit
         in: query
@@ -550,14 +756,14 @@ paths:
               $ref: '#/components/schemas/CorrelateRequest'
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
-                title: Response Granger Causality Api V1 Causal Granger Post
+                title: Response Granger Causality
         '422':
           description: Validation Error
           content:
@@ -566,16 +772,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/causal/bayesian:
     post:
       tags:
       - Causal
       summary: Bayesian posterior over RCA categories given observed signals
-      operationId: bayesian_rca_api_v1_causal_bayesian_post
+      operationId: bayesian_rca
       requestBody:
         content:
           application/json:
@@ -584,14 +805,14 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
                 type: object
-                title: Response Bayesian Rca Api V1 Causal Bayesian Post
+                title: Response Bayesian Rca
         '422':
           description: Validation Error
           content:
@@ -600,16 +821,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/ml/weights/feedback:
     post:
       tags:
       - ML
       summary: Submit signal correctness feedback
-      operationId: signal_feedback_api_v1_ml_weights_feedback_post
+      operationId: signal_feedback
       parameters:
       - name: tenant_id
         in: query
@@ -631,14 +867,14 @@ paths:
           title: Was Correct
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
-                title: Response Signal Feedback Api V1 Ml Weights Feedback Post
+                title: Response Signal Feedback
         '422':
           description: Validation Error
           content:
@@ -647,16 +883,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/ml/weights:
     get:
       tags:
       - ML
       summary: Current adaptive signal weights for a tenant
-      operationId: get_signal_weights_api_v1_ml_weights_get
+      operationId: get_signal_weights
       parameters:
       - name: tenant_id
         in: query
@@ -666,14 +917,14 @@ paths:
           title: Tenant Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
-                title: Response Get Signal Weights Api V1 Ml Weights Get
+                title: Response Get Signal Weights
         '422':
           description: Validation Error
           content:
@@ -682,14 +933,25 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/ml/weights/reset:
     post:
       tags:
       - ML
       summary: Reset adaptive weights to defaults for a tenant
-      operationId: reset_signal_weights_api_v1_ml_weights_reset_post
+      operationId: reset_signal_weights
       parameters:
       - name: tenant_id
         in: query
@@ -699,14 +961,14 @@ paths:
           title: Tenant Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/JSONValue'
-                title: Response Reset Signal Weights Api V1 Ml Weights Reset Post
+                title: Response Reset Signal Weights
         '422':
           description: Validation Error
           content:
@@ -715,16 +977,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/jobs/analyze:
     post:
       tags:
       - RCA Jobs
       summary: Create Job
-      operationId: create_job_api_v1_jobs_analyze_post
+      operationId: create_job
       requestBody:
         content:
           application/json:
@@ -733,7 +1010,7 @@ paths:
         required: true
       responses:
         '202':
-          description: Successful Response
+          description: Accepted
           content:
             application/json:
               schema:
@@ -746,16 +1023,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/jobs:
     get:
       tags:
       - RCA Jobs
       summary: List Jobs
-      operationId: list_jobs_api_v1_jobs_get
+      operationId: list_jobs
       parameters:
       - name: status
         in: query
@@ -784,7 +1076,7 @@ paths:
           title: Cursor
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -797,14 +1089,25 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/jobs/{job_id}:
     get:
       tags:
       - RCA Jobs
       summary: Get Job
-      operationId: get_job_api_v1_jobs__job_id__get
+      operationId: get_job
       parameters:
       - name: job_id
         in: path
@@ -814,7 +1117,7 @@ paths:
           title: Job Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -827,16 +1130,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/jobs/{job_id}/result:
     get:
       tags:
       - RCA Jobs
       summary: Get Job Result
-      operationId: get_job_result_api_v1_jobs__job_id__result_get
+      operationId: get_job_result
       parameters:
       - name: job_id
         in: path
@@ -846,7 +1164,7 @@ paths:
           title: Job Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -859,16 +1177,31 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/reports/{report_id}:
     get:
       tags:
       - RCA Jobs
       summary: Get Report
-      operationId: get_report_api_v1_reports__report_id__get
+      operationId: get_report
       parameters:
       - name: report_id
         in: path
@@ -878,7 +1211,7 @@ paths:
           title: Report Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -891,15 +1224,30 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
     delete:
       tags:
       - RCA Jobs
       summary: Delete Report
-      operationId: delete_report_api_v1_reports__report_id__delete
+      operationId: delete_report
       parameters:
       - name: report_id
         in: path
@@ -909,7 +1257,7 @@ paths:
           title: Report Id
       responses:
         '200':
-          description: Successful Response
+          description: OK
           content:
             application/json:
               schema:
@@ -922,28 +1270,209 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - ServiceToken: []
+        ContextBearer: []
   /api/v1/ready:
     get:
       tags:
-      - health
+      - Health
       summary: Backend readiness probe
-      operationId: ready_api_v1_ready_get
+      description: Returns readiness state for configured backend dependencies.
+      operationId: ready
       responses:
         '200':
-          description: Successful Response
+          description: Resolver readiness state and per-backend status details.
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: '#/components/schemas/ResolverReadyResponse'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolverReadyResponse'
 components:
   schemas:
-    AnalysisQuality: {}
-    AnalysisReport: {}
+    AnalysisQuality:
+      properties:
+        anomaly_density:
+          additionalProperties:
+            type: number
+          type: object
+          title: Anomaly Density
+        suppression_counts:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Suppression Counts
+        gating_profile:
+          type: string
+          title: Gating Profile
+        confidence_calibration_version:
+          type: string
+          title: Confidence Calibration Version
+      type: object
+      required:
+      - gating_profile
+      - confidence_calibration_version
+      title: AnalysisQuality
+    AnalysisReport:
+      properties:
+        tenant_id:
+          type: string
+          title: Tenant Id
+        start:
+          type: integer
+          title: Start
+        end:
+          type: integer
+          title: End
+        duration_seconds:
+          type: integer
+          title: Duration Seconds
+        metric_anomalies:
+          items:
+            $ref: '#/components/schemas/MetricAnomaly'
+          type: array
+          title: Metric Anomalies
+        log_bursts:
+          items:
+            $ref: '#/components/schemas/LogBurst'
+          type: array
+          title: Log Bursts
+        log_patterns:
+          items:
+            $ref: '#/components/schemas/LogPattern'
+          type: array
+          title: Log Patterns
+        service_latency:
+          items:
+            $ref: '#/components/schemas/ServiceLatency'
+          type: array
+          title: Service Latency
+        error_propagation:
+          items:
+            $ref: '#/components/schemas/ErrorPropagation'
+          type: array
+          title: Error Propagation
+        slo_alerts:
+          items:
+            $ref: '#/components/schemas/SloBurnAlert'
+          type: array
+          title: Slo Alerts
+          default: []
+        root_causes:
+          items:
+            $ref: '#/components/schemas/ApiRootCause'
+          type: array
+          title: Root Causes
+        ranked_causes:
+          items:
+            $ref: '#/components/schemas/RankedCause'
+          type: array
+          title: Ranked Causes
+          default: []
+        change_points:
+          items:
+            $ref: '#/components/schemas/ChangePoint'
+          type: array
+          title: Change Points
+          default: []
+        log_metric_links:
+          items:
+            $ref: '#/components/schemas/LogMetricLink'
+          type: array
+          title: Log Metric Links
+          default: []
+        forecasts:
+          items:
+            $ref: '#/components/schemas/TrajectoryForecast'
+          type: array
+          title: Forecasts
+          default: []
+        degradation_signals:
+          items:
+            $ref: '#/components/schemas/DegradationSignal'
+          type: array
+          title: Degradation Signals
+          default: []
+        anomaly_clusters:
+          items:
+            $ref: '#/components/schemas/AnomalyCluster'
+          type: array
+          title: Anomaly Clusters
+          default: []
+        granger_results:
+          items:
+            $ref: '#/components/schemas/GrangerResult'
+          type: array
+          title: Granger Results
+          default: []
+        bayesian_scores:
+          items:
+            $ref: '#/components/schemas/BayesianScore'
+          type: array
+          title: Bayesian Scores
+          default: []
+        analysis_warnings:
+          items:
+            type: string
+          type: array
+          title: Analysis Warnings
+          default: []
+        overall_severity:
+          $ref: '#/components/schemas/Severity'
+        summary:
+          type: string
+          title: Summary
+        quality:
+          anyOf:
+          - $ref: '#/components/schemas/AnalysisQuality'
+          - type: 'null'
+        metric_series_statistics:
+          items:
+            $ref: '#/components/schemas/MetricSeriesDistributionStats'
+          type: array
+          title: Metric Series Statistics
+      type: object
+      required:
+      - tenant_id
+      - start
+      - end
+      - duration_seconds
+      - metric_anomalies
+      - log_bursts
+      - log_patterns
+      - service_latency
+      - error_propagation
+      - root_causes
+      - overall_severity
+      - summary
+      title: AnalysisReport
     AnalyzeConfigTemplateResponse:
       properties:
         version:
@@ -982,6 +1511,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         services:
           items:
             type: string
@@ -1103,6 +1633,7 @@ components:
           title: Requested By
         result:
           anyOf:
+          - $ref: '#/components/schemas/AnalysisReport'
           - additionalProperties:
               $ref: '#/components/schemas/JSONValue'
             type: object
@@ -1206,6 +1737,7 @@ components:
           title: Requested By
         result:
           anyOf:
+          - $ref: '#/components/schemas/AnalysisReport'
           - additionalProperties:
               $ref: '#/components/schemas/JSONValue'
             type: object
@@ -1234,6 +1766,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         services:
           items:
             type: string
@@ -1292,6 +1825,112 @@ components:
       - start
       - end
       title: AnalyzeRequest
+    AnomalyCluster:
+      properties:
+        cluster_id:
+          type: integer
+          title: Cluster Id
+        members:
+          items:
+            $ref: '#/components/schemas/MetricAnomaly'
+          type: array
+          title: Members
+        centroid_timestamp:
+          type: number
+          title: Centroid Timestamp
+        centroid_value:
+          type: number
+          title: Centroid Value
+        metric_names:
+          items:
+            type: string
+          type: array
+          title: Metric Names
+        size:
+          type: integer
+          title: Size
+        is_noise:
+          type: boolean
+          title: Is Noise
+          default: false
+      type: object
+      required:
+      - cluster_id
+      - members
+      - centroid_timestamp
+      - centroid_value
+      - metric_names
+      - size
+      title: AnomalyCluster
+    ApiRootCause:
+      properties:
+        hypothesis:
+          type: string
+          title: Hypothesis
+        confidence:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Confidence
+        evidence:
+          items:
+            type: string
+          type: array
+          title: Evidence
+        contributing_signals:
+          items:
+            $ref: '#/components/schemas/Signal'
+          type: array
+          title: Contributing Signals
+        recommended_action:
+          type: string
+          title: Recommended Action
+        severity:
+          $ref: '#/components/schemas/Severity'
+        corroboration_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Corroboration Summary
+        suppression_diagnostics:
+          additionalProperties:
+            $ref: '#/components/schemas/JSONValue'
+          type: object
+          title: Suppression Diagnostics
+        selection_score_components:
+          additionalProperties:
+            type: number
+          type: object
+          title: Selection Score Components
+      type: object
+      required:
+      - hypothesis
+      - confidence
+      - evidence
+      - contributing_signals
+      - recommended_action
+      - severity
+      title: ApiRootCause
+    BayesianScore:
+      properties:
+        category:
+          $ref: '#/components/schemas/RcaCategory'
+        posterior:
+          type: number
+          title: Posterior
+        prior:
+          type: number
+          title: Prior
+        likelihood:
+          type: number
+          title: Likelihood
+      type: object
+      required:
+      - category
+      - posterior
+      - prior
+      - likelihood
+      title: BayesianScore
     ChangePoint:
       properties:
         index:
@@ -1351,6 +1990,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         threshold_sigma:
           type: number
           maximum: 10.0
@@ -1379,6 +2019,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         services:
           items:
             type: string
@@ -1408,6 +2049,72 @@ components:
       - start
       - end
       title: CorrelateRequest
+    DegradationSignal:
+      properties:
+        metric_name:
+          type: string
+          title: Metric Name
+        degradation_rate:
+          type: number
+          title: Degradation Rate
+        volatility:
+          type: number
+          title: Volatility
+        trend:
+          type: string
+          title: Trend
+        window_seconds:
+          type: number
+          title: Window Seconds
+        severity:
+          $ref: '#/components/schemas/Severity'
+        is_accelerating:
+          type: boolean
+          title: Is Accelerating
+      type: object
+      required:
+      - metric_name
+      - degradation_rate
+      - volatility
+      - trend
+      - window_seconds
+      - severity
+      - is_accelerating
+      title: DegradationSignal
+    DeploymentEvent:
+      properties:
+        service:
+          type: string
+          title: Service
+        timestamp:
+          type: number
+          title: Timestamp
+        version:
+          type: string
+          title: Version
+        author:
+          type: string
+          title: Author
+          default: ''
+        environment:
+          type: string
+          title: Environment
+          default: production
+        source:
+          type: string
+          title: Source
+          default: unknown
+        metadata:
+          additionalProperties:
+            type: string
+          type: object
+          title: Metadata
+      type: object
+      required:
+      - service
+      - timestamp
+      - version
+      title: DeploymentEvent
     DeploymentEventRequest:
       properties:
         service:
@@ -1446,7 +2153,61 @@ components:
       - version
       - tenant_id
       title: DeploymentEventRequest
-    ErrorPropagation: {}
+    ErrorPropagation:
+      properties:
+        source_service:
+          type: string
+          title: Source Service
+        affected_services:
+          items:
+            type: string
+          type: array
+          title: Affected Services
+        error_rate:
+          type: number
+          title: Error Rate
+        severity:
+          $ref: '#/components/schemas/Severity'
+      type: object
+      required:
+      - source_service
+      - affected_services
+      - error_rate
+      - severity
+      title: ErrorPropagation
+    GrangerResult:
+      properties:
+        cause_metric:
+          type: string
+          title: Cause Metric
+        effect_metric:
+          type: string
+          title: Effect Metric
+        max_lag:
+          type: integer
+          title: Max Lag
+        f_statistic:
+          type: number
+          title: F Statistic
+        p_value:
+          type: number
+          title: P Value
+        is_causal:
+          type: boolean
+          title: Is Causal
+        strength:
+          type: number
+          title: Strength
+      type: object
+      required:
+      - cause_metric
+      - effect_metric
+      - max_lag
+      - f_statistic
+      - p_value
+      - is_causal
+      - strength
+      title: GrangerResult
     HTTPValidationError:
       properties:
         detail:
@@ -1456,6 +2217,52 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    HypothesisRootCause:
+      properties:
+        hypothesis:
+          type: string
+          title: Hypothesis
+        confidence:
+          type: number
+          title: Confidence
+        severity:
+          $ref: '#/components/schemas/Severity'
+        category:
+          $ref: '#/components/schemas/RcaCategory'
+        evidence:
+          items:
+            type: string
+          type: array
+          title: Evidence
+        contributing_signals:
+          items:
+            type: string
+          type: array
+          title: Contributing Signals
+        affected_services:
+          items:
+            type: string
+          type: array
+          title: Affected Services
+        recommended_action:
+          type: string
+          title: Recommended Action
+          default: ''
+        deployment:
+          anyOf:
+          - $ref: '#/components/schemas/DeploymentEvent'
+          - type: 'null'
+        corroboration_summary:
+          type: string
+          title: Corroboration Summary
+          default: ''
+      type: object
+      required:
+      - hypothesis
+      - confidence
+      - severity
+      - category
+      title: HypothesisRootCause
     JSONValue:
       anyOf:
       - type: string
@@ -1479,8 +2286,99 @@ components:
       - cancelled
       - deleted
       title: JobStatus
-    LogBurst: {}
-    LogPattern: {}
+    LogBurst:
+      properties:
+        window_start:
+          type: number
+          title: Window Start
+        window_end:
+          type: number
+          title: Window End
+        rate_per_second:
+          type: number
+          title: Rate Per Second
+        baseline_rate:
+          type: number
+          title: Baseline Rate
+        ratio:
+          type: number
+          title: Ratio
+        severity:
+          $ref: '#/components/schemas/Severity'
+      type: object
+      required:
+      - window_start
+      - window_end
+      - rate_per_second
+      - baseline_rate
+      - ratio
+      - severity
+      title: LogBurst
+    LogMetricLink:
+      properties:
+        metric_name:
+          type: string
+          title: Metric Name
+        metric_timestamp:
+          type: number
+          title: Metric Timestamp
+        log_stream:
+          type: string
+          title: Log Stream
+        log_burst_start:
+          type: number
+          title: Log Burst Start
+        lag_seconds:
+          type: number
+          title: Lag Seconds
+        strength:
+          type: number
+          title: Strength
+      type: object
+      required:
+      - metric_name
+      - metric_timestamp
+      - log_stream
+      - log_burst_start
+      - lag_seconds
+      - strength
+      title: LogMetricLink
+    LogPattern:
+      properties:
+        pattern:
+          type: string
+          title: Pattern
+        count:
+          type: integer
+          title: Count
+        first_seen:
+          type: number
+          title: First Seen
+        last_seen:
+          type: number
+          title: Last Seen
+        rate_per_minute:
+          type: number
+          title: Rate Per Minute
+        entropy:
+          type: number
+          title: Entropy
+        severity:
+          $ref: '#/components/schemas/Severity'
+        sample:
+          type: string
+          title: Sample
+      type: object
+      required:
+      - pattern
+      - count
+      - first_seen
+      - last_seen
+      - rate_per_minute
+      - entropy
+      - severity
+      - sample
+      title: LogPattern
     LogRequest:
       properties:
         tenant_id:
@@ -1502,7 +2400,62 @@ components:
       - start
       - end
       title: LogRequest
-    MetricAnomaly: {}
+    MetricAnomaly:
+      properties:
+        metric_name:
+          type: string
+          title: Metric Name
+        timestamp:
+          type: number
+          title: Timestamp
+        value:
+          type: number
+          title: Value
+        change_type:
+          $ref: '#/components/schemas/ChangeType'
+        z_score:
+          type: number
+          title: Z Score
+        mad_score:
+          type: number
+          title: Mad Score
+        isolation_score:
+          type: number
+          title: Isolation Score
+        expected_range:
+          prefixItems:
+          - type: number
+          - type: number
+          type: array
+          maxItems: 2
+          minItems: 2
+          title: Expected Range
+        severity:
+          $ref: '#/components/schemas/Severity'
+        description:
+          type: string
+          title: Description
+        iqr_score:
+          type: number
+          title: Iqr Score
+          default: 0.0
+        tukey_outlier_class:
+          type: string
+          title: Tukey Outlier Class
+          default: none
+      type: object
+      required:
+      - metric_name
+      - timestamp
+      - value
+      - change_type
+      - z_score
+      - mad_score
+      - isolation_score
+      - expected_range
+      - severity
+      - description
+      title: MetricAnomaly
     MetricRequest:
       properties:
         tenant_id:
@@ -1521,6 +2474,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         sensitivity:
           anyOf:
           - type: number
@@ -1536,7 +2490,93 @@ components:
       - start
       - end
       title: MetricRequest
-    MetricSeriesDistributionStats: {}
+    MetricSeriesDistributionStats:
+      properties:
+        series_key:
+          type: string
+          title: Series Key
+          default: ''
+        metric_name:
+          type: string
+          title: Metric Name
+        sample_count:
+          type: integer
+          title: Sample Count
+        mean:
+          type: number
+          title: Mean
+        std:
+          type: number
+          title: Std
+        min:
+          type: number
+          title: Min
+        max:
+          type: number
+          title: Max
+        median:
+          type: number
+          title: Median
+        q1:
+          type: number
+          title: Q1
+        q3:
+          type: number
+          title: Q3
+        iqr:
+          type: number
+          title: Iqr
+        mad:
+          type: number
+          title: Mad
+        skewness:
+          type: number
+          title: Skewness
+        kurtosis:
+          type: number
+          title: Kurtosis
+        coefficient_of_variation:
+          type: number
+          title: Coefficient Of Variation
+      type: object
+      required:
+      - metric_name
+      - sample_count
+      - mean
+      - std
+      - min
+      - max
+      - median
+      - q1
+      - q3
+      - iqr
+      - mad
+      - skewness
+      - kurtosis
+      - coefficient_of_variation
+      title: MetricSeriesDistributionStats
+    RankedCause:
+      properties:
+        root_cause:
+          $ref: '#/components/schemas/HypothesisRootCause'
+        ml_score:
+          type: number
+          title: Ml Score
+        final_score:
+          type: number
+          title: Final Score
+        feature_importance:
+          additionalProperties:
+            type: number
+          type: object
+          title: Feature Importance
+      type: object
+      required:
+      - root_cause
+      - ml_score
+      - final_score
+      - feature_importance
+      title: RankedCause
     RcaCategory:
       type: string
       enum:
@@ -1548,8 +2588,72 @@ components:
       - slo_burn
       - unknown
       title: RcaCategory
-    RootCause: {}
-    ServiceLatency: {}
+    ResolverReadyResponse:
+      properties:
+        ready:
+          type: boolean
+          title: Ready
+          description: Whether resolver dependencies are currently ready.
+        backends:
+          additionalProperties:
+            type: string
+          type: object
+          title: Backends
+          description: Per-backend readiness details keyed by backend name.
+      type: object
+      required:
+      - ready
+      title: ResolverReadyResponse
+    ServiceLatency:
+      properties:
+        service:
+          type: string
+          title: Service
+        operation:
+          type: string
+          title: Operation
+        p50_ms:
+          type: number
+          title: P50 Ms
+        p95_ms:
+          type: number
+          title: P95 Ms
+        p99_ms:
+          type: number
+          title: P99 Ms
+        apdex:
+          type: number
+          title: Apdex
+        error_rate:
+          type: number
+          title: Error Rate
+        sample_count:
+          type: integer
+          title: Sample Count
+        severity:
+          $ref: '#/components/schemas/Severity'
+        window_start:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Window Start
+        window_end:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Window End
+      type: object
+      required:
+      - service
+      - operation
+      - p50_ms
+      - p95_ms
+      - p99_ms
+      - apdex
+      - error_rate
+      - sample_count
+      - severity
+      title: ServiceLatency
     Severity:
       type: string
       enum:
@@ -1566,6 +2670,34 @@ components:
       - traces
       - events
       title: Signal
+    SloBurnAlert:
+      properties:
+        service:
+          type: string
+          title: Service
+        window_label:
+          type: string
+          title: Window Label
+        error_rate:
+          type: number
+          title: Error Rate
+        burn_rate:
+          type: number
+          title: Burn Rate
+        budget_consumed_pct:
+          type: number
+          title: Budget Consumed Pct
+        severity:
+          $ref: '#/components/schemas/Severity'
+      type: object
+      required:
+      - service
+      - window_label
+      - error_rate
+      - burn_rate
+      - budget_consumed_pct
+      - severity
+      title: SloBurnAlert
     SloRequest:
       properties:
         tenant_id:
@@ -1584,6 +2716,7 @@ components:
           type: string
           title: Step
           default: 15s
+          pattern: ^[1-9][0-9]*[smhd]$
         target_availability:
           type: number
           maximum: 1.0
@@ -1660,6 +2793,44 @@ components:
       - start
       - end
       title: TraceRequest
+    TrajectoryForecast:
+      properties:
+        metric_name:
+          type: string
+          title: Metric Name
+        current_value:
+          type: number
+          title: Current Value
+        slope_per_second:
+          type: number
+          title: Slope Per Second
+        predicted_value_at_horizon:
+          type: number
+          title: Predicted Value At Horizon
+        time_to_threshold_seconds:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Time To Threshold Seconds
+        breach_threshold:
+          type: number
+          title: Breach Threshold
+        confidence:
+          type: number
+          title: Confidence
+        severity:
+          $ref: '#/components/schemas/Severity'
+      type: object
+      required:
+      - metric_name
+      - current_value
+      - slope_per_second
+      - predicted_value_at_horizon
+      - time_to_threshold_seconds
+      - breach_threshold
+      - confidence
+      - severity
+      title: TrajectoryForecast
     ValidationError:
       properties:
         loc:
@@ -1686,3 +2857,24 @@ components:
       - msg
       - type
       title: ValidationError
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          title: Detail
+      required:
+      - detail
+      title: ErrorResponse
+  securitySchemes:
+    ServiceToken:
+      type: apiKey
+      in: header
+      name: x-service-token
+      description: Internal service token required for resolver API access.
+    ContextBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Context JWT carrying tenant and user scope for internal calls.
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
