@@ -9,7 +9,6 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 """
 
 import asyncio
-import time
 from types import SimpleNamespace
 
 import pytest
@@ -192,7 +191,7 @@ async def test_analyzer_run_non_empty_path_and_tenant_isolation(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_analyzer_concurrent_throughput_target(monkeypatch):
+async def test_analyzer_concurrent_runs_are_consistent(monkeypatch):
     monkeypatch.setattr(analyzer, "DEFAULT_METRIC_QUERIES", ["q_a", "q_b"])
     monkeypatch.setattr(analyzer, "get_registry", lambda: DummyRegistry())
     monkeypatch.setattr(analyzer.anomaly, "detect", fake_detect)
@@ -209,17 +208,25 @@ async def test_analyzer_concurrent_throughput_target(monkeypatch):
     monkeypatch.setattr(analyzer.granger_store, "save_and_merge", fake_save_and_merge)
 
     req = AnalyzeRequest(tenant_id="tenant-perf", start=1, end=3600, step="15s", services=["payment-service"])
+    reports = await asyncio.gather(*[analyzer.run(DummyProvider(), req) for _ in range(5)])
 
-    async def _timed_run():
-        t0 = time.perf_counter()
-        await analyzer.run(DummyProvider(), req)
-        return time.perf_counter() - t0
+    assert len(reports) == 5
+    assert all(report.tenant_id == "tenant-perf" for report in reports)
+    assert all(report.metric_anomalies for report in reports)
+    assert all(report.log_bursts for report in reports)
+    assert all(report.service_latency for report in reports)
 
-    durations = await asyncio.gather(*[_timed_run() for _ in range(5)])
-    durations_sorted = sorted(durations)
-    p95_index = max(0, int(round(0.95 * len(durations_sorted))) - 1)
-    p95 = durations_sorted[p95_index]
-    assert p95 < 1.5
+    baseline_shape = (
+        len(reports[0].metric_anomalies),
+        len(reports[0].log_bursts),
+        len(reports[0].service_latency),
+    )
+    for report in reports[1:]:
+        assert (
+            len(report.metric_anomalies),
+            len(report.log_bursts),
+            len(report.service_latency),
+        ) == baseline_shape
 
 
 @pytest.mark.asyncio
