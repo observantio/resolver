@@ -17,7 +17,12 @@ from custom_types.json import JSONDict
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    summary="Service health probe",
+    description="Checks resolver health and reports the active store backend.",
+    response_description="Current resolver health state and store backend in use.",
+)
 @handle_exceptions
 async def health() -> JSONDict:
     await get_redis()

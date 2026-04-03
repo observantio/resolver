@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from custom_types.json import JSONDict
 
@@ -21,7 +21,9 @@ from engine.enums import Severity, Signal
 from .base import NpModel
 
 
-class RootCause(NpModel):
+class ApiRootCause(NpModel):
+    model_config = ConfigDict(title="ApiRootCause")
+
     hypothesis: str
     confidence: float = Field(ge=0.0, le=1.0)
     evidence: List[str]
@@ -31,3 +33,7 @@ class RootCause(NpModel):
     corroboration_summary: Optional[str] = None
     suppression_diagnostics: JSONDict = Field(default_factory=dict)
     selection_score_components: Dict[str, float] = Field(default_factory=dict)
+
+
+# Backward-compatible alias for existing imports.
+RootCause = ApiRootCause

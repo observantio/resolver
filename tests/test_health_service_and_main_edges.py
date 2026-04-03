@@ -15,6 +15,7 @@ import types
 
 import httpx
 import pytest
+from fastapi.routing import APIRoute
 
 from api.responses import JobStatus
 from api.routes import health as health_route
@@ -158,3 +159,18 @@ async def test_ready_endpoint_success_payload():
     response = await app_main.ready()
     assert response.status_code == 200
     assert b'"ready":true' in response.body
+
+
+def test_openapi_server_and_operation_id_helpers(monkeypatch):
+    monkeypatch.setattr(app_main.settings, "ssl_enabled", False)
+    monkeypatch.setattr(app_main.settings, "host", "127.0.0.1")
+    monkeypatch.setattr(app_main.settings, "port", 4322)
+    servers = app_main._openapi_servers()
+    assert servers[0] == {"url": "/"}
+    assert servers[1]["url"].startswith("http://127.0.0.1:4322")
+
+    async def _endpoint() -> None:
+        return None
+
+    route = APIRoute("/jobs", _endpoint, methods=["GET"], name="list_jobs")
+    assert app_main._generate_operation_id(route) == "list_jobs"

@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 import re
 from typing import List, Optional
 
+from pydantic import ConfigDict
 from api.responses import (
     MetricAnomaly, LogBurst, LogPattern,
     ServiceLatency, ErrorPropagation,
@@ -44,7 +45,9 @@ _PROCESS_PID_KEYS = ("process.pid", "process_pid", "pid")
 
 
 @dataclass
-class RootCause:
+class HypothesisRootCause:
+    __pydantic_config__ = ConfigDict(title="HypothesisRootCause")
+
     hypothesis: str
     confidence: float
     severity: Severity
@@ -55,6 +58,10 @@ class RootCause:
     recommended_action: str = ""
     deployment: Optional[DeploymentEvent] = None
     corroboration_summary: str = ""
+
+
+# Backward-compatible alias for existing imports.
+RootCause = HypothesisRootCause
 
 
 def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:

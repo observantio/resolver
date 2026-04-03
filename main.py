@@ -21,7 +21,9 @@ from typing import AsyncIterator, Dict, Optional
 import httpx
 import uvicorn
 from fastapi import FastAPI
+from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from api.routes import router
 from api.routes.common import close_providers
@@ -41,6 +43,42 @@ log = logging.getLogger(__name__)
 
 _backend_ready = False
 _backend_status: Dict[str, str] = {}
+OPENAPI_TAGS = [
+    {"name": "Health", "description": "Service and backend readiness endpoints."},
+    {"name": "RCA", "description": "Root cause analysis workflows and templates."},
+    {"name": "Metrics", "description": "Metric anomaly and changepoint analysis."},
+    {"name": "Logs", "description": "Log pattern and burst analysis."},
+    {"name": "Traces", "description": "Trace latency and error propagation analysis."},
+    {"name": "Correlation", "description": "Cross-signal temporal correlation endpoints."},
+    {"name": "SLO", "description": "Service-level objective error budget analysis."},
+    {"name": "Topology", "description": "Service dependency and blast radius analysis."},
+    {"name": "Events", "description": "Deployment event ingestion and lifecycle endpoints."},
+    {"name": "Forecast", "description": "Degradation trajectory and time-to-failure forecasting."},
+    {"name": "Causal", "description": "Causality analysis across metric and signal features."},
+    {"name": "ML", "description": "Adaptive signal-weight model controls and feedback."},
+    {"name": "RCA Jobs", "description": "Asynchronous RCA job creation, polling, and reports."},
+]
+
+
+def _openapi_servers() -> list[dict[str, str]]:
+    scheme = "https" if settings.ssl_enabled else "http"
+    explicit = f"{scheme}://{settings.host}:{settings.port}"
+    servers = [{"url": "/"}]
+    if settings.host and settings.port:
+        servers.append({"url": explicit})
+    return servers
+
+
+def _generate_operation_id(route: APIRoute) -> str:
+    return route.name
+
+
+class ResolverReadyResponse(BaseModel):
+    ready: bool = Field(description="Whether resolver dependencies are currently ready.")
+    backends: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-backend readiness details keyed by backend name.",
+    )
 
 
 async def wait_for(
@@ -166,6 +204,17 @@ app = FastAPI(
     title="Resolver Analysis Engine",
     description="AI-powered root cause analysis and anomaly detection over logs, metrics, and traces.",
     version="1.0.0",
+    generate_unique_id_function=_generate_operation_id,
+    servers=_openapi_servers(),
+    contact={
+        "name": "Resolver Maintainers",
+        "url": "https://github.com/stefankhacks/watchdog",
+    },
+    license_info={
+        "name": "Apache 2.0",
+        "identifier": "Apache-2.0",
+    },
+    openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
 )
 
@@ -174,7 +223,17 @@ app.include_router(router, prefix="/api/v1")
 install_custom_openapi(app)
 
 
-@app.get("/api/v1/ready", tags=["health"], summary="Backend readiness probe")
+@app.get(
+    "/api/v1/ready",
+    tags=["Health"],
+    summary="Backend readiness probe",
+    description="Returns readiness state for configured backend dependencies.",
+    response_description="Resolver readiness state and per-backend status details.",
+    responses={
+        200: {"model": ResolverReadyResponse},
+        503: {"model": ResolverReadyResponse, "description": "Service Unavailable"},
+    },
+)
 async def ready() -> JSONResponse:
     code = 200 if _backend_ready else 503
     return JSONResponse(
