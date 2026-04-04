@@ -1,10 +1,31 @@
-# Resolver
+<div align="center">
 
-Resolver is the internal analysis engine in the Observantio platform. It takes logs, metrics, and traces from the configured backends, runs anomaly and correlation logic across them, and returns RCA-oriented results that can be consumed synchronously or as background jobs.
+# Observantio's Resolver
 
-This service is not a generic dashboard backend. Its job is to answer questions like: what changed, where did it start, what correlated with it, what is the likely blast radius, and what does the evidence suggest as the most probable root cause.
+  <img src="assets/square.png" alt="Resolver square icon" width="150" />
 
-![Workflow of Resolver](assets/watchdog.png)
+  <p>
+    <img src="https://img.shields.io/badge/Signals-Logs%20%7C%20Metrics%20%7C%20Traces-1d4ed8?style=flat-square" alt="Signals" />
+    <img src="https://img.shields.io/badge/Service-Resolver-0f766e?style=flat-square" alt="Service" />
+    <img src="https://img.shields.io/badge/Focus-RCA%20%7C%20Correlation%20%7C%20Causality-7c3aed?style=flat-square" alt="Focus" />
+  </p>
+  <p>
+    <a href="https://github.com/observantio/watchdog/blob/main/README.md">
+      <img src="https://img.shields.io/badge/Control%20Plane-Watchdog-0f766e?style=flat-square&logo=github&logoColor=white" alt="Watchdog" />
+    </a>
+    <a href="https://github.com/observantio/watchdog/blob/main/USER%20GUIDE.md">
+      <img src="https://img.shields.io/badge/Operator%20Guide-Docs-16a34a?style=flat-square&logo=readthedocs&logoColor=white" alt="Docs" />
+    </a>
+  </p>
+</div>
+<div>
+  <p>
+    <strong>Cross-signal root cause analysis engine for observability investigations</strong>
+  </p>
+  <p>
+    Resolver is the internal analysis engine in the Observantio platform. It pulls evidence from logs, metrics, and traces, runs anomaly detection and correlation logic across those signals, and returns RCA-oriented answers that can be used synchronously or as background jobs.
+  </p>
+</div>
 
 ## What This Service Does
 
