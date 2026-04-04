@@ -3,9 +3,9 @@ OpenAPI customization wiring for the Resolver FastAPI app.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -136,9 +136,7 @@ def _ensure_standard_error_content(operation: dict[str, Any]) -> None:
             continue
         if isinstance(response.get("content"), dict):
             continue
-        response["content"] = {
-            "application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}
-        }
+        response["content"] = {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}
 
 
 def _ensure_operation_docs(path: str, method: str, operation: dict[str, Any]) -> None:

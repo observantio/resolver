@@ -3,9 +3,9 @@ Tests for metric-aware anomaly clustering.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -27,12 +27,12 @@ def _anomaly(
         metric_name=metric_name,
         timestamp=timestamp,
         value=value,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=1.0,
         mad_score=1.0,
         isolation_score=-0.1,
         expected_range=(0.0, 1.0),
-        severity=Severity.medium,
+        severity=Severity.MEDIUM,
         description="",
     )
 

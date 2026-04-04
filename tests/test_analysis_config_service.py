@@ -38,7 +38,7 @@ def test_prepare_request_applies_yaml_request_and_runtime_overrides() -> None:
         tenant_id="tenant-a",
         start=10,
         end=20,
-                config_yaml="""
+        config_yaml="""
 version: 1
 request:
     step: 30s

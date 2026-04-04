@@ -1,13 +1,13 @@
 """
-Degradation analysis logic for time series metrics, including trend detection, volatility measurement, and severity classification based on configured thresholds, to identify potential performance degradations in monitored systems.
+Degradation analysis logic for time series metrics, including trend detection, volatility measurement, and severity
+classification based on configured thresholds, to identify potential performance degradations in monitored systems.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
-
 
 from __future__ import annotations
 
@@ -90,13 +90,13 @@ def analyze(
     if rate > settings.forecast_degradation_threshold_critical or (
         rate > settings.forecast_degradation_threshold_high and acceleration > 0
     ):
-        sev = Severity.critical
+        sev = Severity.CRITICAL
     elif rate > settings.forecast_degradation_threshold_high:
-        sev = Severity.high
+        sev = Severity.HIGH
     elif rate > settings.forecast_degradation_threshold_medium:
-        sev = Severity.medium
+        sev = Severity.MEDIUM
     else:
-        sev = Severity.low
+        sev = Severity.LOW
 
     return DegradationSignal(
         metric_name=metric_name,

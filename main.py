@@ -3,9 +3,9 @@ Entry point for the Resolver Analysis Engine API server.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -41,8 +41,8 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-_backend_ready = False
-_backend_status: Dict[str, str] = {}
+_BACKEND_READY = False
+_BACKEND_STATUS: Dict[str, str] = {}
 OPENAPI_TAGS = [
     {"name": "Health", "description": "Service and backend readiness endpoints."},
     {"name": "RCA", "description": "Root cause analysis workflows and templates."},
@@ -117,39 +117,47 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
 
     # Logs
     if data_settings.logs_backend == LOGS_BACKEND_LOKI:
-        checks.append((
-            LOGS_BACKEND_LOKI,
-            f"{data_settings.loki_url}/loki/api/v1/labels",
-            scope,
-            (200, 404),
-        ))
+        checks.append(
+            (
+                LOGS_BACKEND_LOKI,
+                f"{data_settings.loki_url}/loki/api/v1/labels",
+                scope,
+                (200, 404),
+            )
+        )
 
     # Metrics
     if data_settings.metrics_backend == METRICS_BACKEND_MIMIR:
-        checks.append((
-            METRICS_BACKEND_MIMIR,
-            f"{data_settings.mimir_url}/prometheus/api/v1/query?query=vector%281%29",
-            scope,
-            (200,),
-        ))
+        checks.append(
+            (
+                METRICS_BACKEND_MIMIR,
+                f"{data_settings.mimir_url}/prometheus/api/v1/query?query=vector%281%29",
+                scope,
+                (200,),
+            )
+        )
 
     # Traces
     if data_settings.traces_backend == TRACES_BACKEND_TEMPO:
-        checks.append((
-            TRACES_BACKEND_TEMPO,
-            f"{data_settings.tempo_url}/api/echo",
-            scope,
-            (200,),
-        ))
+        checks.append(
+            (
+                TRACES_BACKEND_TEMPO,
+                f"{data_settings.tempo_url}/api/echo",
+                scope,
+                (200,),
+            )
+        )
 
     log.info("Backend readiness check starting (timeout=%ds) ...", data_settings.startup_timeout)
 
     for name, url, hdrs, ok in checks:
-        _backend_status[name] = "waiting"
+        _BACKEND_STATUS[name] = "waiting"
 
     results = await asyncio.gather(
-                *[wait_for(name, url, data_settings.startup_timeout, headers=hdrs, accept_status=ok)
-          for name, url, hdrs, ok in checks],
+        *[
+            wait_for(name, url, data_settings.startup_timeout, headers=hdrs, accept_status=ok)
+            for name, url, hdrs, ok in checks
+        ],
         return_exceptions=True,
     )
 
@@ -157,17 +165,17 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
     for (name, *_), result in zip(checks, results):
         if isinstance(result, Exception):
             log.error("%s failed readiness: %s", name, result)
-            _backend_status[name] = f"failed: {result}"
+            _BACKEND_STATUS[name] = f"failed: {result}"
             all_ok = False
         else:
-            _backend_status[name] = "ready"
+            _BACKEND_STATUS[name] = "ready"
 
     if all_ok:
-        globals()["_backend_ready"] = True
+        globals()["_BACKEND_READY"] = True
         log.info("All backends ready — engine fully operational")
     else:
         log.warning("Some backends failed readiness — partial functionality available")
-        globals()["_backend_ready"] = False
+        globals()["_BACKEND_READY"] = False
 
 
 @asynccontextmanager
@@ -235,10 +243,10 @@ install_custom_openapi(app)
     },
 )
 async def ready() -> JSONResponse:
-    code = 200 if _backend_ready else 503
+    code = 200 if _BACKEND_READY else 503
     return JSONResponse(
         status_code=code,
-        content={"ready": _backend_ready, "backends": _backend_status},
+        content={"ready": _BACKEND_READY, "backends": _BACKEND_STATUS},
     )
 
 

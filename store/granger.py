@@ -3,9 +3,9 @@ Granger causality test result storage and retrieval logic.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -53,6 +53,7 @@ def _coerce_float(value: object) -> float:
         return float(value)
     raise TypeError(f"Unsupported float value: {type(value).__name__}")
 
+
 def _pair_key(cause: str, effect: str) -> str:
     return f"{cause}>>>{effect}"
 
@@ -88,6 +89,7 @@ def _coerce_record(value: object) -> GrangerRecord | None:
         "strength": strength,
     }
 
+
 async def load(tenant_id: str, service: str) -> List[GrangerRecord]:
     try:
         raw = await redis_get(keys.granger(tenant_id, service))
@@ -105,6 +107,7 @@ async def load(tenant_id: str, service: str) -> List[GrangerRecord]:
         log.debug("Granger load failed %s/%s: %s", tenant_id, service, exc)
     return []
 
+
 async def save_and_merge(
     tenant_id: str,
     service: str,
@@ -112,10 +115,7 @@ async def save_and_merge(
 ) -> List[GrangerRecord]:
     cached = await load(tenant_id, service)
 
-    stored: Dict[str, GrangerRecord] = {
-        _pair_key(r["cause_metric"], r["effect_metric"]): r
-        for r in cached
-    }
+    stored: Dict[str, GrangerRecord] = {_pair_key(r["cause_metric"], r["effect_metric"]): r for r in cached}
     for r in fresh_results:
         pk = _pair_key(r.cause_metric, r.effect_metric)
         existing = stored.get(pk)
@@ -136,6 +136,7 @@ async def save_and_merge(
     except (TypeError, ValueError) as exc:
         log.debug("Granger save failed %s/%s: %s", tenant_id, service, exc)
     return merged
+
 
 async def load_all_services(tenant_id: str, services: List[str]) -> List[GrangerRecord]:
     per_service = await asyncio.gather(*[load(tenant_id, svc) for svc in services])

@@ -1,11 +1,11 @@
 """
-Test Suite for Topology Analysis
+Test Suite for Topology Analysis.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.topology.graph import DependencyGraph, BlastRadius
@@ -25,7 +25,7 @@ def test_dependency_graph():
     path = g.critical_path("a", "c")
     assert path and path[0] == "a" and path[-1] == "c"
     allsvcs = g.all_services()
-    assert allsvcs >= {"a","b","c"}
+    assert allsvcs >= {"a", "b", "c"}
 
 
 def test_from_spans():
@@ -34,19 +34,23 @@ def test_from_spans():
         {
             "rootServiceName": "a",
             "spanSets": [
-                {"attributes": [
-                    {"key": "service.name", "value": {"stringValue": "a"}},
-                    {"key": "peer.service", "value": {"stringValue": "b"}},
-                ]},
+                {
+                    "attributes": [
+                        {"key": "service.name", "value": {"stringValue": "a"}},
+                        {"key": "peer.service", "value": {"stringValue": "b"}},
+                    ]
+                },
             ],
         },
         {
             "rootServiceName": "b",
             "spanSets": [
-                {"attributes": [
-                    {"key": "service.name", "value": {"stringValue": "b"}},
-                    {"key": "peer.service", "value": {"stringValue": "d"}},
-                ]},
+                {
+                    "attributes": [
+                        {"key": "service.name", "value": {"stringValue": "b"}},
+                        {"key": "peer.service", "value": {"stringValue": "d"}},
+                    ]
+                },
             ],
         },
     ]

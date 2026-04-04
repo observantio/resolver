@@ -1,11 +1,11 @@
 """
-Analyzer Module for Root Cause Analysis and Correlation of Anomalies
+Analyzer Module for Root Cause Analysis and Correlation of Anomalies.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -20,14 +20,14 @@ from config import settings
 def _get_windows() -> List[Tuple[str, float, float, Severity]]:
     windows: List[Tuple[str, float, float, Severity]] = []
     for label, window_s, thr, sev in settings.slo_burn_windows:
-        sev_enum = Severity.low
+        sev_enum = Severity.LOW
         if isinstance(sev, Severity):
             sev_enum = sev
         elif isinstance(sev, str):
             try:
                 sev_enum = Severity(sev)
             except ValueError:
-                sev_enum = Severity.__members__.get(sev, Severity.low)
+                sev_enum = Severity.__members__.get(sev.upper(), Severity.LOW)
 
         windows.append((label, float(window_s), float(thr), sev_enum))
     return windows

@@ -1,13 +1,13 @@
 """
-Weights and thresholds for machine learning models and heuristics used in anomaly detection, root cause analysis, and severity classification, defined in a centralized module for easy configuration and tuning.
+Weights and thresholds for machine learning models and heuristics used in anomaly detection, root cause analysis, and
+severity classification, defined in a centralized module for easy configuration and tuning.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
-
 
 from __future__ import annotations
 
@@ -71,9 +71,9 @@ class SignalWeights:
         trace_score: float,
     ) -> float:
         return round(
-            self.get(Signal.metrics) * metric_score
-            + self.get(Signal.logs) * log_score
-            + self.get(Signal.traces) * trace_score,
+            self.get(Signal.METRICS) * metric_score
+            + self.get(Signal.LOGS) * log_score
+            + self.get(Signal.TRACES) * trace_score,
             4,
         )
 

@@ -1,11 +1,12 @@
 """
-Test API routes for deployment events, ensuring correct handling of tenant context, request validation, and integration with the event registry.
+Test API routes for deployment events, ensuring correct handling of tenant context, request validation, and integration
+with the event registry.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -46,6 +47,7 @@ async def test_register_deployment_with_query_param(monkeypatch):
 async def test_register_deployment_missing_tenant(monkeypatch):
     dummy = DummyRegistry()
     monkeypatch.setattr(events_route, "get_registry", lambda: dummy)
+
     class FakeReq:
         service = "s"
         timestamp = 1
@@ -54,5 +56,6 @@ async def test_register_deployment_missing_tenant(monkeypatch):
         environment = "production"
         source = "api"
         metadata = {}
+
     with pytest.raises(Exception):
         await events_route.register_deployment(FakeReq())

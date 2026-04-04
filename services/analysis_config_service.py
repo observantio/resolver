@@ -1,8 +1,8 @@
 """
 Helpers for RCA job configuration overrides driven by uploaded YAML.
 
-This module keeps per-job analysis tuning scoped to the current RCA execution
-while preserving server defaults when no YAML is supplied.
+This module keeps per-job analysis tuning scoped to the current RCA execution while preserving server defaults when no
+YAML is supplied.
 """
 
 from __future__ import annotations
@@ -23,7 +23,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 import config as config_module
 from api.requests import AnalyzeRequest
 from config import Settings, settings
-
 
 ANALYSIS_CONFIG_VERSION = 1
 _OVERRIDABLE_CONSTANT_KEYS = {
@@ -130,11 +129,7 @@ def _copy_value(value: object) -> object:
 
 def _analysis_settings_defaults() -> dict[str, object]:
     dumped = settings.model_dump()
-    return {
-        key: _copy_value(value)
-        for key, value in dumped.items()
-        if key not in _NON_OVERRIDABLE_SETTINGS
-    }
+    return {key: _copy_value(value) for key, value in dumped.items() if key not in _NON_OVERRIDABLE_SETTINGS}
 
 
 def _analysis_constant_defaults() -> dict[str, object]:
@@ -268,10 +263,7 @@ def _normalize_settings_overrides(raw: dict[str, object]) -> dict[str, object]:
         validated = Settings.model_validate(baseline)
     except ValidationError as exc:
         raise _http_400(str(exc)) from exc
-    return {
-        key: _copy_value(getattr(validated, key))
-        for key in raw
-    }
+    return {key: _copy_value(getattr(validated, key)) for key in raw}
 
 
 class AnalysisConfigService:
@@ -303,9 +295,7 @@ class AnalysisConfigService:
         except ValidationError as exc:
             raise _http_400(str(exc)) from exc
         if document.version != ANALYSIS_CONFIG_VERSION:
-            raise _http_400(
-                f"Unsupported RCA config version {document.version}; expected {ANALYSIS_CONFIG_VERSION}"
-            )
+            raise _http_400(f"Unsupported RCA config version {document.version}; expected {ANALYSIS_CONFIG_VERSION}")
         return document
 
     def prepare_request(
@@ -344,10 +334,7 @@ class AnalysisConfigService:
             return
 
         async with self._runtime_lock:
-            original_setting_values = {
-                key: _copy_value(getattr(settings, key))
-                for key in prepared.settings_overrides
-            }
+            original_setting_values = {key: _copy_value(getattr(settings, key)) for key in prepared.settings_overrides}
             original_constants: list[tuple[ModuleType, str, object]] = []
             modules = self._runtime_modules()
             try:

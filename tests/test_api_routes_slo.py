@@ -1,11 +1,12 @@
 """
-Test API routes for SLO analysis endpoints, validating request handling, response formatting, and integration with the analysis engine.
+Test API routes for SLO analysis endpoints, validating request handling, response formatting, and integration with the
+analysis engine.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from types import SimpleNamespace
@@ -24,6 +25,7 @@ class DummyProvider:
     async def query_metrics(self, query, start, end, step):
         self.queries.append(query)
         return {"data": {"result": [{"metric": {}, "values": [[1, "0"]]}]}}
+
 
 def dummy_slo_evaluate(service, err_vals, tot_vals, ts, target):
     return []

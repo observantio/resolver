@@ -1,11 +1,13 @@
 """
-Temporal correlation logic to identify related anomalies across different signals (metrics, logs, traces) based on their occurrence within a configurable time window, and to compute a confidence score for the correlation based on the number and types of signals involved, to assist in root cause analysis and incident investigation.
+Temporal correlation logic to identify related anomalies across different signals (metrics, logs, traces) based on their
+occurrence within a configurable time window, and to compute a confidence score for the correlation based on the number
+and types of signals involved, to assist in root cause analysis and incident investigation.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -172,15 +174,17 @@ def correlate(
             raw_conf = metric_score + log_score + trace_score
         confidence = round(min(settings.correlation_score_max, raw_conf), 3)
 
-        events.append(CorrelatedEvent(
-            window_start=w_start,
-            window_end=w_end,
-            metric_anomalies=ma,
-            log_bursts=lb,
-            service_latency=sl,
-            signal_count=sig,
-            confidence=confidence,
-        ))
+        events.append(
+            CorrelatedEvent(
+                window_start=w_start,
+                window_end=w_end,
+                metric_anomalies=ma,
+                log_bursts=lb,
+                service_latency=sl,
+                signal_count=sig,
+                confidence=confidence,
+            )
+        )
 
         for a in anchor_times:
             if w_start <= a <= w_end:

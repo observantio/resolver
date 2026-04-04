@@ -1,10 +1,9 @@
 """
 SLO routes for detecting metric anomalies and changepoints based on user-defined sensitivity and thresholds.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -36,12 +35,8 @@ async def slo_burn(req: SloRequest) -> JSONDict:
     total_q = req.total_query or settings.slo_total_query_template.format(service=req.service)
     provider = get_provider(req.tenant_id)
 
-    err_raw = await safe_call(
-        provider.query_metrics(query=error_q, start=req.start, end=req.end, step=req.step)
-    )
-    tot_raw = await safe_call(
-        provider.query_metrics(query=total_q, start=req.start, end=req.end, step=req.step)
-    )
+    err_raw = await safe_call(provider.query_metrics(query=error_q, start=req.start, end=req.end, step=req.step))
+    tot_raw = await safe_call(provider.query_metrics(query=total_q, start=req.start, end=req.end, step=req.step))
 
     err_series = list(anomaly.iter_series(err_raw, query_hint=error_q))
     tot_series = list(anomaly.iter_series(tot_raw, query_hint=total_q))

@@ -1,11 +1,11 @@
 """
-Base connectors and shared utilities for data sources
+Base connectors and shared utilities for data sources.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from abc import ABC, abstractmethod
@@ -13,6 +13,7 @@ from typing import Optional
 import httpx
 
 from datasources.types import JSONDict, TraceFilters
+
 
 class BaseConnector(ABC):
     health_path: str = ""
@@ -49,8 +50,7 @@ class LogsConnector(BaseConnector):
         start: int,
         end: int,
         limit: Optional[int] = None,
-    ) -> JSONDict:
-        ...
+    ) -> JSONDict: ...
 
 
 class MetricsConnector(BaseConnector):
@@ -62,8 +62,7 @@ class MetricsConnector(BaseConnector):
         start: int,
         end: int,
         step: str,
-    ) -> JSONDict:
-        ...
+    ) -> JSONDict: ...
 
 
 class TracesConnector(BaseConnector):
@@ -75,5 +74,4 @@ class TracesConnector(BaseConnector):
         start: int,
         end: int,
         limit: Optional[int] = None,
-    ) -> JSONDict:
-        ...
+    ) -> JSONDict: ...

@@ -1,11 +1,13 @@
 """
-Test cases for fuzzy testing of various components in the analysis engine, including anomaly detection, Granger causality, forecasting, degradation analysis, correlation, causal graph logic, and topology graph logic. These tests use randomized inputs to validate that the components can handle a wide range of scenarios without errors.
+Test cases for fuzzy testing of various components in the analysis engine, including anomaly detection, Granger
+causality, forecasting, degradation analysis, correlation, causal graph logic, and topology graph logic. These tests use
+randomized inputs to validate that the components can handle a wide range of scenarios without errors.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -28,10 +30,10 @@ def random_anomaly(t):
         metric_id=mid,
         metric_name=mid,
         timestamp=t,
-        value=random.random()*100,
+        value=random.random() * 100,
         change_type="spike",
-        z_score=random.random()*5,
-        mad_score=random.random()*5,
+        z_score=random.random() * 5,
+        mad_score=random.random() * 5,
         isolation_score=random.random(),
         expected_range=(0, 100),
         severity=random.choice(list(Severity)),
@@ -42,10 +44,10 @@ def random_anomaly(t):
 def random_logburst(t):
     return LogBurst(
         window_start=t,
-        window_end=t + random.random()*10,
-        rate_per_second=random.random()*5,
-        baseline_rate=random.random()*2 + 0.1,
-        ratio=random.random()*5,
+        window_end=t + random.random() * 10,
+        rate_per_second=random.random() * 5,
+        baseline_rate=random.random() * 2 + 0.1,
+        ratio=random.random() * 5,
         severity=random.choice(list(Severity)),
     )
 
@@ -54,12 +56,12 @@ def random_latency():
     return ServiceLatency(
         service=f"s{random.randint(0,3)}",
         operation="op",
-        p50_ms=random.random()*100,
-        p95_ms=random.random()*200,
-        p99_ms=random.random()*300,
+        p50_ms=random.random() * 100,
+        p95_ms=random.random() * 200,
+        p99_ms=random.random() * 300,
         apdex=random.random(),
         error_rate=random.random(),
-        sample_count=random.randint(1,10),
+        sample_count=random.randint(1, 10),
         severity=random.choice(list(Severity)),
     )
 
@@ -96,7 +98,7 @@ def test_fuzzy_forecast_and_degradation(seed):
     random.seed(seed)
     length = random.randint(10, 60)
     ts = list(range(length))
-    vals = [random.random()*100 + i*random.random() for i in ts]
+    vals = [random.random() * 100 + i * random.random() for i in ts]
     f = forecast("m", ts, vals, threshold=50, horizon_seconds=10)
     if f:
         assert isinstance(f, object)
@@ -109,8 +111,8 @@ def test_fuzzy_correlation_and_causal(seed):
     random.seed(seed)
     length = random.randint(10, 30)
     anomalies = [random_anomaly(i) for i in range(length)]
-    bursts = [random_logburst(i*random.random()*5) for i in range(length//5)]
-    sl = [random_latency() for _ in range(length//5)]
+    bursts = [random_logburst(i * random.random() * 5) for i in range(length // 5)]
+    sl = [random_latency() for _ in range(length // 5)]
     events = correlate(anomalies, bursts, sl, window_seconds=10)
     assert isinstance(events, list)
 

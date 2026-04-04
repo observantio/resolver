@@ -1,12 +1,13 @@
 """
-Data source connectors for querying traces, metrics, and logs from various backends
+Data source connectors for querying traces, metrics, and logs from various backends.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from config import (
@@ -23,6 +24,7 @@ from config import (
     RESOLVER_STARTUP_TIMEOUT,
 )
 
+
 class DataSourceSettings(BaseSettings):
     logs_backend: str = RESOLVER_LOGS_BACKEND
     metrics_backend: str = RESOLVER_METRICS_BACKEND
@@ -32,6 +34,7 @@ class DataSourceSettings(BaseSettings):
     tempo_url: str = RESOLVER_TRACES_TEMPO_URL
     connector_timeout: int = RESOLVER_CONNECTOR_TIMEOUT
     startup_timeout: int = RESOLVER_STARTUP_TIMEOUT
+
     @field_validator("loki_url", "mimir_url", "tempo_url", mode="before")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:

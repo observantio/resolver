@@ -1,11 +1,12 @@
 """
-Test cases for anomaly detection logic in the analysis engine, including output limiting and Granger causality series selection.
+Test cases for anomaly detection logic in the analysis engine, including output limiting and Granger causality series
+selection.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import numpy as np
@@ -39,7 +40,7 @@ def test_iqr_and_tukey_helpers():
 def test_mad_and_cusum():
     arr = [1, 1, 1, 10, 1, 1, 1]
     m = _mad_scores(np.array(arr))
-    assert m.dtype in (float, 'float64', 'int64')
+    assert m.dtype in (float, "float64", "int64")
     flags_hi = _cusum_changepoints(np.array(arr), threshold=100)
     assert not flags_hi.any()
     flags_lo = _cusum_changepoints(np.array(arr), threshold=0.1)
@@ -47,21 +48,21 @@ def test_mad_and_cusum():
 
 
 def test_change_type_severity():
-    assert _change_type(10, 0, 1, 0) == ChangeType.spike
-    assert _change_type(0, 0, -1, 0) == ChangeType.drop
-    assert _change_type(0, 0, 0, 1) == ChangeType.drift
+    assert _change_type(10, 0, 1, 0) == ChangeType.SPIKE
+    assert _change_type(0, 0, -1, 0) == ChangeType.DROP
+    assert _change_type(0, 0, 0, 1) == ChangeType.DRIFT
     sev = _severity(5, 0, -1)
-    assert sev in (Severity.high, Severity.critical)
-    assert _severity(0, 0, 0) == Severity.low
+    assert sev in (Severity.HIGH, Severity.CRITICAL)
+    assert _severity(0, 0, 0) == Severity.LOW
 
 
 def test_detect_simple():
     ts = list(range(20))
-    vals = [1]*19 + [100]
+    vals = [1] * 19 + [100]
     anomalies = detect("m", ts, vals)
     assert isinstance(anomalies, list)
     if anomalies:
-        assert hasattr(anomalies[0], 'change_type')
+        assert hasattr(anomalies[0], "change_type")
 
 
 def test_compress_runs_limits_noisy_sequences(monkeypatch):
@@ -71,12 +72,12 @@ def test_compress_runs_limits_noisy_sequences(monkeypatch):
             metric_name="m",
             timestamp=float(i),
             value=float(i),
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=2.5 + i * 0.1,
             mad_score=2.0,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
         for i in range(10)
@@ -102,10 +103,12 @@ def test_detect_requires_statistical_or_multisignal_corroboration_for_iso(monkey
 
         def fit_predict(self, x):
             import numpy as np
+
             return np.full(shape=(x.shape[0],), fill_value=-1, dtype=int)
 
         def score_samples(self, x):
             import numpy as np
+
             return np.full(shape=(x.shape[0],), fill_value=-0.8, dtype=float)
 
     monkeypatch.setattr("engine.anomaly.detection.IsolationForest", FakeIsolationForest)
@@ -122,12 +125,12 @@ def test_density_cap_limits_anomalies_per_hour(monkeypatch):
             metric_name="m",
             timestamp=float(i * 600),
             value=float(i),
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=3.0 + i,
             mad_score=2.0 + i,
             isolation_score=-0.4,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
         for i in range(6)
@@ -142,7 +145,7 @@ def test_cusum_zero_sigma_returns_no_flags():
 
 
 def test_change_type_shift_when_z_zero():
-    assert _change_type(1.0, 0.0, 0.0, 0.0) == ChangeType.shift
+    assert _change_type(1.0, 0.0, 0.0, 0.0) == ChangeType.SHIFT
 
 
 def test_tukey_mild_low():
@@ -163,12 +166,12 @@ def test_apply_density_cap_disabled_when_max_zero(monkeypatch):
             metric_name="m",
             timestamp=float(i),
             value=1.0,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=3.0,
             mad_score=3.0,
             isolation_score=-0.1,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
             iqr_score=1.0,
             tukey_outlier_class="none",
@@ -185,12 +188,12 @@ def test_apply_density_cap_single_timestamp_uses_hour_window(monkeypatch):
         metric_name="m",
         timestamp=1.0,
         value=1.0,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=9.0,
         mad_score=9.0,
         isolation_score=-0.1,
         expected_range=(0.0, 1.0),
-        severity=Severity.high,
+        severity=Severity.HIGH,
         description="",
         iqr_score=2.0,
         tukey_outlier_class="none",
@@ -268,12 +271,12 @@ def test_compress_runs_extends_short_groups_before_compressing_long_run(monkeypa
             metric_name="m",
             timestamp=float(i),
             value=1.0,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=4.0,
             mad_score=4.0,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
             iqr_score=1.0,
             tukey_outlier_class="none",
@@ -285,12 +288,12 @@ def test_compress_runs_extends_short_groups_before_compressing_long_run(monkeypa
             metric_name="m",
             timestamp=100.0 + float(i),
             value=1.0,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=4.0,
             mad_score=4.0,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
             iqr_score=1.0,
             tukey_outlier_class="none",
@@ -308,12 +311,12 @@ def test_compress_runs_splits_groups_by_change_type(monkeypatch):
             metric_name="m",
             timestamp=float(i),
             value=1.0,
-            change_type=ChangeType.spike if i < 5 else ChangeType.drop,
+            change_type=ChangeType.SPIKE if i < 5 else ChangeType.DROP,
             z_score=4.0,
             mad_score=4.0,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
             iqr_score=1.0,
             tukey_outlier_class="none",

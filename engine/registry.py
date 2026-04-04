@@ -1,11 +1,11 @@
 """
-Registry for Tenant-Specific Weights and Events
+Registry for Tenant-Specific Weights and Events.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from config import DEFAULT_WEIGHTS, REGISTRY_ALPHA
 
 log = logging.getLogger(__name__)
 
-SIGNAL_KEYS: tuple[Signal, ...] = (Signal.metrics, Signal.logs, Signal.traces)
+SIGNAL_KEYS: tuple[Signal, ...] = (Signal.METRICS, Signal.LOGS, Signal.TRACES)
 
 
 def _default_weights() -> Dict[Signal, float]:
@@ -120,8 +120,9 @@ class TenantState:
         log_score: float,
         trace_score: float,
     ) -> float:
-        """Return a confidence value computed as a weighted sum of the three
-        signal-specific scores using the tenant's adaptive weights.
+        """
+        Return a confidence value computed as a weighted sum of the three signal-specific scores using the tenant's
+        adaptive weights.
 
         The result is capped according to ``settings.correlation_score_max``
         when used in temporal correlation.  This helper is consumed by
@@ -131,9 +132,9 @@ class TenantState:
         w = self._weights
         default = _default_weights()
         return round(
-            w.get(Signal.metrics, default.get(Signal.metrics, 1.0 / len(SIGNAL_KEYS))) * metric_score
-            + w.get(Signal.logs, default.get(Signal.logs, 1.0 / len(SIGNAL_KEYS))) * log_score
-            + w.get(Signal.traces, default.get(Signal.traces, 1.0 / len(SIGNAL_KEYS))) * trace_score,
+            w.get(Signal.METRICS, default.get(Signal.METRICS, 1.0 / len(SIGNAL_KEYS))) * metric_score
+            + w.get(Signal.LOGS, default.get(Signal.LOGS, 1.0 / len(SIGNAL_KEYS))) * log_score
+            + w.get(Signal.TRACES, default.get(Signal.TRACES, 1.0 / len(SIGNAL_KEYS))) * trace_score,
             4,
         )
 
@@ -164,9 +165,7 @@ class TenantRegistry:
             self._states[tenant_id] = state
         return self._states[tenant_id]
 
-    async def update_weight(
-        self, tenant_id: str, signal: Union[Signal, str], was_correct: bool
-    ) -> TenantState:
+    async def update_weight(self, tenant_id: str, signal: Union[Signal, str], was_correct: bool) -> TenantState:
         if isinstance(signal, str):
             signal = Signal(signal)
         state = await self.get_state(tenant_id)

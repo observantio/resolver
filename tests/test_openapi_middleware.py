@@ -3,9 +3,9 @@ OpenAPI middleware tests.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -100,7 +100,9 @@ def test_install_custom_openapi_cache_and_schema_walk(monkeypatch) -> None:
     assert responses["400"]["description"] == "Bad Request"
     assert responses["404"]["description"] == "Not Found"
     assert responses["401"]["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ErrorResponse"
-    assert generated["paths"]["/api/v1/jobs/{job_id}"]["post"]["security"] == [{"ServiceToken": [], "ContextBearer": []}]
+    assert generated["paths"]["/api/v1/jobs/{job_id}"]["post"]["security"] == [
+        {"ServiceToken": [], "ContextBearer": []}
+    ]
     ready_responses = generated["paths"]["/api/v1/ready"]["get"]["responses"]
     assert ready_responses["503"]["description"] == "Service Unavailable"
     assert generated["jsonSchemaDialect"] == "https://json-schema.org/draft/2020-12/schema"
@@ -116,7 +118,9 @@ def test_install_custom_openapi_cache_and_schema_walk(monkeypatch) -> None:
     assert generated["components"]["schemas"]["AnalyzeReportResponse"]["properties"]["result"]["anyOf"][0] == {
         "$ref": "#/components/schemas/AnalysisReport"
     }
-    assert generated["components"]["schemas"]["MetricRequest"]["properties"]["step"]["pattern"] == r"^[1-9][0-9]*[smhd]$"
+    assert (
+        generated["components"]["schemas"]["MetricRequest"]["properties"]["step"]["pattern"] == r"^[1-9][0-9]*[smhd]$"
+    )
 
     app3 = FastAPI()
     openapi_middleware.install_custom_openapi(app3)
@@ -233,13 +237,18 @@ def test_openapi_helper_guards_cover_remaining_branches() -> None:
     openapi_middleware._ensure_operation_docs("/api/v1/jobs", "GET", non_string_description)  # type: ignore[arg-type]
     assert "description" not in non_string_description
 
-    assert openapi_middleware._iter_method_operations({
-        "/api/v1/jobs": {
-            "summary": "skip",
-            "x-custom": {},
-            "get": "not-a-dict",
-        }
-    }) == []
+    assert (
+        openapi_middleware._iter_method_operations(
+            {
+                "/api/v1/jobs": {
+                    "summary": "skip",
+                    "x-custom": {},
+                    "get": "not-a-dict",
+                }
+            }
+        )
+        == []
+    )
 
     paths_not_dict: dict[str, object] = {"/api/v1/events/deployment": []}
     openapi_middleware._remove_deployment_tenant_query_param(paths_not_dict)  # type: ignore[arg-type]
@@ -253,9 +262,7 @@ def test_openapi_helper_guards_cover_remaining_branches() -> None:
     openapi_middleware._remove_deployment_tenant_query_param(paths_bad_post)  # type: ignore[arg-type]
     assert paths_bad_post["/api/v1/events/deployment"]["post"] == []
 
-    paths_bad_parameters: dict[str, object] = {
-        "/api/v1/events/deployment": {"post": {"parameters": "bad"}}
-    }
+    paths_bad_parameters: dict[str, object] = {"/api/v1/events/deployment": {"post": {"parameters": "bad"}}}
     openapi_middleware._remove_deployment_tenant_query_param(paths_bad_parameters)  # type: ignore[arg-type]
     assert paths_bad_parameters["/api/v1/events/deployment"]["post"]["parameters"] == "bad"
 
@@ -319,7 +326,9 @@ def test_openapi_helper_guards_cover_remaining_branches() -> None:
         }
     }
     openapi_middleware._constrain_step_fields(schema_constrain_branches)  # type: ignore[arg-type]
-    assert schema_constrain_branches["components"]["schemas"]["StepNotString"]["properties"]["step"]["type"] == "integer"
+    assert (
+        schema_constrain_branches["components"]["schemas"]["StepNotString"]["properties"]["step"]["type"] == "integer"
+    )
 
     schema_with_existing_ref = {
         "components": {
@@ -338,5 +347,7 @@ def test_openapi_helper_guards_cover_remaining_branches() -> None:
         }
     }
     openapi_middleware._add_analysis_report_result_refs(schema_with_existing_ref)  # type: ignore[arg-type]
-    any_of = schema_with_existing_ref["components"]["schemas"]["AnalyzeJobResultResponse"]["properties"]["result"]["anyOf"]
+    any_of = schema_with_existing_ref["components"]["schemas"]["AnalyzeJobResultResponse"]["properties"]["result"][
+        "anyOf"
+    ]
     assert any_of.count({"$ref": "#/components/schemas/AnalysisReport"}) == 1

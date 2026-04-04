@@ -1,9 +1,9 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -72,16 +72,18 @@ async def test_metric_trajectory_sorts_and_limits_results(monkeypatch):
     monkeypatch.setattr(
         forecast_route,
         "forecast",
-        lambda metric_name, ts, vals, threshold: types.SimpleNamespace(severity="high", threshold=threshold)
-        if metric_name == "cpu_usage"
-        else None,
+        lambda metric_name, ts, vals, threshold: (
+            types.SimpleNamespace(severity="high", threshold=threshold) if metric_name == "cpu_usage" else None
+        ),
     )
     monkeypatch.setattr(
         forecast_route,
         "analyze_degradation",
-        lambda metric_name, ts, vals: types.SimpleNamespace(severity="medium")
-        if metric_name == "cpu_usage"
-        else types.SimpleNamespace(severity="critical"),
+        lambda metric_name, ts, vals: (
+            types.SimpleNamespace(severity="medium")
+            if metric_name == "cpu_usage"
+            else types.SimpleNamespace(severity="critical")
+        ),
     )
 
     result = await forecast_route.metric_trajectory(req, limit=1)
@@ -113,15 +115,17 @@ async def test_event_routes_and_json_type_guards(monkeypatch):
 
         async def get_events(self, tenant_id):
             recorded["listed"] = tenant_id
-            return [{
-                "service": "svc",
-                "timestamp": 12,
-                "version": "v1",
-                "author": "me",
-                "environment": "prod",
-                "source": "api",
-                "metadata": {"ok": True},
-            }]
+            return [
+                {
+                    "service": "svc",
+                    "timestamp": 12,
+                    "version": "v1",
+                    "author": "me",
+                    "environment": "prod",
+                    "source": "api",
+                    "metadata": {"ok": True},
+                }
+            ]
 
         async def clear_events(self, tenant_id):
             recorded["cleared"] = tenant_id
@@ -139,15 +143,17 @@ async def test_event_routes_and_json_type_guards(monkeypatch):
         "service": "svc",
         "version": "v1",
     }
-    assert await events_route.list_deployments("tenant-a") == [{
-        "service": "svc",
-        "timestamp": 12,
-        "version": "v1",
-        "author": "me",
-        "environment": "prod",
-        "source": "api",
-        "metadata": {"ok": True},
-    }]
+    assert await events_route.list_deployments("tenant-a") == [
+        {
+            "service": "svc",
+            "timestamp": 12,
+            "version": "v1",
+            "author": "me",
+            "environment": "prod",
+            "source": "api",
+            "metadata": {"ok": True},
+        }
+    ]
     assert await events_route.clear_deployments("tenant-a") == {
         "status": "cleared",
         "tenant_id": "tenant-a",
@@ -199,12 +205,8 @@ async def test_log_routes_call_provider_and_analysis(monkeypatch):
 
     req = LogRequest(tenant_id="tenant-a", query="{job='api'}", start=2, end=4)
 
-    assert await logs_route.log_patterns(req) == [
-        {"kind": "pattern", "query": "{job='api'}", "start": 20, "end": 40}
-    ]
-    assert await logs_route.log_bursts(req) == [
-        {"kind": "burst", "query": "{job='api'}", "start": 20, "end": 40}
-    ]
+    assert await logs_route.log_patterns(req) == [{"kind": "pattern", "query": "{job='api'}", "start": 20, "end": 40}]
+    assert await logs_route.log_bursts(req) == [{"kind": "burst", "query": "{job='api'}", "start": 20, "end": 40}]
     assert calls == [
         ("{job='api'}", 20, 40),
         ("{job='api'}", 20, 40),
@@ -234,9 +236,11 @@ async def test_metric_anomalies_and_changepoints_routes_cover_fallbacks(monkeypa
     monkeypatch.setattr(
         metrics_route.anomaly,
         "detect",
-        lambda metric, ts, vals, sensitivity: [types.SimpleNamespace(timestamp=3, metric=metric)]
-        if metric == "metric-b"
-        else [types.SimpleNamespace(timestamp=1, metric=metric)],
+        lambda metric, ts, vals, sensitivity: (
+            [types.SimpleNamespace(timestamp=3, metric=metric)]
+            if metric == "metric-b"
+            else [types.SimpleNamespace(timestamp=1, metric=metric)]
+        ),
     )
 
     req = MetricRequest(tenant_id="tenant-a", query="up", start=1, end=5, step="30s", sensitivity=4.0)
@@ -283,7 +287,9 @@ async def test_correlation_and_trace_routes_cover_remaining_branches(monkeypatch
 
     monkeypatch.setattr(correlation_route, "fetch_metrics", fake_fetch_metrics)
     monkeypatch.setattr(correlation_route.anomaly, "iter_series", lambda resp, query_hint=None: [("cpu", [1], [2.0])])
-    monkeypatch.setattr(correlation_route.anomaly, "detect", lambda metric, ts, vals: [types.SimpleNamespace(name=metric)])
+    monkeypatch.setattr(
+        correlation_route.anomaly, "detect", lambda metric, ts, vals: [types.SimpleNamespace(name=metric)]
+    )
     monkeypatch.setattr(correlation_route.logs, "detect_bursts", lambda raw: [types.SimpleNamespace(stream="api")])
     monkeypatch.setattr(
         correlation_route,
@@ -321,20 +327,24 @@ async def test_correlation_and_trace_routes_cover_remaining_branches(monkeypatch
     )
 
     assert result == {
-        "correlated_events": [{
-            "window_start": 1,
-            "window_end": 2,
-            "confidence": 0.75,
-            "signal_count": 2,
-            "metric_anomaly_count": 1,
-            "log_burst_count": 1,
-        }],
-        "log_metric_links": [{
-            "metric_name": "cpu",
-            "log_stream": "api",
-            "lag_seconds": 3.0,
-            "strength": 0.8,
-        }],
+        "correlated_events": [
+            {
+                "window_start": 1,
+                "window_end": 2,
+                "confidence": 0.75,
+                "signal_count": 2,
+                "metric_anomaly_count": 1,
+                "log_burst_count": 1,
+            }
+        ],
+        "log_metric_links": [
+            {
+                "metric_name": "cpu",
+                "log_stream": "api",
+                "lag_seconds": 3.0,
+                "strength": 0.8,
+            }
+        ],
     }
 
     async def fake_safe_call(awaitable):
@@ -352,14 +362,18 @@ async def test_correlation_and_trace_routes_cover_remaining_branches(monkeypatch
         TraceRequest(tenant_id="tenant-a", start=3, end=9, service=None, apdex_threshold_ms=100.0)
     )
 
-    assert traced == [{
-        "raw": {"filters": {"service.name": "checkout"}, "start": 3, "end": 9},
-        "threshold": 250.0,
-    }]
-    assert unfiltered == [{
-        "raw": {"filters": {}, "start": 3, "end": 9},
-        "threshold": 100.0,
-    }]
+    assert traced == [
+        {
+            "raw": {"filters": {"service.name": "checkout"}, "start": 3, "end": 9},
+            "threshold": 250.0,
+        }
+    ]
+    assert unfiltered == [
+        {
+            "raw": {"filters": {}, "start": 3, "end": 9},
+            "threshold": 100.0,
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -439,8 +453,8 @@ async def test_wait_for_all_bg_with_mimir_and_cleanup_loop(monkeypatch):
         calls.append(("sleep", seconds))
 
     monkeypatch.setattr(app_main, "wait_for", fake_wait_for)
-    app_main._backend_ready = False
-    app_main._backend_status = {}
+    app_main._BACKEND_READY = False
+    app_main._BACKEND_STATUS = {}
     await app_main._wait_for_all_bg(settings, "tenant-a")
 
     monkeypatch.setattr(app_main.settings, "database_url", "sqlite:///tmp.db")
@@ -473,7 +487,9 @@ def test_dunder_main_runs_uvicorn_with_ssl(monkeypatch):
     import config as config_module
 
     importlib.reload(config_module)
-    monkeypatch.setitem(sys.modules, "uvicorn", types.SimpleNamespace(run=lambda app, **kwargs: captured.update({"app": app, **kwargs})))
+    monkeypatch.setitem(
+        sys.modules, "uvicorn", types.SimpleNamespace(run=lambda app, **kwargs: captured.update({"app": app, **kwargs}))
+    )
     runpy.run_module("main", run_name="__main__")
 
     assert captured["app"] == "main:app"

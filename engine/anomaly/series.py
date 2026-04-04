@@ -1,11 +1,12 @@
 """
-Series iteration logic for processing Mimir query responses, extracting metric labels and corresponding timestamp-value pairs, to facilitate downstream analysis and anomaly detection on time series data.
+Series iteration logic for processing Mimir query responses, extracting metric labels and corresponding timestamp- value
+pairs, to facilitate downstream analysis and anomaly detection on time series data.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -85,9 +86,7 @@ def _metric_hint_from_query(query_hint: Optional[str]) -> Optional[str]:
     candidates: list[str] = [
         token
         for token in tokens
-        if token.lower() not in _PROMQL_EXCLUDED_TOKENS
-        and "_" in token
-        and not token.startswith("__")
+        if token.lower() not in _PROMQL_EXCLUDED_TOKENS and "_" in token and not token.startswith("__")
     ]
     if candidates:
         return candidates[0]

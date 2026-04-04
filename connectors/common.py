@@ -1,4 +1,6 @@
-"""Shared request helpers for datasource connectors."""
+"""
+Shared request helpers for datasource connectors.
+"""
 
 from __future__ import annotations
 
@@ -15,8 +17,7 @@ class _BackendConnector(Protocol):
     timeout: int
     client: httpx.AsyncClient
 
-    def request_headers(self) -> dict[str, str]:
-        ...
+    def request_headers(self) -> dict[str, str]: ...
 
 
 async def query_backend_json(

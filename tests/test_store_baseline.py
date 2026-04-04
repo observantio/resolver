@@ -1,11 +1,11 @@
 """
-Test Suite for Baseline Storage
+Test Suite for Baseline Storage.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -18,6 +18,7 @@ async def test_baseline_save_load():
     tid = "ten1"
     metric = "mymetric"
     from engine.baseline.compute import Baseline
+
     base = Baseline(mean=1.0, std=1.0, lower=-2.0, upper=4.0)
     await bstore.save(tid, metric, base)
     loaded = await bstore.load(tid, metric)
@@ -30,4 +31,4 @@ async def test_baseline_save_load():
     ts = [0.0, 1.0, 2.0, 3.0, 4.0]
     vals = [1.0, 2.0, 1.5, 2.5, 1.0]
     result = await bstore.compute_and_persist(tid, metric, ts, vals)
-    assert hasattr(result, 'mean')
+    assert hasattr(result, "mean")

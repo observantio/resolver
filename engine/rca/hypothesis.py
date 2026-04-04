@@ -1,11 +1,12 @@
 """
-RCA hypothesis generation based on correlated events, error propagation analysis, and multi-signal correlation patterns, with confidence scoring and severity categorization.
+RCA hypothesis generation based on correlated events, error propagation analysis, and multi-signal correlation patterns,
+with confidence scoring and severity categorization.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -16,15 +17,20 @@ from typing import List, Optional
 
 from pydantic import ConfigDict
 from api.responses import (
-    MetricAnomaly, LogBurst, LogPattern,
-    ServiceLatency, ErrorPropagation,
+    MetricAnomaly,
+    LogBurst,
+    LogPattern,
+    ServiceLatency,
+    ErrorPropagation,
 )
 from engine.correlation.temporal import CorrelatedEvent
 from engine.events.registry import DeploymentEvent, EventRegistry
 from engine.topology.graph import DependencyGraph
 from engine.rca.scoring import (
-    score_correlated_event, score_deployment_correlation,
-    score_error_propagation, categorize,
+    score_correlated_event,
+    score_deployment_correlation,
+    score_error_propagation,
+    categorize,
 )
 from engine.enums import Severity, RcaCategory
 from config import settings
@@ -65,7 +71,9 @@ RootCause = HypothesisRootCause
 
 
 def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:
-    """Higher tuple = more important for narrative selection (matches report intent)."""
+    """
+    Higher tuple = more important for narrative selection (matches report intent).
+    """
     sev = getattr(anomaly, "severity", None)
     try:
         weight = float(sev.weight()) if sev is not None else 0.0
@@ -80,8 +88,8 @@ def _metric_names_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: i
     """
     Pick metric names to cite in the hypothesis from a correlated event.
 
-    We keep the strongest anomaly per metric_name, then rank names by severity / |z| / |MAD|.
-    Alphabetical order was misleading (e.g. pid=160 before pid=520145 regardless of impact).
+    We keep the strongest anomaly per metric_name, then rank names by severity / |z| / |MAD|. Alphabetical order was
+    misleading (e.g. pid=160 before pid=520145 regardless of impact).
     """
     best_by_name: dict[str, MetricAnomaly] = {}
     for anomaly in metric_anomalies:
@@ -100,7 +108,9 @@ def _metric_names_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: i
 
 
 def _process_entities_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: int = 2) -> List[str]:
-    """Top process hotspots by anomaly strength, not lexicographic entity string."""
+    """
+    Top process hotspots by anomaly strength, not lexicographic entity string.
+    """
     best_by_entity: dict[str, tuple[tuple[float, float, float], MetricAnomaly]] = {}
     for anomaly in metric_anomalies:
         entity = _process_entity_from_metric_name(getattr(anomaly, "metric_name", ""))
@@ -144,8 +154,14 @@ def _dedupe_causes(causes: List[RootCause]) -> List[RootCause]:
         elif cause.confidence < current.confidence:
             winner, loser = current, cause
         else:
-            winner, loser = (cause, current) if _evidence_score(cause.evidence) >= _evidence_score(current.evidence) else (current, cause)
-        winner.affected_services = list(dict.fromkeys((winner.affected_services or []) + (loser.affected_services or [])))
+            winner, loser = (
+                (cause, current)
+                if _evidence_score(cause.evidence) >= _evidence_score(current.evidence)
+                else (current, cause)
+            )
+        winner.affected_services = list(
+            dict.fromkeys((winner.affected_services or []) + (loser.affected_services or []))
+        )
         selected[key] = winner
     return list(selected.values())
 
@@ -233,13 +249,13 @@ def _corroboration_summary(signals: List[str]) -> str:
 
 def _action_for_category(category: RcaCategory, service: str = "") -> str:
     actions = {
-        RcaCategory.deployment:           f"Rollback recent deployment for {service or 'affected service'}.",
-        RcaCategory.resource_exhaustion:  "Check resource limits, scale horizontally or increase quotas.",
-        RcaCategory.dependency_failure:   "Inspect downstream dependencies and circuit breakers.",
-        RcaCategory.traffic_surge:        "Verify rate limits, auto-scaling triggers, and CDN caching.",
-        RcaCategory.error_propagation:    f"Isolate {service or 'source service'} and check recent changes.",
-        RcaCategory.slo_burn:             "Immediate incident response; error budget critical.",
-        RcaCategory.unknown:              "Review correlated signals and recent changes.",
+        RcaCategory.DEPLOYMENT: f"Rollback recent deployment for {service or 'affected service'}.",
+        RcaCategory.RESOURCE_EXHAUSTION: "Check resource limits, scale horizontally or increase quotas.",
+        RcaCategory.DEPENDENCY_FAILURE: "Inspect downstream dependencies and circuit breakers.",
+        RcaCategory.TRAFFIC_SURGE: "Verify rate limits, auto-scaling triggers, and CDN caching.",
+        RcaCategory.ERROR_PROPAGATION: f"Isolate {service or 'source service'} and check recent changes.",
+        RcaCategory.SLO_BURN: "Immediate incident response; error budget critical.",
+        RcaCategory.UNKNOWN: "Review correlated signals and recent changes.",
     }
     return actions.get(category, "Investigate correlated signals.")
 
@@ -258,7 +274,7 @@ def generate(
     causes: List[RootCause] = []
     deployments = event_registry.list_all() if event_registry else []
 
-    for event in (correlated_events or []):
+    for event in correlated_events or []:
         if event.confidence < settings.rca_event_confidence_threshold:
             continue
         event_window_start = event.window_start
@@ -294,8 +310,7 @@ def generate(
             affected = blast.affected_downstream
             if event_registry:
                 service_deploys = [
-                    d for d in event_registry.for_service(root_svc)
-                    if window_start <= d.timestamp <= window_end
+                    d for d in event_registry.for_service(root_svc) if window_start <= d.timestamp <= window_end
                 ]
                 if service_deploys:
                     deploy_event = min(service_deploys, key=_deployment_distance)
@@ -319,23 +334,25 @@ def generate(
         hypothesis = f"[{category.value}] Correlated incident: {' + '.join(parts) or 'multi-signal event'}"
 
         event_signals = _signals_from_event(event)
-        causes.append(RootCause(
-            hypothesis=hypothesis,
-            confidence=confidence,
-            severity=Severity.from_score(confidence),
-            category=category,
-            evidence=[
-                f"metrics={len(event.metric_anomalies)}",
-                f"process_entities={len(process_entities)}",
-                f"log_bursts={len(event.log_bursts)}",
-                f"latency_services={len(event.service_latency)}",
-            ],
-            contributing_signals=event_signals,
-            affected_services=affected,
-            recommended_action=_action_for_category(category, root_svc),
-            deployment=deploy_event,
-            corroboration_summary=_corroboration_summary(event_signals),
-        ))
+        causes.append(
+            RootCause(
+                hypothesis=hypothesis,
+                confidence=confidence,
+                severity=Severity.from_score(confidence),
+                category=category,
+                evidence=[
+                    f"metrics={len(event.metric_anomalies)}",
+                    f"process_entities={len(process_entities)}",
+                    f"log_bursts={len(event.log_bursts)}",
+                    f"latency_services={len(event.service_latency)}",
+                ],
+                contributing_signals=event_signals,
+                affected_services=affected,
+                recommended_action=_action_for_category(category, root_svc),
+                deployment=deploy_event,
+                corroboration_summary=_corroboration_summary(event_signals),
+            )
+        )
 
     for prop in error_propagation:
         svc = prop.source_service
@@ -343,28 +360,37 @@ def generate(
         conf = score_error_propagation([prop])
         upstream = graph.find_upstream_roots(svc) if graph else []
         all_affected = list(dict.fromkeys(upstream + affected))
-        causes.append(RootCause(
-            hypothesis=f"[error_propagation] Errors originating from {svc}, cascading to {', '.join(affected[:3])}",
-            confidence=conf,
-            severity=Severity.high,
-            category=RcaCategory.error_propagation,
-            contributing_signals=[f"trace:propagation:{svc}"],
-            affected_services=all_affected,
-            recommended_action=_action_for_category(RcaCategory.error_propagation, svc),
-            corroboration_summary=_corroboration_summary([f"trace:propagation:{svc}"]),
-        ))
+        causes.append(
+            RootCause(
+                hypothesis=f"[error_propagation] Errors originating from {svc}, cascading to {', '.join(affected[:3])}",
+                confidence=conf,
+                severity=Severity.HIGH,
+                category=RcaCategory.ERROR_PROPAGATION,
+                contributing_signals=[f"trace:propagation:{svc}"],
+                affected_services=all_affected,
+                recommended_action=_action_for_category(RcaCategory.ERROR_PROPAGATION, svc),
+                corroboration_summary=_corroboration_summary([f"trace:propagation:{svc}"]),
+            )
+        )
 
     critical_patterns = [p for p in log_patterns if p.severity.weight() >= settings.rca_severity_weight_threshold]
     if critical_patterns:
-        causes.append(RootCause(
-            hypothesis=f"[log_pattern] {len(critical_patterns)} critical pattern(s): {critical_patterns[0].pattern[:80]}",
-            confidence=settings.rca_log_pattern_score,
-            severity=Severity.high,
-            category=RcaCategory.unknown,
-            contributing_signals=[f"log:{p.pattern[:40]}" for p in critical_patterns[:3]],
-            recommended_action="Review high-severity log patterns for error root cause.",
-            corroboration_summary=_corroboration_summary([f"log:{p.pattern[:40]}" for p in critical_patterns[:3]]),
-        ))
+        causes.append(
+            RootCause(
+                hypothesis=(
+                    f"[log_pattern] {len(critical_patterns)} critical pattern(s): "
+                    f"{critical_patterns[0].pattern[:80]}"
+                ),
+                confidence=settings.rca_log_pattern_score,
+                severity=Severity.HIGH,
+                category=RcaCategory.UNKNOWN,
+                contributing_signals=[f"log:{p.pattern[:40]}" for p in critical_patterns[:3]],
+                recommended_action="Review high-severity log patterns for error root cause.",
+                corroboration_summary=_corroboration_summary(
+                    [f"log:{p.pattern[:40]}" for p in critical_patterns[:3]]
+                ),
+            )
+        )
 
     causes = _dedupe_causes(causes)
     causes.sort(key=lambda c: c.confidence, reverse=True)

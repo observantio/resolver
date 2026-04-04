@@ -1,4 +1,6 @@
-"""Shared helpers for iterating Tempo trace spans."""
+"""
+Shared helpers for iterating Tempo trace spans.
+"""
 
 from __future__ import annotations
 

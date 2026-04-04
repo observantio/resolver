@@ -1,15 +1,16 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
 
 from api.routes import correlation as corr_route
 from api.requests import CorrelateRequest
+
 
 class DummyState:
     def __init__(self):
@@ -18,6 +19,7 @@ class DummyState:
 
     def weighted_confidence(self, metric_score, log_score, trace_score):
         return metric_score * self.weights_serializable.get("metrics", 0.0)
+
 
 class DummyRegistry:
     def __init__(self):
@@ -35,14 +37,17 @@ class DummyProvider:
         # return empty structure expected by logs.detect_bursts
         return {"data": {"result": []}}
 
+
 @pytest.mark.asyncio
 async def test_correlate_route_uses_weights(monkeypatch):
     dummy_reg = DummyRegistry()
     monkeypatch.setattr(corr_route, "get_registry", lambda: dummy_reg)
     # bypass actual fetching by patching provider methods used in route
     monkeypatch.setattr(corr_route, "get_provider", lambda tid: DummyProvider())
+
     async def fake_fetch_metrics(*args, **kwargs):
         return []
+
     monkeypatch.setattr(corr_route, "fetch_metrics", fake_fetch_metrics)
 
     req = CorrelateRequest(

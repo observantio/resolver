@@ -1,9 +1,9 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ def _anomaly(metric_name: str, timestamp: float, severity: Severity):
         timestamp=timestamp,
         severity=severity,
         value=1.0,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=1.0,
         mad_score=1.0,
         isolation_score=0.0,
@@ -154,18 +154,18 @@ def test_group_metric_anomalies_groups_and_updates_representative(monkeypatch):
 
     grouped = group_metric_anomalies(
         [
-            _anomaly("cpu", 10.0, Severity.low),
-            _anomaly("cpu", 15.0, Severity.critical),
-            _anomaly("mem", 16.0, Severity.high),
-            _anomaly("cpu", 40.0, Severity.medium),
+            _anomaly("cpu", 10.0, Severity.LOW),
+            _anomaly("cpu", 15.0, Severity.CRITICAL),
+            _anomaly("mem", 16.0, Severity.HIGH),
+            _anomaly("cpu", 40.0, Severity.MEDIUM),
         ]
     )
     assert len(grouped) == 3
     assert grouped[0].count == 2
-    assert grouped[0].representative.severity == Severity.critical
+    assert grouped[0].representative.severity == Severity.CRITICAL
 
     collapsed = group_metric_anomalies(
-        [_anomaly("cpu", 1.0, Severity.low), _anomaly("mem", 5.0, Severity.high)],
+        [_anomaly("cpu", 1.0, Severity.LOW), _anomaly("mem", 5.0, Severity.HIGH)],
         by_metric=False,
         time_window=10.0,
     )
@@ -238,7 +238,9 @@ async def test_causal_route_helpers_and_bayesian(monkeypatch):
     )
 
     response = await causal_route.bayesian_rca(
-        AnalyzeRequest(tenant_id="tenant-a", start=1, end=10, metric_queries=["up"], log_query="error", services=["api"])
+        AnalyzeRequest(
+            tenant_id="tenant-a", start=1, end=10, metric_queries=["up"], log_query="error", services=["api"]
+        )
     )
     assert response == {"posteriors": [{"category": "deployment", "posterior": 0.9, "prior": 0.35}]}
 
@@ -319,12 +321,18 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
 
     ensure_calls = []
     fake_engine = SimpleNamespace(dispose=lambda: disposed_admin.append(False), connect=lambda: FakeConn(True))
-    fake_session = SimpleNamespace(commit=lambda: ensure_calls.append("commit"), rollback=lambda: ensure_calls.append("rollback"), close=lambda: ensure_calls.append("close"))
+    fake_session = SimpleNamespace(
+        commit=lambda: ensure_calls.append("commit"),
+        rollback=lambda: ensure_calls.append("rollback"),
+        close=lambda: ensure_calls.append("close"),
+    )
     database_module.dispose_database()
     monkeypatch.setattr(database_module, "_ensure_postgres_database_exists", lambda url: ensure_calls.append(url))
     monkeypatch.setattr(database_module, "create_engine", lambda url, **kwargs: fake_engine)
     monkeypatch.setattr(database_module, "sessionmaker", lambda **kwargs: (lambda: fake_session))
-    monkeypatch.setattr(database_module.Base.metadata, "create_all", lambda bind: ensure_calls.append(("create_all", bind)))
+    monkeypatch.setattr(
+        database_module.Base.metadata, "create_all", lambda bind: ensure_calls.append(("create_all", bind))
+    )
 
     database_module.init_database("sqlite:///tmp.db")
     database_module.init_database("sqlite:///tmp.db")
@@ -350,11 +358,11 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
         def dispose(self):
             ensure_calls.append("disposed")
 
-    database_module._engine = BrokenEngine()
+    database_module._ENGINE = BrokenEngine()
     assert database_module.connection_test() is False
     database_module.dispose_database()
-    assert database_module._engine is None
-    assert database_module._session_factory is None
+    assert database_module._ENGINE is None
+    assert database_module._SESSION_FACTORY is None
 
 
 def test_database_session_factory_must_be_callable() -> None:
@@ -364,8 +372,8 @@ def test_database_session_factory_must_be_callable() -> None:
         def dispose(self) -> None:
             return None
 
-    database_module._engine = cast(Any, _DisposableEngine())
-    database_module._session_factory = cast(Any, object())
+    database_module._ENGINE = cast(Any, _DisposableEngine())
+    database_module._SESSION_FACTORY = cast(Any, object())
     with pytest.raises(RuntimeError, match="Database not initialized"):
         with database_module.get_db_session():
             pass

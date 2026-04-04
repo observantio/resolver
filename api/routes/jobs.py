@@ -1,6 +1,7 @@
 """
 Core module implementing `jobs` functionality for the analysis engine.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -72,7 +73,9 @@ async def list_jobs(
 ) -> AnalyzeJobListResponse:
     _require_permission("read:rca")
     ctx = _required_context()
-    items, next_cursor = await rca_job_service.list_jobs(ctx=ctx, status_filter=status_filter, limit=limit, cursor=cursor)
+    items, next_cursor = await rca_job_service.list_jobs(
+        ctx=ctx, status_filter=status_filter, limit=limit, cursor=cursor
+    )
     return AnalyzeJobListResponse(items=[_summary(item) for item in items], next_cursor=next_cursor)
 
 

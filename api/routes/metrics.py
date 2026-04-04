@@ -1,10 +1,9 @@
 """
 Metric analysis routes for detecting anomalies and changepoints in time series data.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -21,6 +20,7 @@ from api.responses import MetricAnomaly
 
 router = APIRouter(tags=["Metrics"])
 
+
 @router.post(
     "/anomalies/metrics",
     response_model=List[MetricAnomaly],
@@ -30,9 +30,7 @@ router = APIRouter(tags=["Metrics"])
 async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
-        get_provider(req.tenant_id).query_metrics(
-            query=req.query, start=req.start, end=req.end, step=req.step
-        )
+        get_provider(req.tenant_id).query_metrics(query=req.query, start=req.start, end=req.end, step=req.step)
     )
 
     results = []
@@ -50,9 +48,7 @@ async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
 async def metric_changepoints(req: ChangepointRequest) -> List[ChangePoint]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
-        get_provider(req.tenant_id).query_metrics(
-            query=req.query, start=req.start, end=req.end, step=req.step
-        )
+        get_provider(req.tenant_id).query_metrics(query=req.query, start=req.start, end=req.end, step=req.step)
     )
 
     results: List[ChangePoint] = []

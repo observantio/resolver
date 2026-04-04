@@ -1,11 +1,12 @@
 """
-Frequency-based burst detection logic for logs, analyzing log entry timestamps to identify periods of unusually high log activity, with severity categorization based on configured thresholds.
+Frequency-based burst detection logic for logs, analyzing log entry timestamps to identify periods of unusually high log
+activity, with severity categorization based on configured thresholds.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 # pylint: disable=duplicate-code
@@ -23,16 +24,20 @@ from api.responses import LogBurst
 
 from config import settings
 
-_BURST_RATIO_THRESHOLDS = [
-    (thr, Severity(sev)) for thr, sev in settings.burst_ratio_thresholds
-]
+_BURST_RATIO_THRESHOLDS = [(thr, Severity(sev)) for thr, sev in settings.burst_ratio_thresholds]
 
 _ADVERSE_RE = re.compile(
-    r"\b(fatal|panic|oom|killed|segfault|out of memory|error|err|exception|failed|failure|crash|timeout|unavailable|refused)\b",
+    (
+        r"\b(fatal|panic|oom|killed|segfault|out of memory|error|err|exception|failed|failure|"
+        r"crash|timeout|unavailable|refused)\b"
+    ),
     re.I,
 )
 _BENIGN_RE = re.compile(
-    r"(background saving|db saved on disk|fork cow|changes in \d+ seconds|terminated with success|heartbeat|healthcheck|ready|started|ok\b|success)",
+    (
+        r"(background saving|db saved on disk|fork cow|changes in \d+ seconds|terminated with success|"
+        r"heartbeat|healthcheck|ready|started|ok\b|success)"
+    ),
     re.I,
 )
 
@@ -107,14 +112,16 @@ def detect_bursts(loki_response: Mapping[str, object], window_seconds: float | N
         if severity is None:
             continue
         if benign_window:
-            severity = Severity.low
-        bursts.append(LogBurst(
-            window_start=w_start,
-            window_end=w_end,
-            rate_per_second=round(rate, 3),
-            baseline_rate=round(baseline_rate, 3),
-            ratio=round(ratio, 2),
-            severity=severity,
-        ))
+            severity = Severity.LOW
+        bursts.append(
+            LogBurst(
+                window_start=w_start,
+                window_end=w_end,
+                rate_per_second=round(rate, 3),
+                baseline_rate=round(baseline_rate, 3),
+                ratio=round(ratio, 2),
+                severity=severity,
+            )
+        )
 
     return bursts

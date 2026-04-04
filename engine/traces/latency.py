@@ -3,9 +3,9 @@ Latency analysis for traces, including Apdex scoring and severity classification
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -88,6 +88,7 @@ def _apdex(durations_ms: np.ndarray, t_ms: float) -> float:
     tolerating = ((durations_ms > t_ms) & (durations_ms <= 4 * t_ms)).sum()
     score = (float(satisfied) + 0.5 * float(tolerating)) / float(durations_ms.size)
     return round(score, 4)
+
 
 def _severity(p99: float, error_rate: float, apdex: float) -> Severity:
     score = 0.0
@@ -173,22 +174,24 @@ def analyze(tempo_response: JSONDict, apdex_t_ms: float | None = None) -> List[S
         apdex_score = _apdex(durations, apdex_t_ms)
         sev = _severity(p99, error_rate, apdex_score)
 
-        if sev == Severity.low:
+        if sev == Severity.LOW:
             continue
 
-        results.append(ServiceLatency(
-            service=service,
-            operation=bucket["op"],
-            p50_ms=round(p50, 2),
-            p95_ms=round(p95, 2),
-            p99_ms=round(p99, 2),
-            apdex=apdex_score,
-            error_rate=round(error_rate, 4),
-            sample_count=bucket["total"],
-            severity=sev,
-            window_start=round(float(bucket["window_start"]), 6) if bucket["window_start"] is not None else None,
-            window_end=round(float(bucket["window_end"]), 6) if bucket["window_end"] is not None else None,
-        ))
+        results.append(
+            ServiceLatency(
+                service=service,
+                operation=bucket["op"],
+                p50_ms=round(p50, 2),
+                p95_ms=round(p95, 2),
+                p99_ms=round(p99, 2),
+                apdex=apdex_score,
+                error_rate=round(error_rate, 4),
+                sample_count=bucket["total"],
+                severity=sev,
+                window_start=round(float(bucket["window_start"]), 6) if bucket["window_start"] is not None else None,
+                window_end=round(float(bucket["window_end"]), 6) if bucket["window_end"] is not None else None,
+            )
+        )
 
     results.sort(key=lambda s: s.severity.weight(), reverse=True)
     return results

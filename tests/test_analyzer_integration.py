@@ -3,9 +3,9 @@ Test AnalyzerService integration with the core analysis engine and data provider
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import asyncio
@@ -70,7 +70,10 @@ class DummyProvider:
                             "spans": [
                                 {
                                     "attributes": [
-                                        {"key": "status.code", "value": {"stringValue": "STATUS_CODE_ERROR" if i % 3 == 0 else "OK"}},
+                                        {
+                                            "key": "status.code",
+                                            "value": {"stringValue": "STATUS_CODE_ERROR" if i % 3 == 0 else "OK"},
+                                        },
                                     ]
                                 }
                             ]
@@ -126,6 +129,7 @@ class DummyRegistry:
             def weighted_confidence(self, metric_score, log_score, trace_score):
                 # default behaviour mirrors previous unweighted logic
                 return metric_score + log_score + trace_score
+
         return _State()
 
 
@@ -137,12 +141,12 @@ def fake_detect(metric_name, ts, vals, sensitivity=None):
             metric_name=metric_name,
             timestamp=t,
             value=v,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=5.0,
             mad_score=5.0,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description=f"{metric_name} spike",
         )
     ]
@@ -281,7 +285,9 @@ async def test_analyzer_empty_inputs_returns_safe_report(monkeypatch):
     assert report.service_latency == []
     assert report.root_causes == []
     assert "No anomalies detected" in report.summary
-    assert any("returned no entries" in warning or "returned no traces" in warning for warning in report.analysis_warnings)
+    assert any(
+        "returned no entries" in warning or "returned no traces" in warning for warning in report.analysis_warnings
+    )
 
 
 @pytest.mark.asyncio
@@ -346,8 +352,8 @@ async def test_analyzer_limits_uncorroborated_root_causes(monkeypatch):
             RootCause(
                 hypothesis="h1",
                 confidence=0.2,
-                severity=Severity.low,
-                category=RcaCategory.unknown,
+                severity=Severity.LOW,
+                category=RcaCategory.UNKNOWN,
                 evidence=[],
                 contributing_signals=["metrics"],
                 affected_services=[],
@@ -356,8 +362,8 @@ async def test_analyzer_limits_uncorroborated_root_causes(monkeypatch):
             RootCause(
                 hypothesis="h2",
                 confidence=0.21,
-                severity=Severity.low,
-                category=RcaCategory.unknown,
+                severity=Severity.LOW,
+                category=RcaCategory.UNKNOWN,
                 evidence=[],
                 contributing_signals=["metrics"],
                 affected_services=[],
@@ -367,7 +373,9 @@ async def test_analyzer_limits_uncorroborated_root_causes(monkeypatch):
 
     def fake_rank(causes, correlated_events):
         return [
-            RankedCause(root_cause=cause, ml_score=cause.confidence, final_score=cause.confidence, feature_importance={})
+            RankedCause(
+                root_cause=cause, ml_score=cause.confidence, final_score=cause.confidence, feature_importance={}
+            )
             for cause in causes
         ]
 
@@ -435,8 +443,8 @@ async def test_analyzer_caps_predictive_only_critical_to_medium(monkeypatch):
         return (
             [],
             [],
-            [SimpleNamespace(severity=Severity.critical)],
-            [SimpleNamespace(severity=Severity.critical)],
+            [SimpleNamespace(severity=Severity.CRITICAL)],
+            [SimpleNamespace(severity=Severity.CRITICAL)],
             {},
             [],
         )
@@ -446,5 +454,5 @@ async def test_analyzer_caps_predictive_only_critical_to_medium(monkeypatch):
     req = AnalyzeRequest(tenant_id="tenant-predictive", start=1, end=300, step="15s", services=["payment-service"])
     report = await analyzer.run(EmptyProvider(), req)
 
-    assert report.overall_severity == Severity.medium
+    assert report.overall_severity == Severity.MEDIUM
     assert any("severity was capped at MEDIUM" in warning for warning in report.analysis_warnings)

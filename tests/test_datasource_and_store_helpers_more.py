@@ -1,9 +1,9 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -24,22 +24,37 @@ from store import baseline as baseline_store
 async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
     captured = {}
 
-    async def fake_fetch_json(url, params=None, headers=None, timeout=30, client=None, invalid_msg="", timeout_msg="", unavailable_msg=""):
-        captured.update({
-            "url": url,
-            "params": params,
-            "headers": headers,
-            "timeout": timeout,
-            "client": client,
-            "invalid_msg": invalid_msg,
-            "timeout_msg": timeout_msg,
-            "unavailable_msg": unavailable_msg,
-        })
+    async def fake_fetch_json(
+        url, params=None, headers=None, timeout=30, client=None, invalid_msg="", timeout_msg="", unavailable_msg=""
+    ):
+        captured.update(
+            {
+                "url": url,
+                "params": params,
+                "headers": headers,
+                "timeout": timeout,
+                "client": client,
+                "invalid_msg": invalid_msg,
+                "timeout_msg": timeout_msg,
+                "unavailable_msg": unavailable_msg,
+            }
+        )
         return {"ok": True}
 
     monkeypatch.setattr("connectors.common.fetch_json", fake_fetch_json)
-    connector = type("C", (), {"base_url": "https://backend", "timeout": 12, "client": object(), "_headers": lambda self: {"X-Scope-OrgID": "tenant"}})()
-    assert await query_backend_json(connector, path="/query", params={"q": "up"}, invalid_msg="bad", timeout_msg="slow", unavailable_msg="down") == {"ok": True}
+    connector = type(
+        "C",
+        (),
+        {
+            "base_url": "https://backend",
+            "timeout": 12,
+            "client": object(),
+            "_headers": lambda self: {"X-Scope-OrgID": "tenant"},
+        },
+    )()
+    assert await query_backend_json(
+        connector, path="/query", params={"q": "up"}, invalid_msg="bad", timeout_msg="slow", unavailable_msg="down"
+    ) == {"ok": True}
     assert captured["url"] == "https://backend/query"
     assert captured["headers"] == {"X-Scope-OrgID": "tenant"}
 
@@ -139,19 +154,29 @@ def test_datasource_settings_factory_and_retry(monkeypatch):
     with pytest.raises(ValueError):
         DataSourceSettings(traces_backend="bad")
 
-    monkeypatch.setattr("datasources.factory.LokiConnector", lambda url, tenant_id, timeout=None: ("loki", url, tenant_id, timeout))
-    monkeypatch.setattr("datasources.factory.MimirConnector", lambda url, tenant_id, timeout=None: ("mimir", url, tenant_id, timeout))
-    monkeypatch.setattr("datasources.factory.TempoConnector", lambda url, tenant_id, timeout=None: ("tempo", url, tenant_id, timeout))
+    monkeypatch.setattr(
+        "datasources.factory.LokiConnector", lambda url, tenant_id, timeout=None: ("loki", url, tenant_id, timeout)
+    )
+    monkeypatch.setattr(
+        "datasources.factory.MimirConnector", lambda url, tenant_id, timeout=None: ("mimir", url, tenant_id, timeout)
+    )
+    monkeypatch.setattr(
+        "datasources.factory.TempoConnector", lambda url, tenant_id, timeout=None: ("tempo", url, tenant_id, timeout)
+    )
 
-    cfg = type("Cfg", (), {
-        "logs_backend": "loki",
-        "metrics_backend": "mimir",
-        "traces_backend": "tempo",
-        "loki_url": "https://loki",
-        "mimir_url": "https://mimir",
-        "tempo_url": "https://tempo",
-        "connector_timeout": 5,
-    })()
+    cfg = type(
+        "Cfg",
+        (),
+        {
+            "logs_backend": "loki",
+            "metrics_backend": "mimir",
+            "traces_backend": "tempo",
+            "loki_url": "https://loki",
+            "mimir_url": "https://mimir",
+            "tempo_url": "https://tempo",
+            "connector_timeout": 5,
+        },
+    )()
     assert DataSourceFactory.create_logs(cfg, "tenant")[0] == "loki"
     assert DataSourceFactory.create_metrics(cfg, "tenant")[0] == "mimir"
     assert DataSourceFactory.create_traces(cfg, "tenant")[0] == "tempo"

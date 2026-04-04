@@ -1,11 +1,12 @@
 """
-Test API routes for causal analysis endpoints, validating request handling, response formatting, and integration with the analysis engine.
+Test API routes for causal analysis endpoints, validating request handling, response formatting, and integration with
+the analysis engine.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from types import SimpleNamespace
@@ -23,7 +24,20 @@ class DummyProvider:
                 "result": [
                     {
                         "metric": {"__name__": "shared_metric"},
-                        "values": [[1, "1"], [2, "2"], [3, "3"], [4, "4"], [5, "5"], [6, "6"], [7, "7"], [8, "8"], [9, "9"], [10, "10"], [11, "11"], [12, "12"]],
+                        "values": [
+                            [1, "1"],
+                            [2, "2"],
+                            [3, "3"],
+                            [4, "4"],
+                            [5, "5"],
+                            [6, "6"],
+                            [7, "7"],
+                            [8, "8"],
+                            [9, "9"],
+                            [10, "10"],
+                            [11, "11"],
+                            [12, "12"],
+                        ],
                     }
                 ]
             }

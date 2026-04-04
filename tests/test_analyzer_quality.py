@@ -1,11 +1,12 @@
 """
-Test Analyzer Quality and output formatting to ensure results are correctly processed and limited before returning to clients.
+Test Analyzer Quality and output formatting to ensure results are correctly processed and limited before returning to
+clients.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ def _anomaly(idx: int, severity: Severity) -> MetricAnomaly:
         metric_name=f"m{idx}",
         timestamp=1000.0 + idx,
         value=float(idx),
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=float(idx),
         mad_score=float(idx) / 2.0,
         isolation_score=0.5,
@@ -48,8 +49,8 @@ def _ranked(idx: int, final_score: float) -> RankedCause:
     rc = RootCause(
         hypothesis=f"cause-{idx}",
         confidence=min(1.0, max(0.0, final_score)),
-        severity=Severity.medium,
-        category=RcaCategory.unknown,
+        severity=Severity.MEDIUM,
+        category=RcaCategory.UNKNOWN,
         evidence=[],
         contributing_signals=["metrics"],
         affected_services=[],
@@ -71,12 +72,12 @@ def test_to_root_cause_model_clamps_invalid_confidence():
     )
     assert isinstance(rc, RootCauseModel)
     assert rc.confidence == 0.0
-    assert Signal.metrics in rc.contributing_signals
-    assert Signal.logs in rc.contributing_signals
+    assert Signal.METRICS in rc.contributing_signals
+    assert Signal.LOGS in rc.contributing_signals
 
 
 def test_limit_analyzer_output_caps_noise_lists():
-    anomalies = [_anomaly(i, Severity.critical if i % 2 else Severity.low) for i in range(500)]
+    anomalies = [_anomaly(i, Severity.CRITICAL if i % 2 else Severity.LOW) for i in range(500)]
     change_points = [
         ChangePoint(
             index=i,
@@ -84,7 +85,7 @@ def test_limit_analyzer_output_caps_noise_lists():
             value_before=1.0,
             value_after=2.0,
             magnitude=float(i),
-            change_type=ChangeType.shift,
+            change_type=ChangeType.SHIFT,
             metric_name=f"c{i}",
         )
         for i in range(400)
@@ -94,9 +95,9 @@ def test_limit_analyzer_output_caps_noise_lists():
             hypothesis=f"h{i}",
             confidence=min(1.0, i / 20.0),
             evidence=[],
-            contributing_signals=[Signal.metrics],
+            contributing_signals=[Signal.METRICS],
             recommended_action="x",
-            severity=Severity.low,
+            severity=Severity.LOW,
         )
         for i in range(40)
     ]
@@ -198,12 +199,12 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
             metric_name="shared_metric",
             timestamp=float(100 + i * 10),
             value=float(i),
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=5.0 + i,
             mad_score=4.0 + i,
             isolation_score=-0.5,
             expected_range=(0.0, 1.0),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
         for i in range(6)
@@ -213,17 +214,17 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
             hypothesis="low-confidence-single-signal",
             confidence=0.08,
             evidence=[],
-            contributing_signals=[Signal.metrics],
+            contributing_signals=[Signal.METRICS],
             recommended_action="inspect",
-            severity=Severity.low,
+            severity=Severity.LOW,
         ),
         RootCauseModel(
             hypothesis="multi-signal-cause",
             confidence=0.75,
             evidence=[],
-            contributing_signals=[Signal.metrics, Signal.logs],
+            contributing_signals=[Signal.METRICS, Signal.LOGS],
             recommended_action="rollback",
-            severity=Severity.high,
+            severity=Severity.HIGH,
         ),
     ]
     ranked = [
@@ -237,7 +238,7 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
             value_before=1.0,
             value_after=2.0,
             magnitude=float(i + 1),
-            change_type=ChangeType.shift,
+            change_type=ChangeType.SHIFT,
             metric_name="shared_metric",
         )
         for i in range(6)
@@ -288,7 +289,7 @@ def test_filter_log_bursts_for_precision_rca_suppresses_periodic_low_signal(monk
             rate_per_second=0.5,
             baseline_rate=0.1,
             ratio=5.0,
-            severity=Severity.high,
+            severity=Severity.HIGH,
         )
         for i in range(6)
     ]
@@ -300,7 +301,7 @@ def test_filter_log_bursts_for_precision_rca_suppresses_periodic_low_signal(monk
             last_seen=1300.0,
             rate_per_minute=1.0,
             entropy=0.1,
-            severity=Severity.low,
+            severity=Severity.LOW,
             sample="Background saving terminated with success",
         )
     ]
@@ -326,7 +327,7 @@ def test_filter_log_bursts_for_precision_rca_keeps_high_signal(monkeypatch):
             rate_per_second=0.5,
             baseline_rate=0.1,
             ratio=5.0,
-            severity=Severity.high,
+            severity=Severity.HIGH,
         )
         for i in range(4)
     ]
@@ -338,7 +339,7 @@ def test_filter_log_bursts_for_precision_rca_keeps_high_signal(monkeypatch):
             last_seen=1180.0,
             rate_per_minute=1.0,
             entropy=0.2,
-            severity=Severity.high,
+            severity=Severity.HIGH,
             sample="timeout while calling dependency",
         )
     ]

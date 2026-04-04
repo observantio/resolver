@@ -1,11 +1,13 @@
 """
-Ranking Logic for Root Cause Analysis, combining rule-based confidence with machine learning predictions based on features extracted from root cause hypotheses and correlated events, to produce a final ranked list of potential causes for observed anomalies.
+Ranking Logic for Root Cause Analysis, combining rule-based confidence with machine learning predictions based on
+features extracted from root cause hypotheses and correlated events, to produce a final ranked list of potential causes
+for observed anomalies.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -44,14 +46,22 @@ def _extract_features(cause: RootCause, event: Optional[CorrelatedEvent] = None)
 
 
 _FEATURE_NAMES = [
-    "rule_confidence", "severity_weight", "signal_count",
-    "blast_radius", "has_deployment", "metric_anomaly_count",
-    "log_burst_count", "latency_count", "correlation_confidence",
+    "rule_confidence",
+    "severity_weight",
+    "signal_count",
+    "blast_radius",
+    "has_deployment",
+    "metric_anomaly_count",
+    "log_burst_count",
+    "latency_count",
+    "correlation_confidence",
 ]
 
 
 def _ranking_pseudo_labels(causes: List[RootCause]) -> list[int]:
-    """Top half of hypotheses by rule confidence = positive class (avoids trivial single-class RF)."""
+    """
+    Top half of hypotheses by rule confidence = positive class (avoids trivial single-class RF).
+    """
     n = len(causes)
     order = sorted(range(n), key=lambda i: causes[i].confidence, reverse=True)
     labels = [0] * n
@@ -114,11 +124,13 @@ def rank(
         event_refs.append(event_ref)
         feature_matrix.append(_extract_features(cause, event_ref))
 
-    X = np.array(feature_matrix, dtype=float)
+    x = np.array(feature_matrix, dtype=float)
 
     importances_global: np.ndarray | None = None
     try:
-        random_forest_classifier: RandomForestClassifierFactory = import_module("sklearn.ensemble").RandomForestClassifier
+        random_forest_classifier: RandomForestClassifierFactory = import_module(
+            "sklearn.ensemble"
+        ).RandomForestClassifier
 
         if len(causes) >= 4:
             labels = _ranking_pseudo_labels(causes)
@@ -128,8 +140,8 @@ def rank(
                     max_depth=settings.ranking_rf_max_depth,
                     random_state=settings.ranking_rf_random_state,
                 )
-                rf.fit(X, labels)
-                ml_scores = rf.predict_proba(X)[:, 1]
+                rf.fit(x, labels)
+                ml_scores = rf.predict_proba(x)[:, 1]
                 importances_global = rf.feature_importances_
             else:
                 ml_scores = np.array([c.confidence for c in causes])
@@ -143,19 +155,20 @@ def rank(
     for i, cause in enumerate(causes):
         ms = float(ml_scores[i])
         if importances_global is not None:
-            row_imp = _per_row_importance_share(X[i], importances_global)
+            row_imp = _per_row_importance_share(x[i], importances_global)
         else:
-            row_imp = _per_row_feature_shares(X[i])
+            row_imp = _per_row_feature_shares(x[i])
         final = round(
-            settings.ranking_confidence_blend * cause.confidence
-            + settings.ranking_ml_blend * ms,
+            settings.ranking_confidence_blend * cause.confidence + settings.ranking_ml_blend * ms,
             3,
         )
-        results.append(RankedCause(
-            root_cause=cause,
-            ml_score=round(ms, 3),
-            final_score=final,
-            feature_importance=row_imp,
-        ))
+        results.append(
+            RankedCause(
+                root_cause=cause,
+                ml_score=round(ms, 3),
+                final_score=final,
+                feature_importance=row_imp,
+            )
+        )
 
     return sorted(results, key=lambda r: r.final_score, reverse=True)

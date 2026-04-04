@@ -3,9 +3,9 @@ Database initialization and session management for Resolver.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from db_models import Base
 
 logger = logging.getLogger(__name__)
-_engine: Optional[Engine] = None
-_session_factory: Optional[Callable[[], Session]] = None
+_ENGINE: Optional[Engine] = None
+_SESSION_FACTORY: Optional[Callable[[], Session]] = None
 
 
 def _ensure_postgres_database_exists(database_url: str) -> None:
@@ -57,7 +57,7 @@ def _ensure_postgres_database_exists(database_url: str) -> None:
 
 
 def init_database(database_url: str) -> None:
-    if _engine is not None and _session_factory is not None:
+    if _ENGINE is not None and _SESSION_FACTORY is not None:
         return
     _ensure_postgres_database_exists(database_url)
     engine = create_engine(
@@ -69,15 +69,15 @@ def init_database(database_url: str) -> None:
         pool_recycle=int(os.getenv("RESOLVER_DB_POOL_RECYCLE", "1800")),
     )
     session_factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-    globals()["_engine"] = engine
-    globals()["_session_factory"] = session_factory
+    globals()["_ENGINE"] = engine
+    globals()["_SESSION_FACTORY"] = session_factory
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    if _engine is None or _session_factory is None:
+    if _ENGINE is None or _SESSION_FACTORY is None:
         raise RuntimeError("Database not initialized")
-    session_factory = _session_factory
+    session_factory = _SESSION_FACTORY
     if not callable(session_factory):
         raise RuntimeError("Database not initialized")
     session = session_factory()
@@ -92,18 +92,18 @@ def get_db_session() -> Iterator[Session]:
 
 
 def init_db() -> None:
-    if _engine is None:
+    if _ENGINE is None:
         raise RuntimeError("Database not initialized")
     logger.info("Initializing Resolver database tables...")
-    Base.metadata.create_all(bind=_engine)
+    Base.metadata.create_all(bind=_ENGINE)
     logger.info("Resolver database tables created successfully")
 
 
 def connection_test() -> bool:
-    if _engine is None:
+    if _ENGINE is None:
         return False
     try:
-        with _engine.connect() as conn:
+        with _ENGINE.connect() as conn:
             conn.execute(text("SELECT 1"))
         return True
     except SQLAlchemyError:
@@ -111,7 +111,7 @@ def connection_test() -> bool:
 
 
 def dispose_database() -> None:
-    globals()["_session_factory"] = None
-    if _engine is not None:
-        _engine.dispose()
-        globals()["_engine"] = None
+    globals()["_SESSION_FACTORY"] = None
+    if _ENGINE is not None:
+        _ENGINE.dispose()
+        globals()["_ENGINE"] = None

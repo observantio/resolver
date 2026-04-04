@@ -1,9 +1,9 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -145,17 +145,17 @@ async def test_main_background_helpers(monkeypatch):
         return None
 
     monkeypatch.setattr(app_main, "wait_for", fake_wait_for)
-    app_main._backend_ready = False
-    app_main._backend_status = {}
+    app_main._BACKEND_READY = False
+    app_main._BACKEND_STATUS = {}
     await app_main._wait_for_all_bg(ready_settings, "tenant-a")
-    assert app_main._backend_ready is True
-    assert set(app_main._backend_status.values()) == {"ready"}
+    assert app_main._BACKEND_READY is True
+    assert set(app_main._BACKEND_STATUS.values()) == {"ready"}
 
 
 @pytest.mark.asyncio
 async def test_ready_endpoint_success_payload():
-    app_main._backend_ready = True
-    app_main._backend_status = {"tempo": "ready"}
+    app_main._BACKEND_READY = True
+    app_main._BACKEND_STATUS = {"tempo": "ready"}
     response = await app_main.ready()
     assert response.status_code == 200
     assert b'"ready":true' in response.body

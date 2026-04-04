@@ -1,11 +1,11 @@
 """
-Test Suite Conftest
+Test Suite Conftest.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import os
@@ -21,13 +21,11 @@ from store.client import _fallback  # noqa: E402
 
 @pytest.fixture(autouse=True)
 def clear_fallback(monkeypatch):
-
-    _fallback.clear()
-    global _redis_client
-    _redis_client = None
-
-
     import store.client as client
+    _fallback.clear()
+    client._REDIS_CLIENT = None
+    client._USING_FALLBACK = False
+    client._RETRY_AFTER_MONOTONIC = 0.0
 
     async def fake_get(key: str):
         return _fallback.get(key)
@@ -42,11 +40,11 @@ def clear_fallback(monkeypatch):
     monkeypatch.setattr(client, "redis_set", fake_set)
     monkeypatch.setattr(client, "redis_delete", fake_delete)
 
-
     import store.weights as wstore
     import store.baseline as bstore
     import store.granger as gstore
     import store.events as estore
+
     for mod in (wstore, bstore, gstore, estore):
         for name in ("redis_get", "redis_set", "redis_delete"):
             if hasattr(mod, name):
@@ -55,10 +53,12 @@ def clear_fallback(monkeypatch):
     yield
 
     _fallback.clear()
-    _redis_client = None
+    client._REDIS_CLIENT = None
+    client._USING_FALLBACK = False
+    client._RETRY_AFTER_MONOTONIC = 0.0
 
 
 def pytest_ignore_collect(collection_path, path=None, config=None):
     text = str(collection_path)
-    if os.path.sep + 'engine' + os.path.sep in text:
+    if os.path.sep + "engine" + os.path.sep in text:
         return True

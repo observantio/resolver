@@ -1,11 +1,12 @@
 """
-Test cases for trace analysis logic in the analysis engine, including detection of trace anomalies, correlation with metrics and logs, and edge cases in timestamp handling and service topology.
+Test cases for trace analysis logic in the analysis engine, including detection of trace anomalies, correlation with
+metrics and logs, and edge cases in timestamp handling and service topology.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.traces.errors import detect_propagation
@@ -25,15 +26,7 @@ def _trace(service: str, duration_ms: float, status_code: str, start_s: float, p
         "durationMs": duration_ms,
         "startTimeUnixNano": int(start_s * 1_000_000_000),
         "endTimeUnixNano": int((start_s + (duration_ms / 1000.0)) * 1_000_000_000),
-        "spanSets": [
-            {
-                "spans": [
-                    {
-                        "attributes": attrs
-                    }
-                ]
-            }
-        ],
+        "spanSets": [{"spans": [{"attributes": attrs}]}],
     }
 
 

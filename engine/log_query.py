@@ -1,4 +1,6 @@
-"""Shared helpers for building log queries."""
+"""
+Shared helpers for building log queries.
+"""
 
 from __future__ import annotations
 

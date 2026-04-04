@@ -1,4 +1,6 @@
-"""Shared deployment event model."""
+"""
+Shared deployment event model.
+"""
 
 from __future__ import annotations
 

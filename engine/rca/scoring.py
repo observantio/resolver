@@ -1,12 +1,12 @@
-
 """
-Scoring and categorization logic for RCA hypotheses based on deployment correlation, error propagation, and multi-signal correlation patterns.
+Scoring and categorization logic for RCA hypotheses based on deployment correlation, error propagation, and multi-
+signal correlation patterns.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -71,30 +71,22 @@ def categorize(
     event: CorrelatedEvent,
     deployments: List[DeploymentEvent],
 ) -> RcaCategory:
-    deploy_score = score_deployment_correlation(
-        event.window_start, deployments
-    ) if deployments else 0.0
+    deploy_score = score_deployment_correlation(event.window_start, deployments) if deployments else 0.0
 
     if deploy_score > settings.rca_deploy_score_cutoff:
-        return RcaCategory.deployment
+        return RcaCategory.DEPLOYMENT
 
-    has_memory = any(
-        "memory" in a.metric_name or "mem" in a.metric_name
-        for a in event.metric_anomalies
-    )
+    has_memory = any("memory" in a.metric_name or "mem" in a.metric_name for a in event.metric_anomalies)
 
     has_cpu = any("cpu" in a.metric_name for a in event.metric_anomalies)
     if has_memory or has_cpu:
-        return RcaCategory.resource_exhaustion
+        return RcaCategory.RESOURCE_EXHAUSTION
 
     if event.service_latency:
-        return RcaCategory.dependency_failure
+        return RcaCategory.DEPENDENCY_FAILURE
 
-    has_traffic = any(
-        "request" in a.metric_name or "rate" in a.metric_name
-        for a in event.metric_anomalies
-    )
+    has_traffic = any("request" in a.metric_name or "rate" in a.metric_name for a in event.metric_anomalies)
     if has_traffic:
-        return RcaCategory.traffic_surge
+        return RcaCategory.TRAFFIC_SURGE
 
-    return RcaCategory.unknown
+    return RcaCategory.UNKNOWN

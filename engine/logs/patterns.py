@@ -1,11 +1,12 @@
 """
-Pattern recognition logic for logs, including normalization, severity classification, and entropy-based uniqueness scoring to identify common log patterns and their characteristics.
+Pattern recognition logic for logs, including normalization, severity classification, and entropy-based uniqueness
+scoring to identify common log patterns and their characteristics.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -21,13 +22,12 @@ from config import settings
 from engine.enums import Severity
 from api.responses import LogPattern
 
-
 _NOISE = re.compile(settings.logs_noise_regex, re.I)
 
 _SEVERITY_RE = {
-    Severity.critical: re.compile(r"\b(fatal|panic|oom|killed|segfault|out of memory)\b", re.I),
-    Severity.high:     re.compile(r"\b(error|err|exception|failed|failure|crash|timeout|unavailable|refused)\b", re.I),
-    Severity.medium:   re.compile(r"\b(warn|warning|slow|retry|retrying|degraded|circuit)\b", re.I),
+    Severity.CRITICAL: re.compile(r"\b(fatal|panic|oom|killed|segfault|out of memory)\b", re.I),
+    Severity.HIGH: re.compile(r"\b(error|err|exception|failed|failure|crash|timeout|unavailable|refused)\b", re.I),
+    Severity.MEDIUM: re.compile(r"\b(warn|warning|slow|retry|retrying|degraded|circuit)\b", re.I),
 }
 
 
@@ -65,10 +65,10 @@ def _normalize(line: str) -> str:
 
 
 def _classify(line: str) -> Severity:
-    for severity in (Severity.critical, Severity.high, Severity.medium):
+    for severity in (Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM):
         if _SEVERITY_RE[severity].search(line):
             return severity
-    return Severity.low
+    return Severity.LOW
 
 
 def _entropy(tokens: List[str]) -> float:
@@ -80,14 +80,16 @@ def _entropy(tokens: List[str]) -> float:
 
 
 def analyze(loki_response: Mapping[str, object]) -> List[LogPattern]:
-    buckets: dict[str, PatternBucket] = defaultdict(lambda: {
-        "count": 0,
-        "first": float("inf"),
-        "last": float("-inf"),
-        "severity": Severity.low,
-        "sample": "",
-        "tokens": [],
-    })
+    buckets: dict[str, PatternBucket] = defaultdict(
+        lambda: {
+            "count": 0,
+            "first": float("inf"),
+            "last": float("-inf"),
+            "severity": Severity.LOW,
+            "sample": "",
+            "tokens": [],
+        }
+    )
 
     for ts, line in _iter_entries(loki_response):
         key = _normalize(line)
@@ -108,16 +110,18 @@ def analyze(loki_response: Mapping[str, object]) -> List[LogPattern]:
         if b["first"] == float("inf"):
             continue
         duration = max(b["last"] - b["first"], settings.logs_min_duration)
-        results.append(LogPattern(
-            pattern=pattern,
-            count=b["count"],
-            first_seen=b["first"],
-            last_seen=b["last"],
-            rate_per_minute=round(b["count"] / (duration / 60), 4),
-            entropy=round(_entropy(b["tokens"]), 4),
-            severity=b["severity"],
-            sample=b["sample"],
-        ))
+        results.append(
+            LogPattern(
+                pattern=pattern,
+                count=b["count"],
+                first_seen=b["first"],
+                last_seen=b["last"],
+                rate_per_minute=round(b["count"] / (duration / 60), 4),
+                entropy=round(_entropy(b["tokens"]), 4),
+                severity=b["severity"],
+                sample=b["sample"],
+            )
+        )
 
     results.sort(key=lambda p: (p.severity.weight(), p.count), reverse=True)
     return results[:100]

@@ -3,9 +3,9 @@ Error propagation detection for traces, identifying source services and affected
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -46,11 +46,7 @@ def detect_propagation(tempo_response: Mapping[str, object]) -> List[ErrorPropag
         if has_error:
             service_errors[service] += 1
 
-    error_rates = {
-        svc: service_errors[svc] / service_total[svc]
-        for svc in service_total
-        if service_total[svc] > 0
-    }
+    error_rates = {svc: service_errors[svc] / service_total[svc] for svc in service_total if service_total[svc] > 0}
 
     sources = [svc for svc, rate in error_rates.items() if rate >= settings.trace_error_rate_threshold]
     if not sources:
@@ -65,17 +61,19 @@ def detect_propagation(tempo_response: Mapping[str, object]) -> List[ErrorPropag
 
         rate = error_rates[source]
         if rate >= settings.trace_error_severity_critical:
-            severity = Severity.critical
+            severity = Severity.CRITICAL
         elif rate >= settings.trace_error_severity_high:
-            severity = Severity.high
+            severity = Severity.HIGH
         else:
-            severity = Severity.medium
+            severity = Severity.MEDIUM
 
-        results.append(ErrorPropagation(
-            source_service=source,
-            affected_services=affected_services,
-            error_rate=round(rate, 4),
-            severity=severity,
-        ))
+        results.append(
+            ErrorPropagation(
+                source_service=source,
+                affected_services=affected_services,
+                error_rate=round(rate, 4),
+                severity=severity,
+            )
+        )
     results.sort(key=lambda e: e.error_rate, reverse=True)
     return results

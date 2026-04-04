@@ -1,11 +1,12 @@
 """
-Test Anomaly Series Detection and correlation logic in the analysis engine, ensuring correct identification of anomalies and their relationships.
+Test Anomaly Series Detection and correlation logic in the analysis engine, ensuring correct identification of anomalies
+and their relationships.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.anomaly.series import iter_series

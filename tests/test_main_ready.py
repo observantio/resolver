@@ -3,9 +3,9 @@ Ready tests for the API service, focused on validating that route permissions ar
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMP
 
 @pytest.mark.asyncio
 async def test_ready_endpoint_returns_503_with_backend_details_when_not_ready():
-    app_main._backend_ready = False
-    app_main._backend_status = {"mimir": "failed: timeout", "tempo": "ready"}
+    app_main._BACKEND_READY = False
+    app_main._BACKEND_STATUS = {"mimir": "failed: timeout", "tempo": "ready"}
     response = await app_main.ready()
     payload = json.loads(response.body.decode("utf-8"))
     assert response.status_code == 503
@@ -46,10 +46,10 @@ async def test_wait_for_all_bg_sets_backend_ready_false_on_partial_failure(monke
         return None
 
     monkeypatch.setattr(app_main, "wait_for", fake_wait_for)
-    app_main._backend_ready = True
-    app_main._backend_status = {}
+    app_main._BACKEND_READY = True
+    app_main._BACKEND_STATUS = {}
 
     await app_main._wait_for_all_bg(DummySettings(), "tenant-a")
 
-    assert app_main._backend_ready is False
-    assert app_main._backend_status[METRICS_BACKEND_MIMIR].startswith("failed:")
+    assert app_main._BACKEND_READY is False
+    assert app_main._BACKEND_STATUS[METRICS_BACKEND_MIMIR].startswith("failed:")

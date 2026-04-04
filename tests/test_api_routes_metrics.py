@@ -1,12 +1,16 @@
 """
-API route tests for metric anomaly detection paths, focused on validating that the changepoint detection route correctly passes the threshold_sigma parameter to the underlying detection function, ensuring that user-specified thresholds are respected in the anomaly detection logic and that the API route correctly interfaces with the detection implementation to produce expected results based on the provided parameters.
+API route tests for metric anomaly detection paths, focused on validating that the changepoint detection route correctly
+passes the threshold_sigma parameter to the underlying detection function, ensuring that user-specified thresholds are
+respected in the anomaly detection logic and that the API route correctly interfaces with the detection implementation
+to produce expected results based on the provided parameters.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
+
 from __future__ import annotations
 
 import pytest

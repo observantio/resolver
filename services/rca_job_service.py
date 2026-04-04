@@ -1,10 +1,9 @@
 """
 RCA job management service that handles scheduling, execution, and lifecycle of root cause analysis jobs.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -32,7 +31,6 @@ from config import settings
 from custom_types.json import JSONDict
 from database import get_db_session
 from db_models import RcaJob, RcaReport
-
 
 _JOB_EXECUTION_ERRORS = (
     asyncio.TimeoutError,
@@ -161,9 +159,19 @@ class RcaJobService:
                     report.result_payload = None
 
             stale_jobs = db.scalars(
-                select(RcaJob).where(and_(RcaJob.created_at < job_cutoff, RcaJob.status.in_([
-                    JobStatus.COMPLETED.value, JobStatus.FAILED.value, JobStatus.CANCELLED.value, JobStatus.DELETED.value,
-                ])))
+                select(RcaJob).where(
+                    and_(
+                        RcaJob.created_at < job_cutoff,
+                        RcaJob.status.in_(
+                            [
+                                JobStatus.COMPLETED.value,
+                                JobStatus.FAILED.value,
+                                JobStatus.CANCELLED.value,
+                                JobStatus.DELETED.value,
+                            ]
+                        ),
+                    )
+                )
             ).all()
             for job in stale_jobs:
                 db.delete(job)
@@ -265,15 +273,17 @@ class RcaJobService:
             if int(settings.analyze_report_retention_days) > 0:
                 expires_at = finished_at + timedelta(days=int(settings.analyze_report_retention_days))
             if existing is None:
-                db.add(RcaReport(
-                    report_id=row.report_id,
-                    job_id=row.job_id,
-                    tenant_id=row.tenant_id,
-                    owner_user_id=row.requested_by,
-                    result_payload=result,
-                    created_at=finished_at,
-                    expires_at=expires_at,
-                ))
+                db.add(
+                    RcaReport(
+                        report_id=row.report_id,
+                        job_id=row.job_id,
+                        tenant_id=row.tenant_id,
+                        owner_user_id=row.requested_by,
+                        result_payload=result,
+                        created_at=finished_at,
+                        expires_at=expires_at,
+                    )
+                )
             else:
                 existing.result_payload = result
                 existing.expires_at = expires_at
@@ -378,7 +388,9 @@ class RcaJobService:
                 if report is None:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RCA report not found")
                 if report.tenant_id != ctx.tenant_id:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied for this RCA report")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, detail="Access denied for this RCA report"
+                    )
                 row = db.get(RcaJob, report.job_id)
                 if row is None or row.status == JobStatus.DELETED.value:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RCA report not found")
@@ -397,12 +409,16 @@ class RcaJobService:
                 if report is None:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RCA report not found")
                 if report.tenant_id != ctx.tenant_id:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied for this RCA report")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, detail="Access denied for this RCA report"
+                    )
                 row = db.get(RcaJob, report.job_id)
                 if row is None:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="RCA report not found")
                 if row.requested_by != ctx.user_id and not ctx.is_superuser:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the report owner can delete this report")
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN, detail="Only the report owner can delete this report"
+                    )
 
                 now = _utcnow()
                 row.status = JobStatus.DELETED.value

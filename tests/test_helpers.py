@@ -1,11 +1,12 @@
 """
-Test cases for helpers in the analysis engine, including utility functions for time handling, data manipulation, and common calculations used across different components.
+Test cases for helpers in the analysis engine, including utility functions for time handling, data manipulation, and
+common calculations used across different components.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -50,6 +51,7 @@ async def test_fetch_json_success(monkeypatch):
     got = await fetch_json("url", params={"a": 1}, headers={})
     assert got == {"foo": "bar"}
 
+
 @pytest.mark.asyncio
 async def test_fetch_json_http_error(monkeypatch):
     resp = DummyResponse(status_code=404, text="not found")
@@ -57,15 +59,18 @@ async def test_fetch_json_http_error(monkeypatch):
     with pytest.raises(InvalidQuery):
         await fetch_json("url")
 
+
 @pytest.mark.asyncio
 async def test_fetch_json_timeout(monkeypatch):
     async def get(*args, **kwargs):
         raise httpx.TimeoutException("timeout")
+
     client = DummyClient(DummyResponse())
     client.get = get
     monkeypatch.setattr(httpx, "AsyncClient", lambda timeout: client)
     with pytest.raises(QueryTimeout):
         await fetch_json("url")
+
 
 @pytest.mark.asyncio
 async def test_fetch_text_success(monkeypatch):

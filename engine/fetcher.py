@@ -1,11 +1,11 @@
 """
-Fetcher Module for Metrics Retrieval and Scrape Fallback
+Fetcher Module for Metrics Retrieval and Scrape Fallback.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -70,15 +70,22 @@ async def _scrape_and_fill(
         candidates = {n for n in _extract_metric_names(q) if n in metrics}
         for name in candidates:
             val = metrics[name]
-            results.append((q, {
-                "status": "success",
-                "data": {
-                    "result": [{
-                        "metric": {"__name__": name},
-                        "values": [[start, val], [end, val]],
-                    }]
-                },
-            }))
+            results.append(
+                (
+                    q,
+                    {
+                        "status": "success",
+                        "data": {
+                            "result": [
+                                {
+                                    "metric": {"__name__": name},
+                                    "values": [[start, val], [end, val]],
+                                }
+                            ]
+                        },
+                    },
+                )
+            )
             break
 
     return results

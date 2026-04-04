@@ -1,10 +1,9 @@
 """
 Causal inference routes for root cause analysis.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -50,7 +49,7 @@ def _select_top_variance_series(series_map: Dict[str, list[float]], max_series: 
 def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> Dict[str, list[str]]:
     common: Dict[str, list[str]] = {}
     for idx, root_a in enumerate(roots):
-        for root_b in roots[idx + 1:]:
+        for root_b in roots[idx + 1 :]:
             pair_key = f"{root_a}|{root_b}"
             common[pair_key] = causal_graph.find_common_causes(root_a, root_b)
     return common
@@ -122,8 +121,7 @@ async def granger_causality(
         "warm_causal_pairs": warm_causal_pairs,
         "root_causes": causal_graph.root_causes(),
         "interventions": {
-            root: causal_graph.simulate_intervention(root).__dict__
-            for root in causal_graph.root_causes()
+            root: causal_graph.simulate_intervention(root).__dict__ for root in causal_graph.root_causes()
         },
         "topological_order": causal_graph.topological_sort(),
         "common_causes_between_roots": _common_causes_for_roots(causal_graph, causal_graph.root_causes()),
@@ -150,9 +148,4 @@ async def bayesian_rca(req: AnalyzeRequest) -> JSONDict:
         has_latency_spike=bool(req.services),
         has_error_propagation=False,
     )
-    return {
-        "posteriors": [
-            {"category": s.category.value, "posterior": s.posterior, "prior": s.prior}
-            for s in scores
-        ]
-    }
+    return {"posteriors": [{"category": s.category.value, "posterior": s.posterior, "prior": s.prior} for s in scores]}

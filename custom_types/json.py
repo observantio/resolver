@@ -3,9 +3,9 @@ JSON-related custom types and helper functions.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -37,9 +37,7 @@ def is_json_value(value: object) -> TypeGuard[JSONValue]:
 
 
 def is_json_object(value: object) -> TypeGuard[JSONDict]:
-    return isinstance(value, dict) and all(
-        isinstance(key, str) and is_json_value(item) for key, item in value.items()
-    )
+    return isinstance(value, dict) and all(isinstance(key, str) and is_json_value(item) for key, item in value.items())
 
 
 __all__ = ["JSONScalar", "JSONValue", "JSONDict", "JSONList", "is_json_value", "is_json_object"]

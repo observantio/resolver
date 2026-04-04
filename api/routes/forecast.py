@@ -1,10 +1,9 @@
 """
 Forecast routes for quick cross-signal temporal correlation without full RCA.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -50,20 +49,23 @@ async def metric_trajectory(
     results: List[JSONDict] = []
     for query_string, resp in metrics_raw:
         for metric_name, ts, vals in anomaly.iter_series(resp, query_hint=query_string):
-            threshold = next(
-                (v for k, v in FORECAST_THRESHOLDS.items() if k in metric_name), None
-            )
+            threshold = next((v for k, v in FORECAST_THRESHOLDS.items() if k in metric_name), None)
             f = forecast(metric_name, ts, vals, threshold) if threshold else None
             deg = analyze_degradation(metric_name, ts, vals)
             if f or deg:
-                results.append({
-                    "metric": metric_name,
-                    "forecast": f.__dict__ if f else None,
-                    "degradation": deg.__dict__ if deg else None,
-                })
+                results.append(
+                    {
+                        "metric": metric_name,
+                        "forecast": f.__dict__ if f else None,
+                        "degradation": deg.__dict__ if deg else None,
+                    }
+                )
     severity_rank = {"low": 1, "medium": 2, "high": 3, "critical": 4}
-    results.sort(key=lambda row: max(
-        severity_rank.get(_severity_value(row.get("forecast")), 0),
-        severity_rank.get(_severity_value(row.get("degradation")), 0),
-    ), reverse=True)
+    results.sort(
+        key=lambda row: max(
+            severity_rank.get(_severity_value(row.get("forecast")), 0),
+            severity_rank.get(_severity_value(row.get("degradation")), 0),
+        ),
+        reverse=True,
+    )
     return {"results": results[:limit]}

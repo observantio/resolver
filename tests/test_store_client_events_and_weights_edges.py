@@ -1,9 +1,9 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -106,9 +106,9 @@ async def test_store_client_get_redis_success_and_cooldown(monkeypatch):
     client_mod = _fresh_store_client()
     client_mod._fallback.clear()
     client_mod._fallback_lists.clear()
-    client_mod._redis_client = None
-    client_mod._retry_after_monotonic = 0.0
-    client_mod._using_fallback = False
+    client_mod._REDIS_CLIENT = None
+    client_mod._RETRY_AFTER_MONOTONIC = 0.0
+    client_mod._USING_FALLBACK = False
 
     fake_client = _FakeRedisClient()
     import_calls: list[str] = []
@@ -130,9 +130,9 @@ async def test_store_client_get_redis_success_and_cooldown(monkeypatch):
     client_mod = _fresh_store_client()
     client_mod._fallback.clear()
     client_mod._fallback_lists.clear()
-    client_mod._redis_client = None
-    client_mod._retry_after_monotonic = 0.0
-    client_mod._using_fallback = False
+    client_mod._REDIS_CLIENT = None
+    client_mod._RETRY_AFTER_MONOTONIC = 0.0
+    client_mod._USING_FALLBACK = False
     attempts = {"count": 0}
     clock = {"calls": 0}
 
@@ -197,7 +197,9 @@ async def test_events_store_coercion_load_and_append(monkeypatch):
     assert events_store._coerce_float("1.25") == 1.25
     with pytest.raises(TypeError):
         events_store._coerce_float(True)
-    assert events_store._coerce_event({"service": "svc", "timestamp": "1", "version": "v1", "metadata": {"a": "b"}}) == {
+    assert events_store._coerce_event(
+        {"service": "svc", "timestamp": "1", "version": "v1", "metadata": {"a": "b"}}
+    ) == {
         "service": "svc",
         "timestamp": 1.0,
         "version": "v1",
@@ -208,15 +210,17 @@ async def test_events_store_coercion_load_and_append(monkeypatch):
     }
     assert events_store._coerce_event({"service": "svc", "timestamp": True, "version": "v1"}) is None
 
-    valid_event = json.dumps({
-        "service": "svc",
-        "timestamp": 2.0,
-        "version": "v2",
-        "author": "me",
-        "environment": "prod",
-        "source": "ci",
-        "metadata": {"sha": "abc"},
-    })
+    valid_event = json.dumps(
+        {
+            "service": "svc",
+            "timestamp": 2.0,
+            "version": "v2",
+            "author": "me",
+            "environment": "prod",
+            "source": "ci",
+            "metadata": {"sha": "abc"},
+        }
+    )
     monkeypatch.setattr(events_store, "redis_lrange", lambda key: _resolved([valid_event]))
     loaded = await events_store.load("tenant-a")
     assert loaded[0]["service"] == "svc"
@@ -230,7 +234,9 @@ async def test_events_store_coercion_load_and_append(monkeypatch):
         recorded.append((key, json.loads(value), ttl, max_len))
 
     monkeypatch.setattr(events_store, "redis_rpush", fake_rpush)
-    await events_store.append("tenant-a", DeploymentEvent(service="svc", timestamp=1.0, version="v1", metadata={"a": "b"}))
+    await events_store.append(
+        "tenant-a", DeploymentEvent(service="svc", timestamp=1.0, version="v1", metadata={"a": "b"})
+    )
     assert recorded[0][1]["service"] == "svc"
     assert recorded[0][3] == 500
 
@@ -245,15 +251,21 @@ async def test_events_store_coercion_load_and_append(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_weights_and_granger_edge_coercions(monkeypatch):
-    monkeypatch.setattr(weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":true}'))
+    monkeypatch.setattr(
+        weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":true}')
+    )
     loaded = await weights_store.load("tenant-a")
     assert loaded == {"weights": {"metrics": 0.4}, "update_count": 1}
 
-    monkeypatch.setattr(weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":2.9}'))
+    monkeypatch.setattr(
+        weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":2.9}')
+    )
     loaded = await weights_store.load("tenant-a")
     assert loaded == {"weights": {"metrics": 0.4}, "update_count": 2}
 
-    monkeypatch.setattr(weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":"oops"}'))
+    monkeypatch.setattr(
+        weights_store, "redis_get", lambda key: _resolved('{"weights":{"metrics":0.4},"update_count":"oops"}')
+    )
     loaded = await weights_store.load("tenant-a")
     assert loaded == {"weights": {"metrics": 0.4}, "update_count": 0}
 
@@ -269,12 +281,46 @@ async def test_weights_and_granger_edge_coercions(monkeypatch):
     monkeypatch.setattr(granger_store, "redis_get", lambda key: _resolved('{"not":"a-list"}'))
     assert await granger_store.load("tenant-a", "svc") == []
 
-    monkeypatch.setattr(granger_store, "redis_get", lambda key: _resolved(json.dumps([
-        {"cause_metric": "a", "effect_metric": "b", "max_lag": "2", "f_statistic": "1.5", "p_value": 0.1, "is_causal": True, "strength": 0.6},
-        {"cause_metric": "x", "effect_metric": "y", "max_lag": True, "f_statistic": 1.5, "p_value": 0.1, "is_causal": True, "strength": 0.2},
-    ])))
+    monkeypatch.setattr(
+        granger_store,
+        "redis_get",
+        lambda key: _resolved(
+            json.dumps(
+                [
+                    {
+                        "cause_metric": "a",
+                        "effect_metric": "b",
+                        "max_lag": "2",
+                        "f_statistic": "1.5",
+                        "p_value": 0.1,
+                        "is_causal": True,
+                        "strength": 0.6,
+                    },
+                    {
+                        "cause_metric": "x",
+                        "effect_metric": "y",
+                        "max_lag": True,
+                        "f_statistic": 1.5,
+                        "p_value": 0.1,
+                        "is_causal": True,
+                        "strength": 0.2,
+                    },
+                ]
+            )
+        ),
+    )
     loaded = await granger_store.load("tenant-a", "svc")
-    assert loaded == [{"cause_metric": "a", "effect_metric": "b", "max_lag": 2, "f_statistic": 1.5, "p_value": 0.1, "is_causal": True, "strength": 0.6}]
+    assert loaded == [
+        {
+            "cause_metric": "a",
+            "effect_metric": "b",
+            "max_lag": 2,
+            "f_statistic": 1.5,
+            "p_value": 0.1,
+            "is_causal": True,
+            "strength": 0.6,
+        }
+    ]
 
     monkeypatch.setattr(granger_store, "redis_set", lambda *args, **kwargs: _raise(TypeError("bad")))
     merged = await granger_store.save_and_merge(
@@ -286,8 +332,28 @@ async def test_weights_and_granger_edge_coercions(monkeypatch):
 
     async def fake_load(tenant_id: str, service: str):
         if service == "svc-a":
-            return [{"cause_metric": "a", "effect_metric": "b", "max_lag": 1, "f_statistic": 1.0, "p_value": 0.1, "is_causal": True, "strength": 0.3}]
-        return [{"cause_metric": "a", "effect_metric": "b", "max_lag": 1, "f_statistic": 1.0, "p_value": 0.1, "is_causal": True, "strength": 0.8}]
+            return [
+                {
+                    "cause_metric": "a",
+                    "effect_metric": "b",
+                    "max_lag": 1,
+                    "f_statistic": 1.0,
+                    "p_value": 0.1,
+                    "is_causal": True,
+                    "strength": 0.3,
+                }
+            ]
+        return [
+            {
+                "cause_metric": "a",
+                "effect_metric": "b",
+                "max_lag": 1,
+                "f_statistic": 1.0,
+                "p_value": 0.1,
+                "is_causal": True,
+                "strength": 0.8,
+            }
+        ]
 
     monkeypatch.setattr(granger_store, "load", fake_load)
     combined = await granger_store.load_all_services("tenant-a", ["svc-a", "svc-b"])

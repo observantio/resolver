@@ -1,11 +1,12 @@
 """
-Clustering logic for grouping related anomalies based on temporal proximity and value similarity, using DBSCAN or a simple fallback method when scikit-learn is unavailable.
+Clustering logic for grouping related anomalies based on temporal proximity and value similarity, using DBSCAN or a
+simple fallback method when scikit-learn is unavailable.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -52,9 +53,9 @@ def _cluster_one_metric(
     except ImportError:
         return _fallback_cluster(anomalies)
 
-    X = _feature_matrix(anomalies)
+    x = _feature_matrix(anomalies)
     model = dbscan_factory(eps=eps, min_samples=min_samples, metric="euclidean")
-    labels = model.fit_predict(X)
+    labels = model.fit_predict(x)
 
     clusters: dict[int, List[MetricAnomaly]] = {}
     for label, anomaly in zip(labels, anomalies):
@@ -62,15 +63,17 @@ def _cluster_one_metric(
 
     result: List[AnomalyCluster] = []
     for cid, members in clusters.items():
-        result.append(AnomalyCluster(
-            cluster_id=cid,
-            members=members,
-            centroid_timestamp=float(np.mean([a.timestamp for a in members])),
-            centroid_value=float(np.mean([a.value for a in members])),
-            metric_names=list(dict.fromkeys(a.metric_name for a in members)),
-            size=len(members),
-            is_noise=cid == -1,
-        ))
+        result.append(
+            AnomalyCluster(
+                cluster_id=cid,
+                members=members,
+                centroid_timestamp=float(np.mean([a.timestamp for a in members])),
+                centroid_value=float(np.mean([a.value for a in members])),
+                metric_names=list(dict.fromkeys(a.metric_name for a in members)),
+                size=len(members),
+                is_noise=cid == -1,
+            )
+        )
 
     return sorted(result, key=lambda c: c.size, reverse=True)
 
@@ -96,15 +99,17 @@ def cluster(
     for _metric_key in sorted(by_metric.keys()):
         part = _cluster_one_metric(by_metric[_metric_key], eps, min_samples)
         for c in part:
-            combined.append(AnomalyCluster(
-                cluster_id=next_cluster_id,
-                members=c.members,
-                centroid_timestamp=c.centroid_timestamp,
-                centroid_value=c.centroid_value,
-                metric_names=c.metric_names,
-                size=c.size,
-                is_noise=c.is_noise,
-            ))
+            combined.append(
+                AnomalyCluster(
+                    cluster_id=next_cluster_id,
+                    members=c.members,
+                    centroid_timestamp=c.centroid_timestamp,
+                    centroid_value=c.centroid_value,
+                    metric_names=c.metric_names,
+                    size=c.size,
+                    is_noise=c.is_noise,
+                )
+            )
             next_cluster_id += 1
 
     return sorted(combined, key=lambda c: c.size, reverse=True)
@@ -113,11 +118,13 @@ def cluster(
 def _fallback_cluster(anomalies: List[MetricAnomaly]) -> List[AnomalyCluster]:
     if not anomalies:
         return []
-    return [AnomalyCluster(
-        cluster_id=0,
-        members=anomalies,
-        centroid_timestamp=float(np.mean([a.timestamp for a in anomalies])),
-        centroid_value=float(np.mean([a.value for a in anomalies])),
-        metric_names=list(dict.fromkeys(a.metric_name for a in anomalies)),
-        size=len(anomalies),
-    )]
+    return [
+        AnomalyCluster(
+            cluster_id=0,
+            members=anomalies,
+            centroid_timestamp=float(np.mean([a.timestamp for a in anomalies])),
+            centroid_value=float(np.mean([a.value for a in anomalies])),
+            metric_names=list(dict.fromkeys(a.metric_name for a in anomalies)),
+            size=len(anomalies),
+        )
+    ]

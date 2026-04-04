@@ -1,11 +1,12 @@
 """
-Test cases for correlation logic in the analysis engine, validating temporal correlation of anomalies, log bursts, and service latency, as well as edge cases in timestamp handling and relevance filtering.
+Test cases for correlation logic in the analysis engine, validating temporal correlation of anomalies, log bursts, and
+service latency, as well as edge cases in timestamp handling and relevance filtering.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.correlation.temporal import CorrelatedEvent, correlate
@@ -17,17 +18,22 @@ from engine.enums import Severity, ChangeType
 
 def make_anomaly(t):
     return MetricAnomaly(
-        metric_name="m", timestamp=t, value=1,
-        change_type=ChangeType.spike, z_score=1, mad_score=1,
-        isolation_score=0, expected_range=(0,1), severity=Severity.low,
-        description=""
+        metric_name="m",
+        timestamp=t,
+        value=1,
+        change_type=ChangeType.SPIKE,
+        z_score=1,
+        mad_score=1,
+        isolation_score=0,
+        expected_range=(0, 1),
+        severity=Severity.LOW,
+        description="",
     )
 
 
 def make_logburst(start, end):
     return LogBurst(
-        window_start=start, window_end=end,
-        rate_per_second=1, baseline_rate=1, ratio=1, severity=Severity.low
+        window_start=start, window_end=end, rate_per_second=1, baseline_rate=1, ratio=1, severity=Severity.LOW
     )
 
 
@@ -41,7 +47,7 @@ def make_latency(service="s", window_start=0, window_end=60):
         apdex=0.5,
         error_rate=0,
         sample_count=1,
-        severity=Severity.low,
+        severity=Severity.LOW,
         window_start=window_start,
         window_end=window_end,
     )
@@ -85,26 +91,42 @@ def test_correlate_only_links_temporally_and_name_relevant_latency():
             metric_name="system_memory_usage_bytes{service=checkout}",
             timestamp=100,
             value=1,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=4,
             mad_score=4,
             isolation_score=0,
             expected_range=(0, 1),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
     ]
     bursts = [make_logburst(95, 105)]
     latency = [
         ServiceLatency(
-            service="checkout", operation="o", p50_ms=10, p95_ms=20, p99_ms=30,
-            apdex=0.5, error_rate=0, sample_count=1, severity=Severity.low,
-            window_start=90.0, window_end=110.0,
+            service="checkout",
+            operation="o",
+            p50_ms=10,
+            p95_ms=20,
+            p99_ms=30,
+            apdex=0.5,
+            error_rate=0,
+            sample_count=1,
+            severity=Severity.LOW,
+            window_start=90.0,
+            window_end=110.0,
         ),
         ServiceLatency(
-            service="inventory", operation="o", p50_ms=10, p95_ms=20, p99_ms=30,
-            apdex=0.5, error_rate=0, sample_count=1, severity=Severity.low,
-            window_start=90.0, window_end=110.0,
+            service="inventory",
+            operation="o",
+            p50_ms=10,
+            p95_ms=20,
+            p99_ms=30,
+            apdex=0.5,
+            error_rate=0,
+            sample_count=1,
+            severity=Severity.LOW,
+            window_start=90.0,
+            window_end=110.0,
         ),
     ]
     events = correlate(anomalies, bursts, latency, window_seconds=30)
@@ -118,12 +140,12 @@ def test_correlate_requires_temporal_overlap_for_latency():
             metric_name="request_total{service=checkout}",
             timestamp=100,
             value=1,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=4,
             mad_score=4,
             isolation_score=0,
             expected_range=(0, 1),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
     ]
@@ -140,12 +162,12 @@ def test_correlate_does_not_use_substring_service_match():
             metric_name="request_total{service=cart}",
             timestamp=100,
             value=1,
-            change_type=ChangeType.spike,
+            change_type=ChangeType.SPIKE,
             z_score=4,
             mad_score=4,
             isolation_score=0,
             expected_range=(0, 1),
-            severity=Severity.high,
+            severity=Severity.HIGH,
             description="",
         )
     ]
@@ -163,9 +185,11 @@ def test_correlate_with_custom_weight_fn():
     sl = [make_latency()]
     # compute unweighted metric score for reference
     m_score = min(settings.correlation_score_max, 1 * settings.correlation_weight_time)
+
     # define a weight function that doubles metric component only
     def wfn(m, log_score, t):
         return m * 2
+
     events = correlate(anomalies, bursts, sl, window_seconds=10, weight_fn=wfn)
     assert events
     expected = round(min(settings.correlation_score_max, wfn(m_score, 0, 0)), 3)

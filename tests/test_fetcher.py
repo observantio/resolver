@@ -1,11 +1,12 @@
 """
-Test cases for Fetcher logic in the analysis engine, including data retrieval, caching behavior, and error handling for different signal types.
+Test cases for Fetcher logic in the analysis engine, including data retrieval, caching behavior, and error handling for
+different signal types.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -16,9 +17,11 @@ from engine.fetcher import fetch_metrics
 class DummyProvider:
     def __init__(self, results):
         self._results = results
+
         class Metrics:
             async def scrape(self_non):
                 return ""
+
         self.metrics = Metrics()
 
     async def query_metrics(self, query, start, end, step):

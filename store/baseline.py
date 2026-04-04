@@ -3,9 +3,9 @@ Baseline computation and persistence logic.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -22,15 +22,18 @@ from store import keys
 
 log = logging.getLogger(__name__)
 
+
 def _to_json(b: Baseline) -> str:
-    return json.dumps({
-        "mean": b.mean,
-        "std": b.std,
-        "lower": b.lower,
-        "upper": b.upper,
-        "seasonal_mean": b.seasonal_mean,
-        "sample_count": b.sample_count,
-    })
+    return json.dumps(
+        {
+            "mean": b.mean,
+            "std": b.std,
+            "lower": b.lower,
+            "upper": b.upper,
+            "seasonal_mean": b.seasonal_mean,
+            "sample_count": b.sample_count,
+        }
+    )
 
 
 def _from_json(data: str) -> Baseline:

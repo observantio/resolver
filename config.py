@@ -3,9 +3,9 @@ Constants and configuration for Resolver.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import os
@@ -98,12 +98,8 @@ RESOLVER_DEFAULT_TENANT_ID = os.getenv("RESOLVER_DEFAULT_TENANT_ID", "Av45ZchZsQ
 
 DEFAULT_SERVICE_NAME = "default_service"
 
-SLO_ERROR_QUERY_TEMPLATE = (
-    'sum(rate(http_requests_total{{service="{service}",status=~"5.."}}[5m]))'
-)
-SLO_TOTAL_QUERY_TEMPLATE = (
-    'sum(rate(http_requests_total{{service="{service}"}}[5m]))'
-)
+SLO_ERROR_QUERY_TEMPLATE = 'sum(rate(http_requests_total{{service="{service}",status=~"5.."}}[5m]))'
+SLO_TOTAL_QUERY_TEMPLATE = 'sum(rate(http_requests_total{{service="{service}"}}[5m]))'
 
 # default metric queries used by various API routes when none are supplied
 DEFAULT_METRIC_QUERIES = [
@@ -146,7 +142,7 @@ DEFAULT_METRIC_QUERIES = [
 ]
 
 SLO_ERROR_QUERY = 'sum(rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m]))'
-SLO_TOTAL_QUERY = 'sum(rate(traces_spanmetrics_calls_total[5m]))'
+SLO_TOTAL_QUERY = "sum(rate(traces_spanmetrics_calls_total[5m]))"
 
 FORECAST_THRESHOLDS: dict[str, float] = {
     "system_memory_usage_bytes": 0.85,
@@ -172,6 +168,7 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
 }
 
 REGISTRY_ALPHA: float = float(os.getenv("REGISTRY_ALPHA", "0.2"))
+
 
 class Settings(BaseSettings):
     logs_backend: str = RESOLVER_LOGS_BACKEND
@@ -319,14 +316,11 @@ class Settings(BaseSettings):
     quality_max_root_causes_without_multisignal: int = int(
         os.getenv("RESOLVER_QUALITY_MAX_ROOT_CAUSES_WITHOUT_MULTISIGNAL", "1")
     )
-    quality_min_corroboration_signals: int = int(
-        os.getenv("RESOLVER_QUALITY_MIN_CORROBORATION_SIGNALS", "2")
-    )
+    quality_min_corroboration_signals: int = int(os.getenv("RESOLVER_QUALITY_MIN_CORROBORATION_SIGNALS", "2"))
     quality_confidence_calibration_version: str = os.getenv(
         "RESOLVER_QUALITY_CONFIDENCE_CALIBRATION_VERSION",
         "calib_2026_02_25_precision_default",
     )
-
 
     events_window_seconds: float = 300.0
 
@@ -342,52 +336,52 @@ class Settings(BaseSettings):
     bayesian_likelihoods: Dict[str, Dict[str, float]] = {
         "deployment": {
             "has_deployment_event": 0.95,
-            "has_metric_spike":     0.70,
-            "has_log_burst":        0.60,
-            "has_latency_spike":    0.50,
-            "has_error_propagation":0.40,
+            "has_metric_spike": 0.70,
+            "has_log_burst": 0.60,
+            "has_latency_spike": 0.50,
+            "has_error_propagation": 0.40,
         },
         "resource_exhaustion": {
             "has_deployment_event": 0.15,
-            "has_metric_spike":     0.90,
-            "has_log_burst":        0.50,
-            "has_latency_spike":    0.70,
-            "has_error_propagation":0.30,
+            "has_metric_spike": 0.90,
+            "has_log_burst": 0.50,
+            "has_latency_spike": 0.70,
+            "has_error_propagation": 0.30,
         },
         "dependency_failure": {
             "has_deployment_event": 0.10,
-            "has_metric_spike":     0.50,
-            "has_log_burst":        0.70,
-            "has_latency_spike":    0.95,
-            "has_error_propagation":0.80,
+            "has_metric_spike": 0.50,
+            "has_log_burst": 0.70,
+            "has_latency_spike": 0.95,
+            "has_error_propagation": 0.80,
         },
         "traffic_surge": {
             "has_deployment_event": 0.05,
-            "has_metric_spike":     0.95,
-            "has_log_burst":        0.60,
-            "has_latency_spike":    0.60,
-            "has_error_propagation":0.20,
+            "has_metric_spike": 0.95,
+            "has_log_burst": 0.60,
+            "has_latency_spike": 0.60,
+            "has_error_propagation": 0.20,
         },
         "error_propagation": {
             "has_deployment_event": 0.10,
-            "has_metric_spike":     0.60,
-            "has_log_burst":        0.80,
-            "has_latency_spike":    0.85,
-            "has_error_propagation":0.99,
+            "has_metric_spike": 0.60,
+            "has_log_burst": 0.80,
+            "has_latency_spike": 0.85,
+            "has_error_propagation": 0.99,
         },
         "slo_burn": {
             "has_deployment_event": 0.20,
-            "has_metric_spike":     0.80,
-            "has_log_burst":        0.50,
-            "has_latency_spike":    0.60,
-            "has_error_propagation":0.50,
+            "has_metric_spike": 0.80,
+            "has_log_burst": 0.50,
+            "has_latency_spike": 0.60,
+            "has_error_propagation": 0.50,
         },
         "unknown": {
             "has_deployment_event": 0.05,
-            "has_metric_spike":     0.30,
-            "has_log_burst":        0.30,
-            "has_latency_spike":    0.30,
-            "has_error_propagation":0.10,
+            "has_metric_spike": 0.30,
+            "has_log_burst": 0.30,
+            "has_latency_spike": 0.30,
+            "has_error_propagation": 0.10,
         },
     }
 
@@ -441,7 +435,7 @@ class Settings(BaseSettings):
     # time window used for monthly SLO budgets (minutes)
     slo_month_minutes: float = 30 * 24 * 60
     slo_month_seconds: float = slo_month_minutes * 60
-    slo_default_target_availability : float = 0.999
+    slo_default_target_availability: float = 0.999
 
     # anomaly detection thresholds
     anomaly_z_thresholds: List[Tuple[float, float]] = [
@@ -531,13 +525,15 @@ class Settings(BaseSettings):
         expected_service_token = str(self.expected_service_token or "").strip()
         if len(expected_service_token) < 24 or _is_weak_secret(expected_service_token):
             raise ValueError(
-                "RESOLVER_EXPECTED_SERVICE_TOKEN must be a strong non-placeholder secret of at least 24 characters in production"
+                "RESOLVER_EXPECTED_SERVICE_TOKEN must be a strong non-placeholder "
+                "secret of at least 24 characters in production"
             )
 
         context_verify_key = str(self.context_verify_key or "").strip()
         if len(context_verify_key) < 32 or _is_weak_secret(context_verify_key):
             raise ValueError(
-                "RESOLVER_CONTEXT_VERIFY_KEY must be a strong non-placeholder secret of at least 32 characters in production"
+                "RESOLVER_CONTEXT_VERIFY_KEY must be a strong non-placeholder "
+                "secret of at least 32 characters in production"
             )
 
         if not str(self.context_issuer or "").strip():

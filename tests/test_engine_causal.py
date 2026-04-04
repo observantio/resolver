@@ -1,11 +1,12 @@
 """
-Test engine causal analysis logic, including correlation of anomalies, log bursts, and service latency, as well as edge cases in timestamp handling and relevance filtering.
+Test engine causal analysis logic, including correlation of anomalies, log bursts, and service latency, as well as edge
+cases in timestamp handling and relevance filtering.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.causal.graph import CausalGraph, InterventionResult

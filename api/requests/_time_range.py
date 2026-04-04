@@ -1,4 +1,6 @@
-"""Shared time-range request models."""
+"""
+Shared time-range request models.
+"""
 
 from __future__ import annotations
 

@@ -1,11 +1,13 @@
 """
-Granger causality analysis logic for determining whether one time series can be considered a cause of another based on the predictability of the effect series using past values of the cause series, to assist in root cause analysis and understanding of relationships between metrics.
+Granger causality analysis logic for determining whether one time series can be considered a cause of another based on
+the predictability of the effect series using past values of the cause series, to assist in root cause analysis and
+understanding of relationships between metrics.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -32,9 +34,9 @@ class GrangerResult:
     strength: float
 
 
-def _ols(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float]:
-    coeffs, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
-    predicted = X @ coeffs
+def _ols(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float]:
+    coeffs, _, _, _ = np.linalg.lstsq(x, y, rcond=None)
+    predicted = x @ coeffs
     ss_res = float(np.sum((y - predicted) ** 2))
     return coeffs, ss_res
 
@@ -43,9 +45,8 @@ def _lag_matrix(series: np.ndarray, max_lag: int) -> np.ndarray:
     n = len(series) - max_lag
     cols = [np.ones(n)]
     for lag in range(1, max_lag + 1):
-        cols.append(series[max_lag - lag: max_lag - lag + n])
+        cols.append(series[max_lag - lag : max_lag - lag + n])
     return np.column_stack(cols)
-
 
 
 def granger_pair_analysis(
@@ -69,15 +70,12 @@ def granger_pair_analysis(
     n = len(effect) - max_lag
     y = effect[max_lag:]
 
-    X_restricted = _lag_matrix(effect, max_lag)
-    _, ss_restricted = _ols(X_restricted, y)
+    x_restricted = _lag_matrix(effect, max_lag)
+    _, ss_restricted = _ols(x_restricted, y)
 
-    cause_lags = np.column_stack([
-        cause[max_lag - lag: max_lag - lag + n]
-        for lag in range(1, max_lag + 1)
-    ])
-    X_unrestricted = np.hstack([X_restricted, cause_lags])
-    _, ss_unrestricted = _ols(X_unrestricted, y)
+    cause_lags = np.column_stack([cause[max_lag - lag : max_lag - lag + n] for lag in range(1, max_lag + 1)])
+    x_unrestricted = np.hstack([x_restricted, cause_lags])
+    _, ss_unrestricted = _ols(x_unrestricted, y)
 
     k = max_lag
     denom_df = n - 2 * max_lag - 1
@@ -91,8 +89,7 @@ def granger_pair_analysis(
 
     is_causal = p_value < p_threshold and f_stat > 1.0
     strength = round(
-        max(0.0, 1.0 - p_value)
-        * min(1.0, f_stat / settings.granger_strength_scale),
+        max(0.0, 1.0 - p_value) * min(1.0, f_stat / settings.granger_strength_scale),
         3,
     )
 
@@ -124,8 +121,10 @@ def granger_multiple_pairs(
             if i == j:
                 continue
             result = granger_pair_analysis(
-                cause, series_map[cause],
-                effect, series_map[effect],
+                cause,
+                series_map[cause],
+                effect,
+                series_map[effect],
                 max_lag=max_lag,
                 p_threshold=p_threshold,
             )

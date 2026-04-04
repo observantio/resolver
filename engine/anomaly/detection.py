@@ -1,11 +1,13 @@
 """
-Detection logic for identifying anomalies in time series metric data using a combination of statistical methods (z-score, MAD) and machine learning (Isolation Forest), along with heuristics for classifying the type and severity of detected anomalies, to provide actionable insights into potential issues in monitored systems.
+Detection logic for identifying anomalies in time series metric data using a combination of statistical methods
+(z-score, MAD) and machine learning (Isolation Forest), along with heuristics for classifying the type and severity of
+detected anomalies, to provide actionable insights into potential issues in monitored systems.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -20,7 +22,9 @@ from engine.enums import ChangeType, Severity
 from api.responses import MetricAnomaly
 from config import settings
 
-linregress: Callable[[np.ndarray, np.ndarray], tuple[float, float, float, float, float]] = import_module("scipy.stats").linregress
+linregress: Callable[[np.ndarray, np.ndarray], tuple[float, float, float, float, float]] = import_module(
+    "scipy.stats"
+).linregress
 
 
 class IsolationForestModel(Protocol):
@@ -96,20 +100,20 @@ def _cusum_changepoints(arr: np.ndarray, threshold: float | None = None) -> np.n
     cusum_neg = np.zeros(len(arr))
     k = settings.anomaly_cusum_k
     for i in range(1, len(arr)):
-        cusum_pos[i] = max(0, cusum_pos[i-1] + normed[i] - k)
-        cusum_neg[i] = max(0, cusum_neg[i-1] - normed[i] - k)
+        cusum_pos[i] = max(0, cusum_pos[i - 1] + normed[i] - k)
+        cusum_neg[i] = max(0, cusum_neg[i - 1] - normed[i] - k)
     return (cusum_pos > threshold) | (cusum_neg > threshold)
 
 
 def _change_type(value: float, mean: float, z: float, trend_slope: float) -> ChangeType:
     _ = (value, mean)
     if abs(trend_slope) > settings.anomaly_drift_slope_threshold:
-        return ChangeType.drift
+        return ChangeType.DRIFT
     if z > 0:
-        return ChangeType.spike
+        return ChangeType.SPIKE
     if z < 0:
-        return ChangeType.drop
-    return ChangeType.shift
+        return ChangeType.DROP
+    return ChangeType.SHIFT
 
 
 def _severity(z: float, mad: float, iso: int, iqr_score: float = 0.0) -> Severity:
@@ -235,8 +239,7 @@ def detect(
         settings.anomaly_contamination_min,
         min(
             settings.anomaly_contamination_max,
-            settings.anomaly_contamination_divisor
-            / max(sensitivity, settings.anomaly_min_sensitivity),
+            settings.anomaly_contamination_divisor / max(sensitivity, settings.anomaly_min_sensitivity),
         ),
     )
     if _is_precision_profile():
@@ -276,25 +279,15 @@ def detect(
     slope, *_ = linregress(np.arange(len(clean)), clean)
 
     anomalies: List[MetricAnomaly] = []
-    for t, v, z, m, c, iso_l, iso_s in (
-        zip(ts, arr, z_scores, mad_scores, cusum_flags, iso_labels, iso_scores)
-    ):
+    for t, v, z, m, c, iso_l, iso_s in zip(ts, arr, z_scores, mad_scores, cusum_flags, iso_labels, iso_scores):
         iq = _iqr_score_value(float(v), med, iqr)
         tukey = _tukey_outlier_class(float(v), q1, q3, iqr)
         iqr_signal = tukey != "none"
-        stat_flag = (
-            abs(z) >= settings.zscore_threshold
-            or abs(m) >= settings.mad_threshold
-            or c
-            or iqr_signal
-        )
-        iso_flag = (
-            iso_l == -1
-            and (
-                abs(z) >= settings.zscore_threshold * 0.7
-                or abs(m) >= settings.mad_threshold * 0.7
-                or abs(iq) >= settings.mad_threshold * 0.5
-            )
+        stat_flag = abs(z) >= settings.zscore_threshold or abs(m) >= settings.mad_threshold or c or iqr_signal
+        iso_flag = iso_l == -1 and (
+            abs(z) >= settings.zscore_threshold * 0.7
+            or abs(m) >= settings.mad_threshold * 0.7
+            or abs(iq) >= settings.mad_threshold * 0.5
         )
         flagged = stat_flag or iso_flag
         if not flagged:
@@ -303,24 +296,26 @@ def detect(
         sev = _severity(z, m, iso_l, iq)
         ctype = _change_type(v, mean, z, slope)
 
-        anomalies.append(MetricAnomaly(
-            metric_name=metric,
-            timestamp=float(t),
-            value=float(v),
-            change_type=ctype,
-            z_score=round(float(z), 3),
-            mad_score=round(float(m), 3),
-            isolation_score=round(float(iso_s), 4),
-            expected_range=(round(p5, 4), round(p95, 4)),
-            severity=sev,
-            iqr_score=round(float(iq), 3),
-            tukey_outlier_class=tukey,
-            description=(
-                f"{metric}: {ctype.value} of {v:.4g} "
-                f"(z={z:+.1f}, MAD={m:+.1f}, IQR={iq:+.2f}, Tukey={tukey}, "
-                f"expected=[{p5:.4g}, {p95:.4g}])"
-            ),
-        ))
+        anomalies.append(
+            MetricAnomaly(
+                metric_name=metric,
+                timestamp=float(t),
+                value=float(v),
+                change_type=ctype,
+                z_score=round(float(z), 3),
+                mad_score=round(float(m), 3),
+                isolation_score=round(float(iso_s), 4),
+                expected_range=(round(p5, 4), round(p95, 4)),
+                severity=sev,
+                iqr_score=round(float(iq), 3),
+                tukey_outlier_class=tukey,
+                description=(
+                    f"{metric}: {ctype.value} of {v:.4g} "
+                    f"(z={z:+.1f}, MAD={m:+.1f}, IQR={iq:+.2f}, Tukey={tukey}, "
+                    f"expected=[{p5:.4g}, {p95:.4g}])"
+                ),
+            )
+        )
 
     if bool(settings.anomaly_compress_runs):
         anomalies = _compress_runs(anomalies)

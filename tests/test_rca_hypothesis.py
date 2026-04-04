@@ -1,11 +1,12 @@
 """
-Test RCA hypothesis generation logic in the analysis engine, including creation of hypotheses based on correlated signals, relevance scoring, and edge cases in timestamp handling and signal relationships.
+Test RCA hypothesis generation logic in the analysis engine, including creation of hypotheses based on correlated
+signals, relevance scoring, and edge cases in timestamp handling and signal relationships.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from engine.rca.hypothesis import _signals_from_event, _action_for_category, generate, RootCause
@@ -25,19 +26,27 @@ class DummyEvent:
 
 def test_signals_and_actions():
     ev = DummyEvent()
-    ev.metric_anomalies = [MetricAnomaly(
-        metric_id="m", metric_name="m", timestamp=1, value=0,
-        change_type=ChangeType.spike,
-        z_score=5, mad_score=2, isolation_score=0.0,
-        expected_range=(0, 1), severity=Severity.high,
-        description=""
-    )]
+    ev.metric_anomalies = [
+        MetricAnomaly(
+            metric_id="m",
+            metric_name="m",
+            timestamp=1,
+            value=0,
+            change_type=ChangeType.SPIKE,
+            z_score=5,
+            mad_score=2,
+            isolation_score=0.0,
+            expected_range=(0, 1),
+            severity=Severity.HIGH,
+            description="",
+        )
+    ]
     ev.log_bursts = []
     ev.service_latency = []
     signals = _signals_from_event(ev)
     assert "metrics" in signals
-    assert "deployment" in _action_for_category(RcaCategory.deployment)
-    assert "resource" in _action_for_category(RcaCategory.resource_exhaustion)
+    assert "deployment" in _action_for_category(RcaCategory.DEPLOYMENT)
+    assert "resource" in _action_for_category(RcaCategory.RESOURCE_EXHAUSTION)
     assert "Investigate" in _action_for_category(None)
 
 
@@ -48,28 +57,36 @@ def test_generate_empty():
 
 def test_generate_with_simple_event():
     anomaly = MetricAnomaly(
-        metric_id="m", metric_name="m", timestamp=1, value=100,
-        change_type=ChangeType.spike,
-        z_score=10, mad_score=5, isolation_score=0.0,
-        expected_range=(0, 1), severity=Severity.high,
-        description=""
+        metric_id="m",
+        metric_name="m",
+        timestamp=1,
+        value=100,
+        change_type=ChangeType.SPIKE,
+        z_score=10,
+        mad_score=5,
+        isolation_score=0.0,
+        expected_range=(0, 1),
+        severity=Severity.HIGH,
+        description="",
     )
     ev = CorrelatedEvent(
         window_start=1,
         window_end=2,
         metric_anomalies=[anomaly],
         log_bursts=[],
-        service_latency=[ServiceLatency(
-            service="svc",
-            operation="op",
-            p50_ms=50.0,
-            p95_ms=80.0,
-            p99_ms=100.0,
-            apdex=0.9,
-            error_rate=0.0,
-            sample_count=1,
-            severity=Severity.low,
-        )],
+        service_latency=[
+            ServiceLatency(
+                service="svc",
+                operation="op",
+                p50_ms=50.0,
+                p95_ms=80.0,
+                p99_ms=100.0,
+                apdex=0.9,
+                error_rate=0.0,
+                sample_count=1,
+                severity=Severity.LOW,
+            )
+        ],
         confidence=0.5,
     )
     root = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
@@ -85,12 +102,12 @@ def test_generate_deduplicates_same_hypothesis_events():
         metric_name="system_memory_usage_bytes",
         timestamp=1,
         value=100,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=10,
         mad_score=5,
         isolation_score=0.0,
         expected_range=(0, 1),
-        severity=Severity.high,
+        severity=Severity.HIGH,
         description="",
     )
     ev1 = CorrelatedEvent(
@@ -115,18 +132,20 @@ def test_generate_deduplicates_same_hypothesis_events():
 
 
 def test_hypothesis_prefers_high_impact_metrics_over_alphabetical():
-    """Cited metrics should follow severity/z-score, not string sort on series names."""
+    """
+    Cited metrics should follow severity/z-score, not string sort on series names.
+    """
     low_first_alpha = MetricAnomaly(
         metric_id="a",
         metric_name="process_cpu_time_seconds_total{process_pid=160}",
         timestamp=1,
         value=1,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=1.0,
         mad_score=1.0,
         isolation_score=0.0,
         expected_range=(0, 1),
-        severity=Severity.low,
+        severity=Severity.LOW,
         description="",
     )
     critical_later_alpha = MetricAnomaly(
@@ -134,12 +153,12 @@ def test_hypothesis_prefers_high_impact_metrics_over_alphabetical():
         metric_name="process_cpu_time_seconds_total{process_pid=520145}",
         timestamp=1,
         value=9,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=10.0,
         mad_score=50.0,
         isolation_score=0.0,
         expected_range=(0, 1),
-        severity=Severity.critical,
+        severity=Severity.CRITICAL,
         description="",
     )
     ev = CorrelatedEvent(
@@ -161,17 +180,16 @@ def test_generate_includes_process_entity_from_metric_labels():
     anomaly = MetricAnomaly(
         metric_id="m",
         metric_name=(
-            "process_cpu_time_seconds_total{service_name=cache,"
-            "process_executable_name=redis-server,process_pid=274}"
+            "process_cpu_time_seconds_total{service_name=cache," "process_executable_name=redis-server,process_pid=274}"
         ),
         timestamp=1,
         value=100,
-        change_type=ChangeType.spike,
+        change_type=ChangeType.SPIKE,
         z_score=10,
         mad_score=5,
         isolation_score=0.0,
         expected_range=(0, 1),
-        severity=Severity.high,
+        severity=Severity.HIGH,
         description="",
     )
     ev = CorrelatedEvent(

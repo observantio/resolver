@@ -1,16 +1,15 @@
 """
 Shared utilities and dependencies for API route modules.
 
-Provides a centralized place for creating data source providers, handling
-common error translation to HTTP responses, and other helpers used across
-multiple routers. This keeps individual route files thin and avoids repeating
-boilerplate logic.
+Provides a centralized place for creating data source providers, handling common error translation to HTTP responses,
+and other helpers used across multiple routers. This keeps individual route files thin and avoids repeating boilerplate
+logic.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -26,7 +25,6 @@ from datasources.provider import DataSourceProvider
 from datasources.types import JSONDict
 from engine.fetcher import fetch_metrics
 from services.security_service import get_context_tenant
-
 
 _T = TypeVar("_T")
 _QueryValueT = TypeVar("_QueryValueT")

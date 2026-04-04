@@ -1,10 +1,10 @@
 """
-Topology analysis routes for computing service dependency blast radius and upstream/downstream relationships from trace data.
+Topology analysis routes for computing service dependency blast radius and upstream/downstream relationships from trace
+data.
 
-Copyright (c) 2026 Stefan Kumarasinghe
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Copyright (c) 2026 Stefan Kumarasinghe Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -28,11 +28,7 @@ router = APIRouter(tags=["Topology"])
 @handle_exceptions
 async def blast_radius(req: TopologyRequest) -> JSONDict:
     req = enforce_request_tenant(req)
-    raw = await safe_call(
-        get_provider(req.tenant_id).query_traces(
-            filters={}, start=req.start, end=req.end
-        )
-    )
+    raw = await safe_call(get_provider(req.tenant_id).query_traces(filters={}, start=req.start, end=req.end))
 
     graph = DependencyGraph()
     graph.from_spans(raw)
@@ -46,7 +42,6 @@ async def blast_radius(req: TopologyRequest) -> JSONDict:
         "upstream_roots": upstream,
         "all_services": sorted(graph.all_services()),
         "critical_paths": {
-            service: graph.critical_path(req.root_service, service)
-            for service in radius.affected_downstream
+            service: graph.critical_path(req.root_service, service) for service in radius.affected_downstream
         },
     }

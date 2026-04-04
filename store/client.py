@@ -3,9 +3,9 @@ Client code for Redis access, with in-memory fallback if Redis is unavailable.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -49,15 +49,17 @@ class RedisClientProtocol(Protocol):
     async def lrange(self, key: str, start: int, end: int) -> list[str]: ...
     def scan_iter(self, pattern: str) -> AsyncIterator[str]: ...
 
-_redis_client: Optional[RedisClientProtocol] = None
+
+_REDIS_CLIENT: Optional[RedisClientProtocol] = None
 _fallback: dict[str, str] = {}
 _fallback_lists: dict[str, list[str]] = {}
-_using_fallback = False
+_USING_FALLBACK = False
 _init_lock = asyncio.Lock()
-_retry_after_monotonic: float = 0.0
+_RETRY_AFTER_MONOTONIC: float = 0.0
 
 try:
     from config import settings
+
     _MAX_FALLBACK_SIZE = int(settings.store_fallback_max_items)
     _REDIS_RETRY_COOLDOWN_SECONDS = float(settings.store_redis_retry_cooldown_seconds)
     _REDIS_OP_TIMEOUT_SECONDS = 0.5
@@ -68,10 +70,10 @@ except (ImportError, AttributeError, TypeError, ValueError):
 
 
 async def get_redis() -> Optional[RedisClientProtocol]:
-    if _redis_client is not None:
-        return _redis_client
-    if time.monotonic() < _retry_after_monotonic:
-        globals()["_using_fallback"] = True
+    if _REDIS_CLIENT is not None:
+        return _REDIS_CLIENT
+    if time.monotonic() < _RETRY_AFTER_MONOTONIC:
+        globals()["_USING_FALLBACK"] = True
         return None
 
     async with _init_lock:
@@ -79,23 +81,26 @@ async def get_redis() -> Optional[RedisClientProtocol]:
             aioredis = import_module("redis.asyncio")
             from config import REDIS_URL
 
-            client = cast(RedisClientProtocol, aioredis.from_url(
-                REDIS_URL,
-                decode_responses=True,
-                socket_connect_timeout=0.5,
-                socket_timeout=0.5,
-            ))
+            client = cast(
+                RedisClientProtocol,
+                aioredis.from_url(
+                    REDIS_URL,
+                    decode_responses=True,
+                    socket_connect_timeout=0.5,
+                    socket_timeout=0.5,
+                ),
+            )
             await asyncio.wait_for(client.ping(), timeout=0.5)
-            globals()["_redis_client"] = client
-            globals()["_retry_after_monotonic"] = 0.0
-            globals()["_using_fallback"] = False
+            globals()["_REDIS_CLIENT"] = client
+            globals()["_RETRY_AFTER_MONOTONIC"] = 0.0
+            globals()["_USING_FALLBACK"] = False
             log.info("Redis connected: %s", REDIS_URL)
-            return _redis_client
+            return _REDIS_CLIENT
         except (ImportError, ModuleNotFoundError, RedisError, asyncio.TimeoutError, OSError) as exc:
-            globals()["_retry_after_monotonic"] = time.monotonic() + max(0.0, _REDIS_RETRY_COOLDOWN_SECONDS)
-            if not _using_fallback:
+            globals()["_RETRY_AFTER_MONOTONIC"] = time.monotonic() + max(0.0, _REDIS_RETRY_COOLDOWN_SECONDS)
+            if not _USING_FALLBACK:
                 log.warning("Redis unavailable (%s) — using in-memory fallback", exc)
-                globals()["_using_fallback"] = True
+                globals()["_USING_FALLBACK"] = True
             return None
 
 
@@ -181,6 +186,7 @@ async def redis_scan(pattern: str) -> list[str]:
     if client is None:
         return [k for k in _fallback if fnmatch.fnmatch(k, pattern)]
     try:
+
         async def _scan_keys() -> list[str]:
             return [key async for key in client.scan_iter(pattern)]
 
@@ -191,4 +197,4 @@ async def redis_scan(pattern: str) -> list[str]:
 
 
 def is_using_fallback() -> bool:
-    return _using_fallback
+    return _USING_FALLBACK

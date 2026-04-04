@@ -1,11 +1,14 @@
 """
-Bayesian scoring logic for root cause analysis, providing functionality to compute the posterior probability of different root cause categories based on observed evidence (such as deployment events, metric spikes, log bursts, latency spikes, and error propagation) using configurable priors and likelihoods, to assist in prioritizing potential causes during incident investigation.
+Bayesian scoring logic for root cause analysis, providing functionality to compute the posterior probability of
+different root cause categories based on observed evidence (such as deployment events, metric spikes, log bursts,
+latency spikes, and error propagation) using configurable priors and likelihoods, to assist in prioritizing potential
+causes during incident investigation.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from engine.enums import RcaCategory
 
 
 from config import settings
+
 
 def _configured_priors() -> Dict[RcaCategory, float]:
     return {RcaCategory(k): v for k, v in settings.bayesian_priors.items()}
@@ -43,10 +47,10 @@ def score(
 ) -> List[BayesianScore]:
     evidence: Dict[str, bool] = {
         "has_deployment_event": has_deployment_event,
-        "has_metric_spike":     has_metric_spike,
-        "has_log_burst":        has_log_burst,
-        "has_latency_spike":    has_latency_spike,
-        "has_error_propagation":has_error_propagation,
+        "has_metric_spike": has_metric_spike,
+        "has_log_burst": has_log_burst,
+        "has_latency_spike": has_latency_spike,
+        "has_error_propagation": has_error_propagation,
     }
 
     priors = _configured_priors()

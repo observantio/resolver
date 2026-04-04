@@ -1,4 +1,6 @@
-"""Shared SLO result models."""
+"""
+Shared SLO result models.
+"""
 
 from __future__ import annotations
 

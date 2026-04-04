@@ -1,11 +1,13 @@
 """
-API route tests for trace anomaly detection paths, focused on validating that the trace query route correctly handles cases where no service filters are provided, ensuring that it does not apply any default service filters and allows the provider to process the request with an empty filter set as intended.
+API route tests for trace anomaly detection paths, focused on validating that the trace query route correctly handles
+cases where no service filters are provided, ensuring that it does not apply any default service filters and allows the
+provider to process the request with an empty filter set as intended.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -44,7 +46,7 @@ async def test_analyze_route_includes_additive_schema_fields(monkeypatch):
                     apdex=0.92,
                     error_rate=0.02,
                     sample_count=10,
-                    severity=Severity.medium,
+                    severity=Severity.MEDIUM,
                     window_start=100.0,
                     window_end=160.0,
                 )
@@ -56,9 +58,9 @@ async def test_analyze_route_includes_additive_schema_fields(monkeypatch):
                     hypothesis="h1",
                     confidence=0.81,
                     evidence=[],
-                    contributing_signals=[Signal.metrics, Signal.logs],
+                    contributing_signals=[Signal.METRICS, Signal.LOGS],
                     recommended_action="rollback",
-                    severity=Severity.high,
+                    severity=Severity.HIGH,
                     corroboration_summary="2 corroborating signal(s): logs, metrics",
                     suppression_diagnostics={"gating_profile": "precision_strict_v1"},
                     selection_score_components={"final_score": 0.81, "ml_score": 0.77},
@@ -73,7 +75,7 @@ async def test_analyze_route_includes_additive_schema_fields(monkeypatch):
             granger_results=[],
             bayesian_scores=[],
             analysis_warnings=[],
-            overall_severity=Severity.high,
+            overall_severity=Severity.HIGH,
             summary="summary",
             quality=AnalysisQuality(
                 anomaly_density={"request_total": 0.4},

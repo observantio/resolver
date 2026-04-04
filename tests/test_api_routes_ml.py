@@ -1,11 +1,12 @@
 """
-Test API routes for machine learning analysis endpoints, validating request handling, response formatting, and integration with the analysis engine.
+Test API routes for machine learning analysis endpoints, validating request handling, response formatting, and
+integration with the analysis engine.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
@@ -51,7 +52,7 @@ async def test_signal_feedback_success(monkeypatch):
 
     res = await ml_route.signal_feedback("tenantA", "metrics", True)
 
-    assert dummy.calls == [("tenantA", Signal.metrics, True)]
+    assert dummy.calls == [("tenantA", Signal.METRICS, True)]
     assert res == {"updated_weights": {"metrics": 0.5}, "update_count": 1}
 
 

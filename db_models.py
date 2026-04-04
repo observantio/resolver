@@ -1,12 +1,15 @@
 """
-All database models for Resolver are defined in this module. This includes the RcaJob and RcaReport models, which represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's DeclarativeBase, allowing for easy interaction with the database using Python objects.
+All database models for Resolver are defined in this module. This includes the RcaJob and RcaReport models, which
+represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's
+DeclarativeBase, allowing for easy interaction with the database using Python objects.
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
+
 from __future__ import annotations
 
 import uuid
@@ -49,7 +52,9 @@ class RcaJob(Base):
         Index("ix_rca_jobs_tenant_created_desc", "tenant_id", "created_at"),
         Index("ix_rca_jobs_tenant_status_created_desc", "tenant_id", "status", "created_at"),
         Index("ix_rca_jobs_requested_by_tenant_created_desc", "requested_by", "tenant_id", "created_at"),
-        Index("ix_rca_jobs_tenant_user_status_created_job", "tenant_id", "requested_by", "status", "created_at", "job_id"),
+        Index(
+            "ix_rca_jobs_tenant_user_status_created_job", "tenant_id", "requested_by", "status", "created_at", "job_id"
+        ),
         Index("ix_rca_jobs_tenant_user_created_job", "tenant_id", "requested_by", "created_at", "job_id"),
         Index("ix_rca_jobs_fingerprint_tenant", "request_fingerprint", "tenant_id"),
     )
@@ -59,7 +64,9 @@ class RcaReport(Base):
     __tablename__ = "rca_reports"
 
     report_id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    job_id: Mapped[str] = mapped_column(String(36), ForeignKey("rca_jobs.job_id", ondelete="CASCADE"), unique=True, nullable=False)
+    job_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("rca_jobs.job_id", ondelete="CASCADE"), unique=True, nullable=False
+    )
     tenant_id: Mapped[str] = mapped_column(String(128), nullable=False)
     owner_user_id: Mapped[str] = mapped_column(String(128), nullable=False)
     result_payload: Mapped[JSONDict | None] = mapped_column(JSON, nullable=True)
@@ -72,6 +79,4 @@ class RcaReport(Base):
 
     job = relationship("RcaJob", back_populates="report")
 
-    __table_args__ = (
-        Index("ix_rca_reports_tenant_report", "tenant_id", "report_id"),
-    )
+    __table_args__ = (Index("ix_rca_reports_tenant_report", "tenant_id", "report_id"),)

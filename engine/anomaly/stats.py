@@ -3,9 +3,9 @@ Descriptive statistics for metric series (IQR, MAD, skewness, kurtosis) used in 
 
 Copyright (c) 2026 Stefan Kumarasinghe
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ def _sample_skewness(vals: NDArray[np.float64]) -> float:
     if m2 <= 0.0:
         return 0.0
     m3 = float(np.mean(centered**3))
-    g1 = m3 / (m2 ** 1.5)
+    g1 = m3 / (m2**1.5)
     return float((math.sqrt(n * (n - 1)) / (n - 2)) * g1)
 
 
