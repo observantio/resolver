@@ -17,7 +17,7 @@ from engine.causal.granger import granger_pair_analysis, granger_multiple_pairs,
 def test_bayesian_score_consistency():
     results = bayesian_score(True, False, False, False, False)
     assert abs(sum(r.posterior for r in results) - 1.0) < 1e-6
-    assert results[0].category.name == "deployment"
+    assert results[0].category.value == "deployment"
 
 
 def test_causal_graph_basic():

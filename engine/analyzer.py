@@ -23,7 +23,7 @@ from api.requests import AnalyzeRequest
 from api.responses import AnalysisReport, RootCause as RootCauseModel, SloBurnAlert as SloBurnAlertModel
 from config import DEFAULT_METRIC_QUERIES, SLO_ERROR_QUERY, SLO_TOTAL_QUERY, settings
 from datasources.provider import DataSourceProvider
-from engine import logs, rca, traces
+from engine import anomaly, logs, rca, traces
 from engine.anomaly.series import WrappedMimirResponse
 from engine.analyze.helpers import (
     _apply_precision_quality_gates,
@@ -33,14 +33,15 @@ from engine.analyze.helpers import (
     _dedupe_change_points,
     _dedupe_metric_anomalies,
     _filter_log_bursts_for_precision_rca,
-    _filter_metric_response_by_services,
     _limit_analyzer_output,
-    _normalize_services,
     _process_metrics,
     _select_granger_series,
     _slo_series_pairs,
     _to_root_cause_model,
 )
+from engine.analyze.filters import filter_metric_response_by_services as _filter_metric_response_by_services
+from engine.analyze.filters import normalize_services as _normalize_services
+from engine.changepoint import detect as changepoint_detect
 from engine.causal import CausalGraph, bayesian_score, test_all_pairs
 from engine.correlation import correlate, link_logs_to_metrics
 from engine.dedup import group_metric_anomalies
@@ -52,7 +53,16 @@ from engine.registry import get_registry
 from engine.slo import evaluate as slo_evaluate
 from engine.slo.models import SloBurnAlert
 from engine.topology import DependencyGraph
+from store import baseline as baseline_store
 from store import granger as granger_store
+
+__all__ = [
+    "anomaly",
+    "baseline_store",
+    "changepoint_detect",
+    "granger_store",
+    "run",
+]
 
 log = logging.getLogger(__name__)
 _TRACE_COUNT_FALLBACK_CAP = 10_000
