@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Applied a clean pylint reformat/refactor pass across resolver with safe line-wrapping/readability updates.
+- Enforced strict naming consistency for module state, enum members, and internal variables/constants to align with configured pylint rules.
+- Reduced lint noise by aligning resolver code with stricter naming/style policy while preserving intended behavior.
 - Updated resolver contract-testing scaffolding to align with middleware-based OpenAPI customization flow used across services.
 - Resolved validation gaps identified by Schemathesis and fuzz-style tests; the provided verification scripts now run fully green (100%).
 
