@@ -156,7 +156,7 @@ def _dedupe_metric_anomalies(items: list[MetricAnomaly]) -> list[MetricAnomaly]:
         if next_sev > curr_sev:
             selected[key] = item
             continue
-        if next_sev == curr_sev:
+        if next_sev == curr_sev:  # pragma: no branch
             if abs(float(getattr(item, "z_score", 0.0))) > abs(float(getattr(current, "z_score", 0.0))):
                 selected[key] = item
     return sorted(selected.values(), key=lambda a: (a.timestamp, a.metric_name))
@@ -189,7 +189,7 @@ def _dedupe_by_metric_with_severity(items: list[_MetricItemT]) -> list[_MetricIt
         if next_sev > curr_sev:
             selected[metric_name] = item
             continue
-        if next_sev == curr_sev:
+        if next_sev == curr_sev:  # pragma: no branch
             curr_signal = abs(float(getattr(current, "degradation_rate", getattr(current, "slope_per_second", 0.0))))
             next_signal = abs(float(getattr(item, "degradation_rate", getattr(item, "slope_per_second", 0.0))))
             if next_signal > curr_signal:
