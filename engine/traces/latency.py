@@ -15,10 +15,11 @@ from typing import List, TypedDict
 
 import numpy as np
 
-from engine.enums import Severity
 from api.responses import ServiceLatency
-from custom_types.json import JSONDict
 from config import settings
+from custom_types.json import JSONDict
+from engine.enums import Severity
+from engine.traces.common import iter_trace_spans, span_has_error
 
 
 class LatencyBucket(TypedDict):
@@ -155,8 +156,6 @@ def analyze(tempo_response: JSONDict, apdex_t_ms: float | None = None) -> List[S
         if end_s is not None:
             current_end = bucket["window_end"]
             bucket["window_end"] = end_s if current_end is None else max(float(current_end), end_s)
-
-        from engine.traces.common import iter_trace_spans, span_has_error
 
         if any(span_has_error(span) for span in iter_trace_spans(trace)):
             bucket["errors"] += 1

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from api.requests import AnalyzeRequest
 from api.responses import AnalysisReport
+from api.routes.common import get_provider as route_get_provider
 from datasources.provider import DataSourceProvider
 from engine.analyzer import run
 from services.analysis_config_service import PreparedAnalysisRequest, analysis_config_service
@@ -17,8 +18,6 @@ from services.security_service import enforce_request_tenant
 
 
 def get_provider(tenant_id: str) -> DataSourceProvider:
-    from api.routes.common import get_provider as route_get_provider
-
     return route_get_provider(tenant_id)
 
 

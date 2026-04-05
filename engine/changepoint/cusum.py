@@ -16,6 +16,7 @@ from typing import List
 
 import numpy as np
 
+from config import settings
 from engine.enums import ChangeType
 
 
@@ -31,8 +32,6 @@ class ChangePoint:
 
 
 def _classify(before: float, after: float, std: float) -> ChangeType:
-    from config import settings
-
     delta = after - before
     relative = abs(delta) / (abs(before) + 1e-9)
     if relative > settings.cusum_relative_cutoff:
@@ -43,8 +42,6 @@ def _classify(before: float, after: float, std: float) -> ChangeType:
 
 
 def _detect_oscillation(arr: np.ndarray, window: int | None = None) -> List[int]:
-    from config import settings
-
     if window is None:
         window = settings.cusum_window
     sign_changes = np.diff(np.sign(np.diff(arr)))
@@ -61,8 +58,6 @@ def detect(
     threshold_sigma: float | None = None,
     metric_name: str = "metric",
 ) -> List[ChangePoint]:
-    from config import settings
-
     if threshold_sigma is None:
         threshold_sigma = settings.cusum_threshold_sigma
     if len(vals) < 10:

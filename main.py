@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 
 from api.routes import router
 from api.routes.common import close_providers
-from config import Settings, settings
+from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO, Settings, settings
 from database import init_database, init_db, dispose_database
 from datasources.exceptions import BackendStartupTimeout
 from middleware.openapi import install_custom_openapi
@@ -108,12 +108,6 @@ async def wait_for(
 async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
     scope = {"X-Scope-OrgID": tenant_id}
     checks: list[tuple[str, str, dict[str, str], tuple[int, ...]]] = []
-
-    from config import (
-        LOGS_BACKEND_LOKI,
-        METRICS_BACKEND_MIMIR,
-        TRACES_BACKEND_TEMPO,
-    )
 
     # Logs
     if data_settings.logs_backend == LOGS_BACKEND_LOKI:
