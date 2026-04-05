@@ -18,6 +18,8 @@ import time
 from types import ModuleType
 from typing import AsyncIterator, Optional, Protocol, cast
 
+from config import REDIS_URL, settings
+
 RedisError: type[Exception] = OSError
 _redis_exceptions_module: ModuleType | None
 
@@ -56,17 +58,14 @@ _fallback_lists: dict[str, list[str]] = {}
 _USING_FALLBACK = False
 _init_lock = asyncio.Lock()
 _RETRY_AFTER_MONOTONIC: float = 0.0
+_REDIS_OP_TIMEOUT_SECONDS = 0.5
 
 try:
-    from config import settings
-
     _MAX_FALLBACK_SIZE = int(settings.store_fallback_max_items)
     _REDIS_RETRY_COOLDOWN_SECONDS = float(settings.store_redis_retry_cooldown_seconds)
-    _REDIS_OP_TIMEOUT_SECONDS = 0.5
 except (ImportError, AttributeError, TypeError, ValueError):
     _MAX_FALLBACK_SIZE = 10_000
     _REDIS_RETRY_COOLDOWN_SECONDS = 10.0
-    _REDIS_OP_TIMEOUT_SECONDS = 0.5
 
 
 async def get_redis() -> Optional[RedisClientProtocol]:
@@ -79,7 +78,6 @@ async def get_redis() -> Optional[RedisClientProtocol]:
     async with _init_lock:
         try:
             aioredis = import_module("redis.asyncio")
-            from config import REDIS_URL
 
             client = cast(
                 RedisClientProtocol,

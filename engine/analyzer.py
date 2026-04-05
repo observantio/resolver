@@ -48,6 +48,7 @@ from engine.dedup import group_metric_anomalies
 from engine.enums import Severity
 from engine.forecast.degradation import DegradationSignal
 from engine.forecast.trajectory import TrajectoryForecast
+from engine.log_query import build_log_query
 from engine.ml import RankedCause, cluster, rank
 from engine.registry import get_registry
 from engine.slo import evaluate as slo_evaluate
@@ -120,8 +121,6 @@ def _summary(report: AnalysisReport) -> str:
 
 
 def _build_log_query(services: list[str] | None, requested_log_query: str | None) -> str:
-    from engine.log_query import build_log_query
-
     return build_log_query(services, requested_log_query)
 
 
