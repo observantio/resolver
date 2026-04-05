@@ -29,6 +29,6 @@ def test_analyze_degrading():
     ts = list(range(20))
     vals = [i * 2 for i in ts]
     sig = analyze("m", ts, vals)
-    assert isinstance(sig, object)
+    assert sig is not None
     assert sig.trend == "degrading"
     assert sig.severity in Severity

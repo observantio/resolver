@@ -20,6 +20,7 @@ async def test_weights_lifecycle():
     data = {"metrics": 0.6, "logs": 0.4}
     await wstore.save(tid, data, update_count=5)
     stored = await wstore.load(tid)
+    assert stored is not None
     assert stored["weights"] == data
     assert stored["update_count"] == 5
     await wstore.delete(tid)

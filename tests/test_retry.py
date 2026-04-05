@@ -9,6 +9,8 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
+import asyncio
+
 import pytest
 
 import datasources.retry as retry_module
@@ -39,7 +41,7 @@ async def test_retry_async_applies_backoff_sleep(monkeypatch):
     async def fake_sleep(delay):
         sleeps.append(delay)
 
-    monkeypatch.setattr(retry_module.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
 
     @retry(attempts=3, delay=0.25, backoff=2.0, exceptions=(ValueError,))
     async def flaky():

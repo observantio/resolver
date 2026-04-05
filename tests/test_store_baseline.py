@@ -27,6 +27,7 @@ async def test_baseline_save_load():
     base2 = Baseline(mean=2.0, std=0.5, lower=-1.0, upper=3.0)
     await bstore.save(tid, metric, base2)
     l2 = await bstore.load(tid, metric)
+    assert l2 is not None
     assert l2.mean == 2.0
     ts = [0.0, 1.0, 2.0, 3.0, 4.0]
     vals = [1.0, 2.0, 1.5, 2.5, 1.0]
