@@ -15,10 +15,10 @@ import logging
 from json import JSONDecodeError
 from typing import List, TypedDict
 
-from engine.events.models import DeploymentEvent
-from store.client import redis_lrange, redis_rpush, redis_delete
 from config import EVENTS_TTL
+from engine.events.models import DeploymentEvent
 from store import keys
+from store.client import redis_lrange, redis_rpush, redis_delete
 
 log = logging.getLogger(__name__)
 

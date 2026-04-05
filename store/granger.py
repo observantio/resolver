@@ -16,10 +16,10 @@ import logging
 from json import JSONDecodeError
 from typing import Dict, List, TypedDict
 
-from engine.causal.granger import GrangerResult
-from store.client import redis_get, redis_set
 from config import GRANGER_TTL
+from engine.causal.granger import GrangerResult
 from store import keys
+from store.client import redis_get, redis_set
 
 log = logging.getLogger(__name__)
 

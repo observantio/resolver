@@ -9,14 +9,16 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from typing import List
+
 from fastapi import APIRouter, Depends
-from api.routes.common import get_provider, safe_call
-from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from engine import anomaly
-from engine.changepoint import detect as changepoint_detect, ChangePoint
+
 from api.requests import MetricRequest, ChangepointRequest
 from api.responses import MetricAnomaly
+from api.routes.common import get_provider, safe_call
+from api.routes.exception import handle_exceptions
+from engine import anomaly
+from engine.changepoint import detect as changepoint_detect, ChangePoint
+from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Metrics"])
 

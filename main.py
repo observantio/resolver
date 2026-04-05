@@ -27,12 +27,12 @@ from pydantic import BaseModel, Field
 
 from api.routes import router
 from api.routes.common import close_providers
-from middleware.openapi import install_custom_openapi
-from services.security_service import InternalAuthMiddleware
 from config import Settings, settings
 from database import init_database, init_db, dispose_database
 from datasources.exceptions import BackendStartupTimeout
+from middleware.openapi import install_custom_openapi
 from services.rca_job_service import rca_job_service
+from services.security_service import InternalAuthMiddleware
 
 logging.basicConfig(
     level=logging.INFO,

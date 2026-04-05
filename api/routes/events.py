@@ -13,12 +13,12 @@ from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from engine.events.models import DeploymentEvent
-from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, get_context_tenant, require_permission_dependency
-from engine.registry import get_registry
 from api.requests import DeploymentEventRequest
+from api.routes.exception import handle_exceptions
 from custom_types.json import JSONDict
+from engine.events.models import DeploymentEvent
+from engine.registry import get_registry
+from services.security_service import enforce_request_tenant, get_context_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Events"])
 

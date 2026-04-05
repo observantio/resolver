@@ -15,10 +15,10 @@ import logging
 from json import JSONDecodeError
 from typing import Dict, Optional, TypedDict
 
-from custom_types.json import is_json_object
-from store.client import redis_get, redis_set, redis_delete
 from config import WEIGHTS_TTL
+from custom_types.json import is_json_object
 from store import keys
+from store.client import redis_get, redis_set, redis_delete
 
 log = logging.getLogger(__name__)
 

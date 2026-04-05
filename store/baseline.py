@@ -15,10 +15,10 @@ import logging
 from json import JSONDecodeError
 from typing import List, Optional
 
-from engine.baseline.compute import Baseline, compute
-from store.client import redis_get, redis_set
 from config import BASELINE_TTL, BLEND_ALPHA
+from engine.baseline.compute import Baseline, compute
 from store import keys
+from store.client import redis_get, redis_set
 
 log = logging.getLogger(__name__)
 

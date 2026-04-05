@@ -9,15 +9,17 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import logging
+
 from fastapi import APIRouter, Depends
+
+from api.requests import SloRequest
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from engine import anomaly
-from engine.slo import evaluate as slo_evaluate, remaining_minutes
-from api.requests import SloRequest
 from config import settings
 from custom_types.json import JSONDict
+from engine import anomaly
+from engine.slo import evaluate as slo_evaluate, remaining_minutes
+from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["SLO"])
 log = logging.getLogger(__name__)

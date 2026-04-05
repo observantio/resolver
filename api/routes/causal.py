@@ -8,21 +8,21 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-import numpy as np
 from typing import Dict
 
+import numpy as np
 from fastapi import APIRouter, Depends, Query
 
 from api.requests import AnalyzeRequest, CorrelateRequest
 from api.routes.common import coerce_query_value, get_provider, safe_call
 from api.routes.exception import handle_exceptions
 from config import DEFAULT_METRIC_QUERIES, DEFAULT_SERVICE_NAME
+from custom_types.json import JSONDict
 from datasources.provider import DataSourceProvider
 from engine import anomaly
 from engine.causal import CausalGraph, bayesian_score, test_all_pairs
 from engine.fetcher import fetch_metrics
 from engine.registry import get_registry
-from custom_types.json import JSONDict
 from services.security_service import enforce_request_tenant, require_permission_dependency
 from store import granger as granger_store
 

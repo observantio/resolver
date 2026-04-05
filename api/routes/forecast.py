@@ -15,11 +15,11 @@ from fastapi import APIRouter, Depends, Query
 from api.requests import CorrelateRequest
 from api.routes.common import coerce_query_value, fetch_requested_metrics, get_provider
 from api.routes.exception import handle_exceptions
-from engine import anomaly
 from config import FORECAST_THRESHOLDS
+from custom_types.json import JSONDict
+from engine import anomaly
 from engine.forecast import analyze_degradation, forecast
 from services.security_service import enforce_request_tenant, require_permission_dependency
-from custom_types.json import JSONDict
 
 router = APIRouter(tags=["Forecast"])
 
