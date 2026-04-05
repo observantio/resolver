@@ -14,10 +14,10 @@ import math
 import logging
 from typing import Dict, List, Union
 
-from engine.enums import Signal
-from store import events as event_store, weights as weight_store
-from engine.events.registry import DeploymentEvent
 from config import DEFAULT_WEIGHTS, REGISTRY_ALPHA
+from engine.enums import Signal
+from engine.events.registry import DeploymentEvent
+from store import events as event_store, weights as weight_store
 
 log = logging.getLogger(__name__)
 

@@ -12,9 +12,10 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from config import settings
 from dataclasses import dataclass
 from typing import Dict, List, Set
+
+from config import settings
 
 
 @dataclass(frozen=True)

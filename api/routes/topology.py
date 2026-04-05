@@ -10,12 +10,13 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+
+from api.requests import TopologyRequest
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
-from services.security_service import enforce_request_tenant, require_permission_dependency
-from engine.topology import DependencyGraph
-from api.requests import TopologyRequest
 from custom_types.json import JSONDict
+from engine.topology import DependencyGraph
+from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Topology"])
 
