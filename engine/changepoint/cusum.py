@@ -11,6 +11,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import List
 
@@ -53,8 +54,8 @@ def _detect_oscillation(arr: np.ndarray, window: int | None = None) -> List[int]
 
 
 def detect(
-    ts: List[float],
-    vals: List[float],
+    ts: Sequence[float],
+    vals: Sequence[float],
     threshold_sigma: float | None = None,
     metric_name: str = "metric",
 ) -> List[ChangePoint]:

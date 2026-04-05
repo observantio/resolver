@@ -12,6 +12,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from importlib import import_module
 import math
 from typing import Callable, List, Protocol
@@ -225,8 +226,8 @@ def _compress_runs(anomalies: List[MetricAnomaly]) -> List[MetricAnomaly]:
 
 def detect(
     metric: str,
-    timestamps: List[float],
-    values: List[float],
+    timestamps: Sequence[float],
+    values: Sequence[float],
     sensitivity: float | None = None,
 ) -> List[MetricAnomaly]:
     if len(values) < settings.min_samples:

@@ -11,8 +11,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -32,7 +33,7 @@ class TrajectoryForecast:
     severity: Severity
 
 
-def _linear_fit(ts: List[float], vals: List[float]) -> tuple[float, float]:
+def _linear_fit(ts: Sequence[float], vals: Sequence[float]) -> tuple[float, float]:
     t = np.array(ts, dtype=float)
     v = np.array(vals, dtype=float)
     t_norm = t - t[0]
@@ -40,7 +41,7 @@ def _linear_fit(ts: List[float], vals: List[float]) -> tuple[float, float]:
     return float(slope), float(intercept)
 
 
-def _r_squared(ts: List[float], vals: List[float], slope: float, intercept: float) -> float:
+def _r_squared(ts: Sequence[float], vals: Sequence[float], slope: float, intercept: float) -> float:
     t_norm = np.array(ts, dtype=float) - ts[0]
     v = np.array(vals, dtype=float)
     predicted = slope * t_norm + intercept
@@ -51,8 +52,8 @@ def _r_squared(ts: List[float], vals: List[float], slope: float, intercept: floa
 
 def forecast(
     metric_name: str,
-    ts: List[float],
-    vals: List[float],
+    ts: Sequence[float],
+    vals: Sequence[float],
     threshold: float,
     horizon_seconds: float | None = None,
 ) -> Optional[TrajectoryForecast]:

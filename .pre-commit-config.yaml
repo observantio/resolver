@@ -4,7 +4,14 @@ repos:
       - id: resolver-unit-tests
         name: Resolver unit tests
         language: system
-        entry: bash -lc 'python -m pytest -q'
+        entry: >-
+          bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
+          cd "$R" || exit 1;
+          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          [[ -n "$c" && -x "$c" ]] || continue;
+          "$c" -c "import pytest" 2>/dev/null && { P="$c"; break; }; done;
+          [[ -n "$P" ]] || { echo "error: no Python with pytest; use .venv and pip install -e .[dev]" >&2; exit 1; };
+          "$P" -m pytest -q'
         pass_filenames: false
         files: \.py$
         exclude: (^|/)tests/
@@ -14,13 +21,14 @@ repos:
         name: Resolver mypy
         language: system
         entry: >-
-          bash -lc 'APP_ENV=development
-          ENVIRONMENT=development
-          RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver
-          RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
-          RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
-          PYTHONPATH=$PWD
-          mypy --config-file "$PWD/pyproject.toml" "$@"' --
+          bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
+          cd "$R" || exit 1;
+          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          [[ -n "$c" && -x "$c" ]] || continue;
+          "$c" -c "import mypy, numpy, sqlalchemy, pydantic, httpx" 2>/dev/null && { P="$c"; break; }; done;
+          [[ -n "$P" ]] || { echo "error: no Python with mypy + resolver deps; pip install -e .[dev] in resolver/" >&2; exit 1; };
+          APP_ENV=development ENVIRONMENT=development RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789 RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890 PYTHONPATH="$PWD" "$P" -m mypy --python-executable "$P" --cache-dir /tmp/resolver-mypy-cache --config-file "$PWD/pyproject.toml" .'
+        pass_filenames: false
         files: \.py$
         exclude: (^|/)tests/
         types: [python]
@@ -29,13 +37,14 @@ repos:
         name: Resolver pylint
         language: system
         entry: >-
-          bash -lc 'APP_ENV=development
-          ENVIRONMENT=development
-          RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver
-          RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789
-          RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890
-          PYTHONPATH=$PWD
-          pylint --rcfile "$PWD/pyproject.toml" "$@"' --
+          bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
+          cd "$R" || exit 1;
+          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          [[ -n "$c" && -x "$c" ]] || continue;
+          "$c" -c "import pylint, numpy, sqlalchemy, pydantic, httpx" 2>/dev/null && { P="$c"; break; }; done;
+          [[ -n "$P" ]] || { echo "error: no Python with pylint + resolver deps; pip install -e .[dev] in resolver/" >&2; exit 1; };
+          APP_ENV=development ENVIRONMENT=development RESOLVER_DATABASE_URL=postgresql://ci_user:ci_password_123@localhost:5432/resolver RESOLVER_EXPECTED_SERVICE_TOKEN=ci_resolver_expected_service_token_123456789 RESOLVER_CONTEXT_VERIFY_KEY=ci_resolver_context_verify_key_12345678901234567890 PYTHONPATH="$PWD" "$P" -m pylint --rcfile "$PWD/pyproject.toml" .'
+        pass_filenames: false
         files: \.py$
         exclude: (^|/)tests/
         types: [python]

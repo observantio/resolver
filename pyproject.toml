@@ -4,14 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "resolver"
-version = "0.0.2"
+version = "0.0.3"
 description = "Resolver RCA and analysis service for the Observantio platform."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
-authors = [
-  { name = "Observantio" }
-]
+authors = [{ name = "Observantio" }]
 keywords = ["observability", "rca", "fastapi", "telemetry", "analysis"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,12 +18,32 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "httpx",
+  "pydantic",
+  "pydantic-settings",
+  "pyjwt",
+  "numpy",
+  "scipy",
+  "scikit-learn",
+  "sqlalchemy",
+  "psycopg2-binary",
+  "redis",
+]
+
+[project.urls]
+Repository = "https://github.com/observantio/resolver"
+Documentation = "https://observantio.github.io/pitch"
+Changelog = "https://github.com/observantio/resolver/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
   "mypy>=1.18.2",
   "types-PyYAML>=6.0.12.20250915",
   "pylint>=3.3.0",
+  "ruff>=0.9.0",
   "pytest>=9.0.0",
   "pytest-asyncio>=1.3.0",
   "pytest-cov>=7.0.0",
@@ -35,9 +53,7 @@ dev = [
 minversion = "9.0"
 testpaths = ["tests"]
 pythonpath = ["."]
-filterwarnings = [
-  "ignore::pytest.PytestRemovedIn9Warning",
-]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
@@ -85,12 +101,25 @@ omit = [
 ]
 
 [tool.coverage.report]
-exclude_also = [
-  "if TYPE_CHECKING:",
-]
+exclude_also = ["if TYPE_CHECKING:"]
 fail_under = 100
 show_missing = true
 skip_covered = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N", "PTH", "RUF", "ERA", "T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["resolver"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -116,14 +145,9 @@ explicit_package_bases = true
 mypy_path = ["."]
 files = ["."]
 exclude = [
-  "^(tests/|build/|dist/|venv/|\\.venv/|__pycache__/|migrations/)",
+  "^(build|dist|venv|\\.venv|__pycache__|migrations)/",
+  "^tests/",
 ]
-
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = ["*.migrations.*"]
@@ -137,7 +161,7 @@ ignore_missing_imports = true
 jobs = 1
 extension-pkg-allow-list = ["sqlalchemy"]
 ignore = [".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "venv", "build", "dist", "tmp", "vendor", "tests"]
-init-hook = "import os,sys; cwd=os.getcwd(); sys.path.insert(0,cwd) if cwd not in sys.path else None"
+init-hook = "import os, sys; cwd = os.getcwd(); sys.path.insert(0, cwd) if cwd not in sys.path else None"
 
 [tool.pylint.messages_control]
 disable = [
@@ -148,7 +172,6 @@ disable = [
   "too-many-positional-arguments",
   "too-many-locals",
   "too-many-branches",
-  "not-callable",
 ]
 
 [tool.pylint.format]
@@ -158,18 +181,17 @@ max-module-lines = 800
 [tool.pylint.design]
 max-args = 6
 max-positional-arguments = 6
-max-attributes = 200
-max-public-methods = 60
-max-returns = 30
-max-nested-blocks = 8
-max-statements = 250
+max-attributes = 35
+max-public-methods = 25
+max-returns = 10
+max-nested-blocks = 5
+max-statements = 80
 min-public-methods = 0
 
 [tool.pylint.basic]
 variable-naming-style = "snake_case"
 argument-naming-style = "snake_case"
 attr-naming-style = "snake_case"
-
 const-naming-style = "UPPER_CASE"
 class-const-naming-style = "UPPER_CASE"
 
@@ -177,5 +199,4 @@ class-const-naming-style = "UPPER_CASE"
 min-similarity-lines = 8
 
 [tool.hatch.build.targets.wheel]
-# Service layout does not include a top-level package named "resolver".
-bypass-selection = true
+packages = ["resolver"]

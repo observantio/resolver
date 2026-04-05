@@ -10,6 +10,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import List, Tuple
 
 from engine.enums import Severity
@@ -38,9 +39,9 @@ __all__ = ["SloBurnAlert", "evaluate"]
 
 def evaluate(
     service: str,
-    error_counts: List[float],
-    total_counts: List[float],
-    ts: List[float],
+    error_counts: Sequence[float],
+    total_counts: Sequence[float],
+    ts: Sequence[float],
     target_availability: float = settings.slo_default_target_availability,
 ) -> List[SloBurnAlert]:
     if not error_counts or not total_counts or len(ts) < 2:

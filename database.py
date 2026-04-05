@@ -14,7 +14,7 @@ import os
 import re
 import logging
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional
+from typing import Iterator, Optional, Protocol
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -25,8 +25,18 @@ from sqlalchemy.orm import Session, sessionmaker
 from db_models import Base
 
 logger = logging.getLogger(__name__)
+
+
+class _SessionFactory(Protocol):
+    def __call__(self) -> Session: ...
+
+
+def _new_session(factory: _SessionFactory) -> Session:
+    return factory()
+
+
 _ENGINE: Optional[Engine] = None
-_SESSION_FACTORY: Optional[Callable[[], Session]] = None
+_SESSION_FACTORY: Optional[_SessionFactory] = None
 
 
 def _ensure_postgres_database_exists(database_url: str) -> None:
@@ -68,19 +78,23 @@ def init_database(database_url: str) -> None:
         pool_timeout=int(os.getenv("RESOLVER_DB_POOL_TIMEOUT", "30")),
         pool_recycle=int(os.getenv("RESOLVER_DB_POOL_RECYCLE", "1800")),
     )
-    session_factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     globals()["_ENGINE"] = engine
-    globals()["_SESSION_FACTORY"] = session_factory
+    globals()["_SESSION_FACTORY"] = factory
+
+
+def _require_session_factory() -> _SessionFactory:
+    factory = _SESSION_FACTORY
+    if factory is None or not callable(factory):
+        raise RuntimeError("Database not initialized")
+    return factory
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    if _ENGINE is None or _SESSION_FACTORY is None:
+    if _ENGINE is None:
         raise RuntimeError("Database not initialized")
-    session_factory = _SESSION_FACTORY
-    if not callable(session_factory):
-        raise RuntimeError("Database not initialized")
-    session = session_factory()
+    session = _new_session(_require_session_factory())
     try:
         yield session
         session.commit()

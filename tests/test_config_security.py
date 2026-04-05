@@ -13,12 +13,13 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+import types
 from unittest.mock import patch
 
 import pytest
 
 
-def _reload_config_module():
+def _reload_config_module() -> types.ModuleType:
     for module_name in ("config", "Resolvers.config"):
         if module_name in sys.modules:
             del sys.modules[module_name]

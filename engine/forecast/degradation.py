@@ -11,8 +11,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -31,7 +32,7 @@ class DegradationSignal:
     is_accelerating: bool
 
 
-def _ema(vals: List[float], alpha: float | None = None) -> np.ndarray:
+def _ema(vals: Sequence[float], alpha: float | None = None) -> np.ndarray:
     if alpha is None:
         alpha = settings.forecast_ema_alpha
     result = np.zeros(len(vals))
@@ -58,8 +59,8 @@ def _is_counter_like_metric(metric_name: str) -> bool:
 
 def analyze(
     metric_name: str,
-    ts: List[float],
-    vals: List[float],
+    ts: Sequence[float],
+    vals: Sequence[float],
     min_degradation_rate: float | None = None,
 ) -> Optional[DegradationSignal]:
     if min_degradation_rate is None:

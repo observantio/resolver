@@ -9,10 +9,10 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.anomaly.series import iter_series
+from engine.anomaly.series import MetricRecord, iter_series
 
 
-def _resp(metric: dict, values: list[list[object]]) -> dict:
+def _resp(metric: MetricRecord, values: list[list[object]]) -> dict[str, object]:
     return {
         "status": "success",
         "data": {

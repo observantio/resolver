@@ -247,7 +247,9 @@ def _corroboration_summary(signals: List[str]) -> str:
     return f"{len(unique)} corroborating signal(s): {', '.join(unique)}"
 
 
-def _action_for_category(category: RcaCategory, service: str = "") -> str:
+def _action_for_category(category: RcaCategory | None, service: str = "") -> str:
+    if category is None:
+        return "Investigate correlated signals."
     actions = {
         RcaCategory.DEPLOYMENT: f"Rollback recent deployment for {service or 'affected service'}.",
         RcaCategory.RESOURCE_EXHAUSTION: "Check resource limits, scale horizontally or increase quotas.",
