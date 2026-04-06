@@ -9,8 +9,8 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-import pytest
 import numpy as np
+import pytest
 
 from config import settings
 from engine.changepoint.cusum import _detect_oscillation, detect

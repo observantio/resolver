@@ -13,9 +13,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
 from config import settings
 
 
@@ -25,15 +25,15 @@ class Baseline:
     std: float
     lower: float
     upper: float
-    seasonal_mean: Optional[float] = None
+    seasonal_mean: float | None = None
     sample_count: int = 0
 
 
-def _hour_buckets(ts: List[float]) -> List[int]:
+def _hour_buckets(ts: list[float]) -> list[int]:
     return [(int(t) % 86400) // 3600 for t in ts]
 
 
-def compute(ts: List[float], vals: List[float], z_threshold: float | None = None) -> Baseline:
+def compute(ts: list[float], vals: list[float], z_threshold: float | None = None) -> Baseline:
     if z_threshold is None:
         z_threshold = settings.baseline_zscore_threshold
     arr = np.array(vals, dtype=float)
@@ -44,11 +44,11 @@ def compute(ts: List[float], vals: List[float], z_threshold: float | None = None
         s = float(np.std(arr)) or 1.0
         return Baseline(mean=m, std=s, lower=m - z_threshold * s, upper=m + z_threshold * s, sample_count=n)
 
-    seasonal_mean: Optional[float] = None
+    seasonal_mean: float | None = None
 
     if n >= settings.baseline_seasonal_min_samples:
         buckets = _hour_buckets(ts)
-        bucket_map: Dict[int, List[float]] = {}
+        bucket_map: dict[int, list[float]] = {}
         for b, v in zip(buckets, vals):
             bucket_map.setdefault(b, []).append(v)
         hour_avgs = {h: float(np.mean(v)) for h, v in bucket_map.items()}
@@ -70,6 +70,6 @@ def compute(ts: List[float], vals: List[float], z_threshold: float | None = None
     )
 
 
-def score(val: float, baseline: Baseline) -> Tuple[bool, float]:
+def score(val: float, baseline: Baseline) -> tuple[bool, float]:
     z = abs(val - baseline.mean) / baseline.std if baseline.std else 0.0
     return (val < baseline.lower or val > baseline.upper), round(z, 3)

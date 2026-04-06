@@ -14,8 +14,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Awaitable, Protocol, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import Protocol, TypeVar
 
 from fastapi import HTTPException
 

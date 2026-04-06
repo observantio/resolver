@@ -13,9 +13,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
-from api.responses import MetricAnomaly, LogBurst
+from api.responses import LogBurst, MetricAnomaly
 from config import settings
 
 
@@ -30,13 +29,13 @@ class LogMetricLink:
 
 
 def link_logs_to_metrics(
-    metric_anomalies: List[MetricAnomaly],
-    log_bursts: List[LogBurst],
+    metric_anomalies: list[MetricAnomaly],
+    log_bursts: list[LogBurst],
     max_lag_seconds: float | None = None,
-) -> List[LogMetricLink]:
+) -> list[LogMetricLink]:
     if max_lag_seconds is None:
         max_lag_seconds = settings.max_lag_seconds
-    links: List[LogMetricLink] = []
+    links: list[LogMetricLink] = []
 
     for anomaly in metric_anomalies:
         for burst in log_bursts:

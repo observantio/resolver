@@ -14,12 +14,12 @@ from types import SimpleNamespace
 
 import pytest
 
+import store.client as store_client_module
 from engine.causal.granger import GrangerResult
 from engine.events.models import DeploymentEvent
 from store import events as events_store
 from store import granger as granger_store
 from store import weights as weights_store
-import store.client as store_client_module
 
 
 class _FakePipeline:

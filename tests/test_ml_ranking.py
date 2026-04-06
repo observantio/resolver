@@ -10,10 +10,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-import pytest
-
-from engine.enums import RcaCategory, Severity
 import engine.ml.ranking as ranking
+from engine.enums import RcaCategory, Severity
 from engine.rca.hypothesis import RootCause
 
 

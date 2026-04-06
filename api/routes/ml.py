@@ -12,10 +12,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from api.routes.common import safe_call
 from api.routes.exception import handle_exceptions
+from custom_types.json import JSONDict
 from engine.enums import Signal
 from engine.registry import get_registry
 from services.security_service import get_context_tenant, require_permission_dependency
-from custom_types.json import JSONDict
 
 router = APIRouter(tags=["ML"])
 

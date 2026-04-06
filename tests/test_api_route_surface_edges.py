@@ -17,8 +17,8 @@ import types
 import numpy as np
 import pytest
 
-from api.requests import ChangepointRequest, CorrelateRequest, LogRequest, MetricRequest
-from api.requests import TraceRequest
+import main as app_main
+from api.requests import ChangepointRequest, CorrelateRequest, LogRequest, MetricRequest, TraceRequest
 from api.responses.base import NpModel, _coerce
 from api.routes import correlation as correlation_route
 from api.routes import events as events_route
@@ -27,7 +27,6 @@ from api.routes import logs as logs_route
 from api.routes import metrics as metrics_route
 from api.routes import traces as traces_route
 from custom_types import json as json_types
-import main as app_main
 
 
 class DemoModel(NpModel):

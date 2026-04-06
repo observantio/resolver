@@ -9,7 +9,7 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.slo.burn import SloBurnAlert, evaluate
 from engine.slo.budget import BudgetStatus, remaining_minutes
+from engine.slo.burn import SloBurnAlert, evaluate
 
-__all__ = ["SloBurnAlert", "evaluate", "BudgetStatus", "remaining_minutes"]
+__all__ = ["BudgetStatus", "SloBurnAlert", "evaluate", "remaining_minutes"]

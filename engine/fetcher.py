@@ -13,13 +13,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from typing import Dict, List, Tuple
 
 import httpx
 
-from datasources.provider import DataSourceProvider
-from custom_types.json import JSONDict
 from config import settings
+from custom_types.json import JSONDict
+from datasources.provider import DataSourceProvider
 
 log = logging.getLogger(__name__)
 
@@ -32,10 +31,10 @@ def _extract_metric_names(query: str) -> list[str]:
 
 async def _scrape_and_fill(
     provider: DataSourceProvider,
-    queries: List[str],
+    queries: list[str],
     start: int,
     end: int,
-) -> List[Tuple[str, JSONDict]]:
+) -> list[tuple[str, JSONDict]]:
     metrics_backend = getattr(provider, "metrics", None)
     scrape_func = getattr(metrics_backend, "scrape", None)
     if not callable(scrape_func):
@@ -43,11 +42,11 @@ async def _scrape_and_fill(
 
     try:
         text = await scrape_func()
-    except (httpx.HTTPError, asyncio.TimeoutError, OSError, TypeError, ValueError) as exc:
+    except (TimeoutError, httpx.HTTPError, OSError, TypeError, ValueError) as exc:
         log.warning("scrape_and_fill: scrape failed: %s", exc)
         return []
 
-    metrics: Dict[str, float] = {}
+    metrics: dict[str, float] = {}
     for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -65,7 +64,7 @@ async def _scrape_and_fill(
         log.debug("scrape_and_fill: scrape returned no parseable metrics")
         return []
 
-    results: List[Tuple[str, JSONDict]] = []
+    results: list[tuple[str, JSONDict]] = []
     for q in queries:
         candidates = {n for n in _extract_metric_names(q) if n in metrics}
         for name in candidates:
@@ -93,11 +92,11 @@ async def _scrape_and_fill(
 
 async def fetch_metrics(
     provider: DataSourceProvider,
-    queries: List[str],
+    queries: list[str],
     start: int,
     end: int,
     step: str,
-) -> List[Tuple[str, JSONDict]]:
+) -> list[tuple[str, JSONDict]]:
     max_parallel = max(1, int(settings.analyzer_max_parallel_metric_queries))
     sem = asyncio.Semaphore(max_parallel)
 
@@ -107,7 +106,7 @@ async def fetch_metrics(
 
     raw = await asyncio.gather(*[_query(q) for q in queries], return_exceptions=True)
 
-    pairs: List[Tuple[str, JSONDict]] = []
+    pairs: list[tuple[str, JSONDict]] = []
     any_results = False
 
     for q, r in zip(queries, raw):

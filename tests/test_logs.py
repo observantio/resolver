@@ -9,9 +9,9 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
+from engine.enums import Severity
 from engine.logs.frequency import detect_bursts
 from engine.logs.patterns import analyze
-from engine.enums import Severity
 
 
 def make_loki_response(lines):

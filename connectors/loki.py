@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 
 import httpx
 
@@ -18,7 +17,7 @@ class LokiConnector(LogsConnector):
         base_url: str,
         tenant_id: str,
         timeout: int = DATASOURCE_TIMEOUT,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(tenant_id, base_url, timeout, headers)
 
@@ -37,7 +36,7 @@ class LokiConnector(LogsConnector):
         query: str,
         start: int,
         end: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> JSONDict:
         params: dict[str, str | int | float | bool] = {
             "query": self._normalize_query(query),

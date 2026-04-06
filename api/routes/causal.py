@@ -8,8 +8,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Dict
-
 import numpy as np
 from fastapi import APIRouter, Depends, Query
 
@@ -29,7 +27,7 @@ from store import granger as granger_store
 router = APIRouter(tags=["Causal"])
 
 
-def _select_top_variance_series(series_map: Dict[str, list[float]], max_series: int) -> Dict[str, list[float]]:
+def _select_top_variance_series(series_map: dict[str, list[float]], max_series: int) -> dict[str, list[float]]:
 
     ranked: list[tuple[str, float]] = []
     for name, values in series_map.items():
@@ -46,8 +44,8 @@ def _select_top_variance_series(series_map: Dict[str, list[float]], max_series: 
     return {name: values for name, values in series_map.items() if name in selected}
 
 
-def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> Dict[str, list[str]]:
-    common: Dict[str, list[str]] = {}
+def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> dict[str, list[str]]:
+    common: dict[str, list[str]] = {}
     for idx, root_a in enumerate(roots):
         for root_b in roots[idx + 1 :]:
             pair_key = f"{root_a}|{root_b}"
@@ -81,7 +79,7 @@ async def granger_causality(
     provider = get_provider(req.tenant_id)
     metrics_raw = await _fetch_requested_metrics(provider, req)
 
-    series_map: Dict[str, list[float]] = {}
+    series_map: dict[str, list[float]] = {}
     for query_string, resp in metrics_raw:
         for metric_name, _, vals in anomaly.iter_series(resp, query_hint=query_string):
             series_key = f"{query_string}::{metric_name}"

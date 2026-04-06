@@ -10,8 +10,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -22,11 +20,11 @@ class SloRequest(BaseModel):
     end: int
     step: str = "15s"
     target_availability: float = Field(default=0.999, ge=0.0, le=1.0)
-    error_query: Optional[str] = None
-    total_query: Optional[str] = None
+    error_query: str | None = None
+    total_query: str | None = None
 
     @model_validator(mode="after")
-    def validate_time_range(self) -> "SloRequest":
+    def validate_time_range(self) -> SloRequest:
         if self.start >= self.end:
             raise ValueError("start must be less than end")
         return self

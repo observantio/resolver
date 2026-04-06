@@ -5,6 +5,6 @@ This package provides dependency-graph primitives and blast-radius helpers used 
 service impact propagation.
 """
 
-from engine.topology.graph import DependencyGraph, BlastRadius
+from engine.topology.graph import BlastRadius, DependencyGraph
 
-__all__ = ["DependencyGraph", "BlastRadius"]
+__all__ = ["BlastRadius", "DependencyGraph"]

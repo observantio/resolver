@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import import_module
-from typing import List
 
 import numpy as np
 
@@ -24,15 +23,15 @@ from config import settings
 @dataclass
 class AnomalyCluster:
     cluster_id: int
-    members: List[MetricAnomaly]
+    members: list[MetricAnomaly]
     centroid_timestamp: float
     centroid_value: float
-    metric_names: List[str]
+    metric_names: list[str]
     size: int
     is_noise: bool = False
 
 
-def _feature_matrix(anomalies: List[MetricAnomaly]) -> np.ndarray:
+def _feature_matrix(anomalies: list[MetricAnomaly]) -> np.ndarray:
     ts_arr = np.array([a.timestamp for a in anomalies], dtype=float)
     val_arr = np.array([a.value for a in anomalies], dtype=float)
     ts_norm = (ts_arr - ts_arr.min()) / (np.ptp(ts_arr) + 1e-9)
@@ -41,10 +40,10 @@ def _feature_matrix(anomalies: List[MetricAnomaly]) -> np.ndarray:
 
 
 def _cluster_one_metric(
-    anomalies: List[MetricAnomaly],
+    anomalies: list[MetricAnomaly],
     eps: float,
     min_samples: int,
-) -> List[AnomalyCluster]:
+) -> list[AnomalyCluster]:
     if len(anomalies) < min_samples:
         return []
 
@@ -57,11 +56,11 @@ def _cluster_one_metric(
     model = dbscan_factory(eps=eps, min_samples=min_samples, metric="euclidean")
     labels = model.fit_predict(x)
 
-    clusters: dict[int, List[MetricAnomaly]] = {}
+    clusters: dict[int, list[MetricAnomaly]] = {}
     for label, anomaly in zip(labels, anomalies):
         clusters.setdefault(int(label), []).append(anomaly)
 
-    result: List[AnomalyCluster] = []
+    result: list[AnomalyCluster] = []
     for cid, members in clusters.items():
         result.append(
             AnomalyCluster(
@@ -79,10 +78,10 @@ def _cluster_one_metric(
 
 
 def cluster(
-    anomalies: List[MetricAnomaly],
+    anomalies: list[MetricAnomaly],
     eps: float | None = None,
     min_samples: int | None = None,
-) -> List[AnomalyCluster]:
+) -> list[AnomalyCluster]:
     if not anomalies:
         return []
     if eps is None:
@@ -90,11 +89,11 @@ def cluster(
     if min_samples is None:
         min_samples = settings.ml_cluster_min_samples
 
-    by_metric: dict[str, List[MetricAnomaly]] = {}
+    by_metric: dict[str, list[MetricAnomaly]] = {}
     for a in anomalies:
         by_metric.setdefault(a.metric_name or "", []).append(a)
 
-    combined: List[AnomalyCluster] = []
+    combined: list[AnomalyCluster] = []
     next_cluster_id = 0
     for _metric_key in sorted(by_metric.keys()):
         part = _cluster_one_metric(by_metric[_metric_key], eps, min_samples)
@@ -115,7 +114,7 @@ def cluster(
     return sorted(combined, key=lambda c: c.size, reverse=True)
 
 
-def _fallback_cluster(anomalies: List[MetricAnomaly]) -> List[AnomalyCluster]:
+def _fallback_cluster(anomalies: list[MetricAnomaly]) -> list[AnomalyCluster]:
     if not anomalies:
         return []
     return [

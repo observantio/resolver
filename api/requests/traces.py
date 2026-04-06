@@ -10,8 +10,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -19,5 +17,5 @@ class TraceRequest(BaseModel):
     tenant_id: str
     start: int
     end: int
-    service: Optional[str] = None
+    service: str | None = None
     apdex_threshold_ms: float = 500.0

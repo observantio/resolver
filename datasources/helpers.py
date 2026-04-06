@@ -10,59 +10,132 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Protocol, cast
+
 import httpx
+
 from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTimeout
 from datasources.types import JSONDict, QueryParams
 
 
+class AsyncGetClient(Protocol):
+    async def get(self, url: str, **kwargs: object) -> Any: ...
+
+
+@dataclass(frozen=True)
+class FetchRequestOptions:
+    params: QueryParams | None = None
+    headers: dict[str, str] | None = None
+    timeout: int = 30
+    client: AsyncGetClient | None = None
+
+
+@dataclass(frozen=True)
+class FetchErrorMessages:
+    invalid_msg: str
+    timeout_msg: str
+    unavailable_msg: str
+
+
+_DEFAULT_JSON_MESSAGES = FetchErrorMessages(
+    invalid_msg="query failed",
+    timeout_msg="query timed out",
+    unavailable_msg="Cannot reach data source at",
+)
+
+_DEFAULT_TEXT_MESSAGES = FetchErrorMessages(
+    invalid_msg="request failed",
+    timeout_msg="request timed out",
+    unavailable_msg="Cannot reach data source at",
+)
+
+
+def _coerce_fetch_options(
+    options: FetchRequestOptions | None,
+    legacy_kwargs: dict[str, object],
+) -> FetchRequestOptions:
+    base = options or FetchRequestOptions()
+
+    params = legacy_kwargs.pop("params", base.params)
+    headers = legacy_kwargs.pop("headers", base.headers)
+    timeout_raw = legacy_kwargs.pop("timeout", base.timeout)
+    client_raw = legacy_kwargs.pop("client", base.client)
+
+    timeout = int(cast(int | str | bytes | bytearray, timeout_raw))
+
+    client = client_raw if hasattr(client_raw, "get") else base.client
+
+    return FetchRequestOptions(
+        params=cast(QueryParams | None, params),
+        headers=cast(dict[str, str] | None, headers),
+        timeout=timeout,
+        client=client,
+    )
+
+
+def _coerce_error_messages(
+    messages: FetchErrorMessages | None,
+    legacy_kwargs: dict[str, object],
+    defaults: FetchErrorMessages,
+) -> FetchErrorMessages:
+    base = messages or defaults
+    invalid_raw = legacy_kwargs.pop("invalid_msg", base.invalid_msg)
+    timeout_raw = legacy_kwargs.pop("timeout_msg", base.timeout_msg)
+    unavailable_raw = legacy_kwargs.pop("unavailable_msg", base.unavailable_msg)
+    return FetchErrorMessages(
+        invalid_msg=str(invalid_raw),
+        timeout_msg=str(timeout_raw),
+        unavailable_msg=str(unavailable_raw),
+    )
+
+
 async def fetch_json(
     url: str,
-    params: Optional[QueryParams] = None,
-    headers: Optional[dict[str, str]] = None,
-    timeout: int = 30,
-    client: Optional[httpx.AsyncClient] = None,
-    invalid_msg: str = "query failed",
-    timeout_msg: str = "query timed out",
-    unavailable_msg: str = "Cannot reach data source at",
+    options: FetchRequestOptions | None = None,
+    messages: FetchErrorMessages | None = None,
+    **legacy_kwargs: object,
 ) -> JSONDict:
+    parsed_options = _coerce_fetch_options(options, dict(legacy_kwargs))
+    parsed_messages = _coerce_error_messages(messages, dict(legacy_kwargs), _DEFAULT_JSON_MESSAGES)
+
     try:
-        if client is None:
-            async with httpx.AsyncClient(timeout=timeout) as owned_client:
-                resp = await owned_client.get(url, params=params, headers=headers)
+        if parsed_options.client is None:
+            async with httpx.AsyncClient(timeout=parsed_options.timeout) as owned_client:
+                resp = await owned_client.get(url, params=parsed_options.params, headers=parsed_options.headers)
         else:
-            resp = await client.get(url, params=params, headers=headers)
+            resp = await parsed_options.client.get(url, params=parsed_options.params, headers=parsed_options.headers)
         resp.raise_for_status()
         payload = resp.json()
         return payload if isinstance(payload, dict) else {}
     except httpx.HTTPStatusError as e:
-        raise InvalidQuery(f"{invalid_msg} [{e.response.status_code}]: {e.response.text}") from e
+        raise InvalidQuery(f"{parsed_messages.invalid_msg} [{e.response.status_code}]: {e.response.text}") from e
     except httpx.TimeoutException as e:
-        raise QueryTimeout(timeout_msg) from e
+        raise QueryTimeout(parsed_messages.timeout_msg) from e
     except httpx.RequestError as e:
-        raise DataSourceUnavailable(f"{unavailable_msg} {url}") from e
+        raise DataSourceUnavailable(f"{parsed_messages.unavailable_msg} {url}") from e
 
 
 async def fetch_text(
     url: str,
-    headers: Optional[dict[str, str]] = None,
-    timeout: int = 30,
-    client: Optional[httpx.AsyncClient] = None,
-    invalid_msg: str = "request failed",
-    timeout_msg: str = "request timed out",
-    unavailable_msg: str = "Cannot reach data source at",
+    options: FetchRequestOptions | None = None,
+    messages: FetchErrorMessages | None = None,
+    **legacy_kwargs: object,
 ) -> str:
+    parsed_options = _coerce_fetch_options(options, dict(legacy_kwargs))
+    parsed_messages = _coerce_error_messages(messages, dict(legacy_kwargs), _DEFAULT_TEXT_MESSAGES)
+
     try:
-        if client is None:
-            async with httpx.AsyncClient(timeout=timeout) as owned_client:
-                resp = await owned_client.get(url, headers=headers)
+        if parsed_options.client is None:
+            async with httpx.AsyncClient(timeout=parsed_options.timeout) as owned_client:
+                resp = await owned_client.get(url, headers=parsed_options.headers)
         else:
-            resp = await client.get(url, headers=headers)
+            resp = await parsed_options.client.get(url, headers=parsed_options.headers)
         resp.raise_for_status()
         return resp.text
     except httpx.HTTPStatusError as e:
-        raise InvalidQuery(f"{invalid_msg} [{e.response.status_code}]: {e.response.text}") from e
+        raise InvalidQuery(f"{parsed_messages.invalid_msg} [{e.response.status_code}]: {e.response.text}") from e
     except httpx.TimeoutException as e:
-        raise QueryTimeout(timeout_msg) from e
+        raise QueryTimeout(parsed_messages.timeout_msg) from e
     except httpx.RequestError as e:
-        raise DataSourceUnavailable(f"{unavailable_msg} {url}") from e
+        raise DataSourceUnavailable(f"{parsed_messages.unavailable_msg} {url}") from e

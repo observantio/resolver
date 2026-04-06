@@ -10,13 +10,12 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import os
 import sys
-from typing import Dict, List, Tuple, Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
-def _to_bool(value: Optional[str], default: bool = False) -> bool:
+def _to_bool(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in ("1", "true", "yes", "on")
@@ -30,11 +29,11 @@ def _is_production_env() -> bool:
     return _env_name() in {"prod", "production"}
 
 
-def _normalized_secret(value: Optional[str]) -> str:
+def _normalized_secret(value: str | None) -> str:
     return str(value or "").strip().lower()
 
 
-def _is_weak_secret(value: Optional[str]) -> bool:
+def _is_weak_secret(value: str | None) -> bool:
     normalized = _normalized_secret(value)
     if not normalized:
         return True
@@ -45,7 +44,7 @@ def _is_weak_secret(value: Optional[str]) -> bool:
 ALLOWED_CONTEXT_ALGORITHMS = {"HS256", "HS384", "HS512"}
 
 
-def _parse_context_algorithms(raw: Optional[str]) -> list[str]:
+def _parse_context_algorithms(raw: str | None) -> list[str]:
     values = [str(v).strip().upper() for v in str(raw or "HS256").split(",") if str(v).strip()]
     return values or ["HS256"]
 
@@ -161,7 +160,7 @@ SEVERITY_WEIGHTS: dict[str, int] = {
 DATASOURCE_TIMEOUT = 30
 HEALTH_PATH = "/ready"
 
-DEFAULT_WEIGHTS: Dict[str, float] = {
+DEFAULT_WEIGHTS: dict[str, float] = {
     "metrics": 0.30,
     "logs": 0.35,
     "traces": 0.35,
@@ -214,7 +213,7 @@ class Settings(BaseSettings):
     cusum_threshold: float = float(os.getenv("RESOLVER_CUSUM_THRESHOLD", "6.0"))
     min_samples: int = int(os.getenv("RESOLVER_MIN_SAMPLES", "12"))
 
-    burst_ratio_thresholds: List[Tuple[float, str]] = [
+    burst_ratio_thresholds: list[tuple[float, str]] = [
         (10.0, "critical"),
         (5.0, "high"),
         (2.5, "medium"),
@@ -279,7 +278,7 @@ class Settings(BaseSettings):
 
     # rca heuristics
     rca_window_seconds: float = 300.0
-    rca_weights: Dict[str, float] = {"metrics": 0.40, "logs": 0.25, "traces": 0.35}
+    rca_weights: dict[str, float] = {"metrics": 0.40, "logs": 0.25, "traces": 0.35}
     rca_deploy_score_cutoff: float = 0.65
     rca_errorprop_max: float = 0.95
     rca_baseline_base: float = 0.5
@@ -324,7 +323,7 @@ class Settings(BaseSettings):
 
     events_window_seconds: float = 300.0
 
-    bayesian_priors: Dict[str, float] = {
+    bayesian_priors: dict[str, float] = {
         "deployment": 0.35,
         "resource_exhaustion": 0.20,
         "dependency_failure": 0.20,
@@ -333,7 +332,7 @@ class Settings(BaseSettings):
         "slo_burn": 0.03,
         "unknown": 0.02,
     }
-    bayesian_likelihoods: Dict[str, Dict[str, float]] = {
+    bayesian_likelihoods: dict[str, dict[str, float]] = {
         "deployment": {
             "has_deployment_event": 0.95,
             "has_metric_spike": 0.70,
@@ -422,7 +421,7 @@ class Settings(BaseSettings):
     rca_log_pattern_score: float = 0.6
 
     # SLO burn windows: list of (label, window_seconds, threshold, severity)
-    slo_burn_windows: List[Tuple[str, float, float, str]] = [
+    slo_burn_windows: list[tuple[str, float, float, str]] = [
         ("1h", 3600, 14.4, "critical"),
         ("6h", 21600, 6.0, "high"),
         ("1d", 86400, 3.0, "medium"),
@@ -438,17 +437,17 @@ class Settings(BaseSettings):
     slo_default_target_availability: float = 0.999
 
     # anomaly detection thresholds
-    anomaly_z_thresholds: List[Tuple[float, float]] = [
+    anomaly_z_thresholds: list[tuple[float, float]] = [
         (4.5, 0.5),
         (3.5, 0.35),
         (3.0, 0.2),
     ]
-    anomaly_mad_thresholds: List[Tuple[float, float]] = [
+    anomaly_mad_thresholds: list[tuple[float, float]] = [
         (6.0, 0.35),
         (4.5, 0.25),
         (3.5, 0.15),
     ]
-    anomaly_iqr_score_thresholds: List[Tuple[float, float]] = [
+    anomaly_iqr_score_thresholds: list[tuple[float, float]] = [
         (4.0, 0.35),
         (3.0, 0.25),
         (2.0, 0.15),

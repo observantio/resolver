@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, TypeAlias, TypeGuard
+
 from typing_extensions import TypeAliasType
 
 JSONScalar: TypeAlias = str | int | float | bool | None
@@ -40,4 +41,4 @@ def is_json_object(value: object) -> TypeGuard[JSONDict]:
     return isinstance(value, dict) and all(isinstance(key, str) and is_json_value(item) for key, item in value.items())
 
 
-__all__ = ["JSONScalar", "JSONValue", "JSONDict", "JSONList", "is_json_value", "is_json_object"]
+__all__ = ["JSONDict", "JSONList", "JSONScalar", "JSONValue", "is_json_object", "is_json_value"]

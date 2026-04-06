@@ -11,7 +11,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import List, TypedDict
+from typing import TypedDict
 
 import numpy as np
 
@@ -115,7 +115,7 @@ def _severity(p99: float, error_rate: float, apdex: float) -> Severity:
     return Severity.from_score(min(score, 1.0))
 
 
-def analyze(tempo_response: JSONDict, apdex_t_ms: float | None = None) -> List[ServiceLatency]:
+def analyze(tempo_response: JSONDict, apdex_t_ms: float | None = None) -> list[ServiceLatency]:
     if apdex_t_ms is None:
         apdex_t_ms = settings.trace_latency_apdex_t_ms
 
@@ -160,7 +160,7 @@ def analyze(tempo_response: JSONDict, apdex_t_ms: float | None = None) -> List[S
         if any(span_has_error(span) for span in iter_trace_spans(trace)):
             bucket["errors"] += 1
 
-    results: List[ServiceLatency] = []
+    results: list[ServiceLatency] = []
 
     for key, bucket in buckets.items():
         durations = np.array(bucket["durations"], dtype=float)

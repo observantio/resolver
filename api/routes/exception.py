@@ -19,8 +19,10 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 from __future__ import annotations
 
 import inspect
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Awaitable, Callable, TypeVar, cast
+from typing import TypeVar, cast
+
 from fastapi import HTTPException
 
 F = TypeVar("F", bound=Callable[..., object])

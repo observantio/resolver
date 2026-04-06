@@ -10,16 +10,15 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO
 from connectors.loki import LokiConnector
 from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
-from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO
 from datasources.base import LogsConnector, MetricsConnector, TracesConnector
 from datasources.data_config import DataSourceSettings
 
 
 class DataSourceFactory:
-
     @staticmethod
     def create_logs(config: DataSourceSettings, tenant_id: str) -> LogsConnector:
         if config.logs_backend == LOGS_BACKEND_LOKI:

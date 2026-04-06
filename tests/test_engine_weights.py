@@ -11,8 +11,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import pytest
 
-from engine.ml.weights import SignalWeights
 from engine.enums import Signal
+from engine.ml.weights import SignalWeights
 
 
 def test_signal_weights_update_normalization():

@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from api.responses import LogBurst, LogPattern, MetricAnomaly, RootCause as RootCauseModel
+from api.responses import LogBurst, LogPattern, MetricAnomaly
+from api.responses import RootCause as RootCauseModel
 from engine.analyzer import (
     _apply_precision_quality_gates,
     _build_log_query,

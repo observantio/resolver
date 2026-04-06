@@ -9,9 +9,9 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.causal.graph import CausalGraph, InterventionResult
 from engine.causal.bayesian import score as bayesian_score
-from engine.causal.granger import granger_pair_analysis, granger_multiple_pairs, GrangerResult
+from engine.causal.granger import GrangerResult, granger_multiple_pairs, granger_pair_analysis
+from engine.causal.graph import CausalGraph, InterventionResult
 
 
 def test_bayesian_score_consistency():

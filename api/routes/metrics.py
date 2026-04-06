@@ -8,16 +8,15 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends
 
-from api.requests import MetricRequest, ChangepointRequest
+from api.requests import ChangepointRequest, MetricRequest
 from api.responses import MetricAnomaly
 from api.routes.common import get_provider, safe_call
 from api.routes.exception import handle_exceptions
 from engine import anomaly
-from engine.changepoint import detect as changepoint_detect, ChangePoint
+from engine.changepoint import ChangePoint
+from engine.changepoint import detect as changepoint_detect
 from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["Metrics"])
@@ -25,11 +24,11 @@ router = APIRouter(tags=["Metrics"])
 
 @router.post(
     "/anomalies/metrics",
-    response_model=List[MetricAnomaly],
+    response_model=list[MetricAnomaly],
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
+async def metric_anomalies(req: MetricRequest) -> list[MetricAnomaly]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
         get_provider(req.tenant_id).query_metrics(query=req.query, start=req.start, end=req.end, step=req.step)
@@ -43,17 +42,17 @@ async def metric_anomalies(req: MetricRequest) -> List[MetricAnomaly]:
 
 @router.post(
     "/changepoints",
-    response_model=List[ChangePoint],
+    response_model=list[ChangePoint],
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def metric_changepoints(req: ChangepointRequest) -> List[ChangePoint]:
+async def metric_changepoints(req: ChangepointRequest) -> list[ChangePoint]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
         get_provider(req.tenant_id).query_metrics(query=req.query, start=req.start, end=req.end, step=req.step)
     )
 
-    results: List[ChangePoint] = []
+    results: list[ChangePoint] = []
     for metric_name, ts, vals in anomaly.iter_series(raw, query_hint=req.query):
         threshold_sigma = float(req.threshold_sigma)
         try:

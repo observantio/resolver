@@ -12,12 +12,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 import asyncio
 import json
 import uuid
-from pydantic import BaseModel
+
 import jwt
-from starlette.responses import JSONResponse
 import pytest
+from pydantic import BaseModel
+from starlette.responses import JSONResponse
 
 import services.security_service as security_service
+from config import settings
 from services.security_service import (
     InternalAuthMiddleware,
     InternalContext,
@@ -26,7 +28,6 @@ from services.security_service import (
     reset_internal_context,
     set_internal_context,
 )
-from config import settings
 
 
 def _headers(payload):

@@ -13,12 +13,12 @@ from __future__ import annotations
 import json
 import logging
 from json import JSONDecodeError
-from typing import List, TypedDict
+from typing import TypedDict
 
 from config import EVENTS_TTL
 from engine.events.models import DeploymentEvent
 from store import keys
-from store.client import redis_lrange, redis_rpush, redis_delete
+from store.client import redis_delete, redis_lrange, redis_rpush
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def _serialise(event: DeploymentEvent) -> str:
     )
 
 
-async def load(tenant_id: str) -> List[StoredEvent]:
+async def load(tenant_id: str) -> list[StoredEvent]:
     try:
         items = await redis_lrange(keys.events(tenant_id))
         events: list[StoredEvent] = []

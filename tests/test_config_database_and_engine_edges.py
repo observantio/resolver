@@ -11,20 +11,19 @@ from __future__ import annotations
 import importlib
 import os
 import sys
-from typing import Any, cast
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
 
+import database as database_module
 from api.requests import AnalyzeRequest
 from api.routes import causal as causal_route
-from engine.causal.granger import GrangerResult
 from engine.dedup.grouping import group_metric_anomalies
 from engine.enums import ChangeType, Severity
 from engine.events.models import DeploymentEvent
 from engine.fetcher import _extract_metric_names, _scrape_and_fill, fetch_metrics
-import database as database_module
 
 baseline_compute_module = importlib.import_module("engine.baseline.compute")
 
@@ -95,27 +94,23 @@ def test_config_security_validation_edges():
 
     env = _base_production_env()
     env["RESOLVER_DATABASE_URL"] = ""
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError, match="DATABASE_URL"):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError, match="DATABASE_URL"):
+        _reload_config_module()
 
     env = _base_production_env()
     env["RESOLVER_CONTEXT_REPLAY_TTL_SECONDS"] = "0"
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError, match="REPLAY_TTL"):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError, match="REPLAY_TTL"):
+        _reload_config_module()
 
     env = _base_production_env()
     env["RESOLVER_CONTEXT_ISSUER"] = ""
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError, match="CONTEXT_ISSUER"):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError, match="CONTEXT_ISSUER"):
+        _reload_config_module()
 
     env = _base_production_env()
     env["RESOLVER_CONTEXT_AUDIENCE"] = ""
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError, match="CONTEXT_AUDIENCE"):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError, match="CONTEXT_AUDIENCE"):
+        _reload_config_module()
 
 
 def test_config_secret_helpers_cover_strong_secret_path():
@@ -253,9 +248,8 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
     database_module._ensure_postgres_database_exists("sqlite:///tmp.db")
     database_module._ensure_postgres_database_exists("postgresql://user:pass@db")
 
-    with pytest.raises(RuntimeError, match="Database not initialized"):
-        with database_module.get_db_session():
-            pass
+    with pytest.raises(RuntimeError, match="Database not initialized"), database_module.get_db_session():
+        pass
 
     with pytest.raises(RuntimeError, match="Database not initialized"):
         database_module.init_db()
@@ -329,7 +323,7 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
     database_module.dispose_database()
     monkeypatch.setattr(database_module, "_ensure_postgres_database_exists", lambda url: ensure_calls.append(url))
     monkeypatch.setattr(database_module, "create_engine", lambda url, **kwargs: fake_engine)
-    monkeypatch.setattr(database_module, "sessionmaker", lambda **kwargs: (lambda: fake_session))
+    monkeypatch.setattr(database_module, "sessionmaker", lambda **kwargs: lambda: fake_session)
     monkeypatch.setattr(
         database_module.Base.metadata, "create_all", lambda bind: ensure_calls.append(("create_all", bind))
     )
@@ -342,9 +336,8 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
         assert session is fake_session
     assert ensure_calls[-2:] == ["commit", "close"]
 
-    with pytest.raises(RuntimeError, match="boom"):
-        with database_module.get_db_session():
-            raise RuntimeError("boom")
+    with pytest.raises(RuntimeError, match="boom"), database_module.get_db_session():
+        raise RuntimeError("boom")
     assert ensure_calls[-2:] == ["rollback", "close"]
 
     database_module.init_db()
@@ -374,7 +367,6 @@ def test_database_session_factory_must_be_callable() -> None:
 
     database_module._ENGINE = cast(Any, _DisposableEngine())
     database_module._SESSION_FACTORY = cast(Any, object())
-    with pytest.raises(RuntimeError, match="Database not initialized"):
-        with database_module.get_db_session():
-            pass
+    with pytest.raises(RuntimeError, match="Database not initialized"), database_module.get_db_session():
+        pass
     database_module.dispose_database()

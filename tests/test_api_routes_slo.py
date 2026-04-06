@@ -13,8 +13,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from api.routes import slo as slo_route
 from api.requests import SloRequest
+from api.routes import slo as slo_route
 from config import settings
 
 

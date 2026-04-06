@@ -13,8 +13,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from api.routes import causal as causal_route
 from api.requests import CorrelateRequest
+from api.routes import causal as causal_route
 
 
 class DummyProvider:

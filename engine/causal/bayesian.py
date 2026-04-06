@@ -14,19 +14,16 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
 
+from config import settings
 from engine.enums import RcaCategory
 
 
-from config import settings
-
-
-def _configured_priors() -> Dict[RcaCategory, float]:
+def _configured_priors() -> dict[RcaCategory, float]:
     return {RcaCategory(k): v for k, v in settings.bayesian_priors.items()}
 
 
-def _configured_likelihoods() -> Dict[RcaCategory, Dict[str, float]]:
+def _configured_likelihoods() -> dict[RcaCategory, dict[str, float]]:
     return {RcaCategory(k): v for k, v in settings.bayesian_likelihoods.items()}
 
 
@@ -44,8 +41,8 @@ def score(
     has_log_burst: bool,
     has_latency_spike: bool,
     has_error_propagation: bool,
-) -> List[BayesianScore]:
-    evidence: Dict[str, bool] = {
+) -> list[BayesianScore]:
+    evidence: dict[str, bool] = {
         "has_deployment_event": has_deployment_event,
         "has_metric_spike": has_metric_spike,
         "has_log_burst": has_log_burst,
@@ -56,7 +53,7 @@ def score(
     priors = _configured_priors()
     likelihood_map = _configured_likelihoods()
 
-    raw_posteriors: Dict[RcaCategory, float] = {}
+    raw_posteriors: dict[RcaCategory, float] = {}
     for category, prior in priors.items():
         likelihood = 1.0
         likelihoods = likelihood_map.get(category, {})

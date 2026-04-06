@@ -10,6 +10,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import os
 import sys
+
 import pytest
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -22,6 +23,7 @@ from store.client import _fallback  # noqa: E402
 @pytest.fixture(autouse=True)
 def clear_fallback(monkeypatch):
     import store.client as client
+
     _fallback.clear()
     client._REDIS_CLIENT = None
     client._USING_FALLBACK = False
@@ -40,10 +42,10 @@ def clear_fallback(monkeypatch):
     monkeypatch.setattr(client, "redis_set", fake_set)
     monkeypatch.setattr(client, "redis_delete", fake_delete)
 
-    import store.weights as wstore
     import store.baseline as bstore
-    import store.granger as gstore
     import store.events as estore
+    import store.granger as gstore
+    import store.weights as wstore
 
     for mod in (wstore, bstore, gstore, estore):
         for name in ("redis_get", "redis_set", "redis_delete"):

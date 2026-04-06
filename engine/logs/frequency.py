@@ -14,15 +14,13 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
-from typing import Iterator, List, Tuple
+from collections.abc import Iterator, Mapping
 
 import numpy as np
 
-from engine.enums import Severity
 from api.responses import LogBurst
-
 from config import settings
+from engine.enums import Severity
 
 _BURST_RATIO_THRESHOLDS = [(thr, Severity(sev)) for thr, sev in settings.burst_ratio_thresholds]
 
@@ -42,7 +40,7 @@ _BENIGN_RE = re.compile(
 )
 
 
-def _iter_entries(loki_response: Mapping[str, object]) -> Iterator[Tuple[float, str]]:
+def _iter_entries(loki_response: Mapping[str, object]) -> Iterator[tuple[float, str]]:
     data = loki_response.get("data")
     if not isinstance(data, dict):
         return
@@ -62,7 +60,7 @@ def _iter_entries(loki_response: Mapping[str, object]) -> Iterator[Tuple[float, 
             yield float(ts_ns) / 1e9, line
 
 
-def _is_benign_repetitive_window(lines: List[str]) -> bool:
+def _is_benign_repetitive_window(lines: list[str]) -> bool:
     if len(lines) < 3:
         return False
     adverse = sum(1 for line in lines if _ADVERSE_RE.search(str(line)))
@@ -72,7 +70,7 @@ def _is_benign_repetitive_window(lines: List[str]) -> bool:
     return (benign / len(lines)) >= 0.6
 
 
-def detect_bursts(loki_response: Mapping[str, object], window_seconds: float | None = None) -> List[LogBurst]:
+def detect_bursts(loki_response: Mapping[str, object], window_seconds: float | None = None) -> list[LogBurst]:
     if window_seconds is None:
         window_seconds = settings.logs_frequency_window_seconds
     entries = sorted(_iter_entries(loki_response), key=lambda x: x[0])
@@ -87,7 +85,7 @@ def detect_bursts(loki_response: Mapping[str, object], window_seconds: float | N
 
     baseline_rate = len(timestamps) / total_duration
 
-    windows: List[Tuple[float, float, int, bool]] = []
+    windows: list[tuple[float, float, int, bool]] = []
     i = 0
     while i < len(timestamps):
         w_start = timestamps[i]
@@ -101,7 +99,7 @@ def detect_bursts(loki_response: Mapping[str, object], window_seconds: float | N
     if not windows:
         return []
 
-    bursts: List[LogBurst] = []
+    bursts: list[LogBurst] = []
     for w_start, w_end, count, benign_window in windows:
         rate = count / window_seconds
         ratio = rate / baseline_rate if baseline_rate > 0 else 0.0

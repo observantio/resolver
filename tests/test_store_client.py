@@ -11,7 +11,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 import pytest
 
 from store import client as store_client
-from store.client import _fallback, redis_get, redis_set, redis_delete, redis_scan
+from store.client import _fallback, redis_delete, redis_get, redis_scan, redis_set
 
 
 @pytest.mark.asyncio

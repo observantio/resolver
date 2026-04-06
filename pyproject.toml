@@ -20,6 +20,7 @@ classifiers = [
 ]
 dependencies = [
   "fastapi>=0.111.0",
+  "starlette>=0.49.1",
   "uvicorn[standard]>=0.29.0",
   "httpx>=0.27.0",
   "pydantic>=2.7.0",
@@ -41,7 +42,6 @@ Changelog = "https://github.com/observantio/resolver/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
   "mypy>=1.18.2",
-  "types-PyYAML>=6.0.12.20250915",
   "pylint>=3.3.0",
   "ruff>=0.9.0",
   "pytest>=9.0.0",
@@ -60,6 +60,7 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 filterwarnings = [
   "ignore::DeprecationWarning:pydantic\\..*",
+  "ignore::DeprecationWarning:starlette\\..*",
 ]
 
 [tool.coverage.run]
@@ -149,20 +150,11 @@ disallow_any_generics = true
 no_implicit_optional = true
 implicit_reexport = false
 explicit_package_bases = true
-mypy_path = ["."]
 files = ["."]
 exclude = [
-  "^(build|dist|venv|\\.venv|__pycache__|migrations)/",
+  "^(build|dist|venv|\\.venv|__pycache__)/",
   "^tests/",
 ]
-
-[[tool.mypy.overrides]]
-module = ["*.migrations.*"]
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = ["requests.*", "setuptools.*"]
-ignore_missing_imports = true
 
 [tool.pylint.main]
 jobs = 1
@@ -175,8 +167,6 @@ disable = [
   "missing-module-docstring",
   "missing-class-docstring",
   "missing-function-docstring",
-  "too-many-arguments",
-  "too-many-positional-arguments",
   "too-many-locals",
   "too-many-branches",
 ]

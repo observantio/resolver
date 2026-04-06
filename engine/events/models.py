@@ -4,8 +4,6 @@ Shared deployment event model.
 
 from __future__ import annotations
 
-from typing import Dict
-
 from pydantic import BaseModel, Field
 
 
@@ -16,4 +14,4 @@ class DeploymentEvent(BaseModel):
     author: str = ""
     environment: str = "production"
     source: str = "unknown"
-    metadata: Dict[str, str] = Field(default_factory=dict)
+    metadata: dict[str, str] = Field(default_factory=dict)

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import import_module
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -34,7 +33,7 @@ class GrangerResult:
     strength: float
 
 
-def _ols(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float]:
+def _ols(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float]:
     coeffs, _, _, _ = np.linalg.lstsq(x, y, rcond=None)
     predicted = x @ coeffs
     ss_res = float(np.sum((y - predicted) ** 2))
@@ -51,12 +50,12 @@ def _lag_matrix(series: np.ndarray, max_lag: int) -> np.ndarray:
 
 def granger_pair_analysis(
     cause_name: str,
-    cause_vals: List[float],
+    cause_vals: list[float],
     effect_name: str,
-    effect_vals: List[float],
+    effect_vals: list[float],
     max_lag: int | None = None,
     p_threshold: float | None = None,
-) -> Optional[GrangerResult]:
+) -> GrangerResult | None:
     if max_lag is None:
         max_lag = settings.granger_max_lag
     if p_threshold is None:
@@ -105,16 +104,16 @@ def granger_pair_analysis(
 
 
 def granger_multiple_pairs(
-    series_map: Dict[str, List[float]],
+    series_map: dict[str, list[float]],
     max_lag: int | None = None,
     p_threshold: float | None = None,
-) -> List[GrangerResult]:
+) -> list[GrangerResult]:
     if max_lag is None:
         max_lag = settings.granger_max_lag
     if p_threshold is None:
         p_threshold = settings.granger_p_threshold
     names = list(series_map.keys())
-    results: List[GrangerResult] = []
+    results: list[GrangerResult] = []
 
     for i, cause in enumerate(names):
         for j, effect in enumerate(names):

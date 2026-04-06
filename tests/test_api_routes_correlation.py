@@ -8,8 +8,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import pytest
 
-from api.routes import correlation as corr_route
 from api.requests import CorrelateRequest
+from api.routes import correlation as corr_route
 
 
 class DummyState:

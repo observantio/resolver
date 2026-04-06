@@ -8,14 +8,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from contextvars import ContextVar, Token
-from dataclasses import dataclass
-from hmac import compare_digest
 import logging
 import threading
 import time
-from typing import Mapping, Optional, TypeVar
+from collections.abc import Awaitable, Callable, Mapping
+from contextvars import ContextVar, Token
+from dataclasses import dataclass
+from hmac import compare_digest
+from typing import TypeVar
 
 import jwt
 from fastapi import HTTPException, Request, status
@@ -26,7 +26,7 @@ from starlette.responses import Response
 
 from config import ALLOWED_CONTEXT_ALGORITHMS, settings
 
-_context_var: ContextVar["InternalContext | None"] = ContextVar("resolver_internal_context", default=None)
+_context_var: ContextVar[InternalContext | None] = ContextVar("resolver_internal_context", default=None)
 log = logging.getLogger(__name__)
 _jti_seen_lock = threading.Lock()
 _jti_seen_cache: dict[str, float] = {}
@@ -160,7 +160,7 @@ def get_internal_context() -> InternalContext | None:
     return _context_var.get()
 
 
-def get_context_tenant(default_tenant: Optional[str] = None) -> str:
+def get_context_tenant(default_tenant: str | None = None) -> str:
     ctx = get_internal_context()
     if ctx:
         return ctx.tenant_id

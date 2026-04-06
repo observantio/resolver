@@ -10,22 +10,23 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-import pytest
 import random
 
-from engine.causal.granger import granger_pair_analysis, granger_multiple_pairs
+import pytest
+
+from api.responses import LogBurst, MetricAnomaly, ServiceLatency
 from engine.anomaly.detection import detect
-from engine.forecast.trajectory import forecast
-from engine.forecast.degradation import analyze as degradation
-from engine.correlation.temporal import correlate
+from engine.causal.granger import granger_multiple_pairs, granger_pair_analysis
 from engine.causal.graph import CausalGraph
-from engine.topology.graph import DependencyGraph
+from engine.correlation.temporal import correlate
 from engine.enums import Severity
-from api.responses import MetricAnomaly, LogBurst, ServiceLatency
+from engine.forecast.degradation import analyze as degradation
+from engine.forecast.trajectory import forecast
+from engine.topology.graph import DependencyGraph
 
 
 def random_anomaly(t):
-    mid = f"m{random.randint(0,5)}"
+    mid = f"m{random.randint(0, 5)}"
     return MetricAnomaly(
         metric_id=mid,
         metric_name=mid,
@@ -54,7 +55,7 @@ def random_logburst(t):
 
 def random_latency():
     return ServiceLatency(
-        service=f"s{random.randint(0,3)}",
+        service=f"s{random.randint(0, 3)}",
         operation="op",
         p50_ms=random.random() * 100,
         p95_ms=random.random() * 200,
@@ -119,7 +120,7 @@ def test_fuzzy_correlation_and_causal(seed):
     g = CausalGraph()
     for i in range(5):
         a = f"m{i}"
-        b = f"m{(i+1)%5}"
+        b = f"m{(i + 1) % 5}"
         g.add_edge(a, b, random.random())
     _ = g.topological_sort()
     _ = g.root_causes()

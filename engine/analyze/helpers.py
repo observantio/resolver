@@ -1,8 +1,6 @@
 """
 Analyzer Helpers.
-
 Copyright (c) 2026 Stefan Kumarasinghe
-
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
@@ -11,37 +9,44 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import asyncio
-from collections import defaultdict
-from collections.abc import Callable, Sequence
 import dataclasses
 import logging
 import math
-from typing import Dict, List, TypeAlias, TypeVar, Tuple
+from collections import defaultdict
+from collections.abc import Callable, Sequence
+from typing import Any, TypeAlias, TypeVar
 
 import httpx
 import numpy as np
 
+from api.requests import AnalyzeRequest
 from api.responses import (
     AnalysisQuality,
     LogBurst,
     LogPattern,
     MetricAnomaly,
     MetricSeriesDistributionStats,
+)
+from api.responses import (
     RootCause as RootCauseModel,
 )
-from api.requests import AnalyzeRequest
 from config import FORECAST_THRESHOLDS, SLO_ERROR_QUERY, SLO_TOTAL_QUERY, settings
 from custom_types.json import JSONDict
 from datasources.provider import DataSourceProvider
+from engine import anomaly
 from engine.analyze.filters import (
     filter_metric_response_by_services as _filter_metric_response_by_services,
+)
+from engine.analyze.filters import (
     normalize_services as _normalize_services,
 )
-from engine import anomaly
+from engine.analyze.series import select_granger_series as _select_granger_series_impl
+from engine.analyze.series import slo_series_pairs as _slo_series_pairs_impl
 from engine.anomaly.stats import compute_series_distribution_stats
 from engine.baseline import compute as baseline_compute
-from engine.changepoint import detect as changepoint_detect, ChangePoint
 from engine.causal.granger import GrangerResult
+from engine.changepoint import ChangePoint
+from engine.changepoint import detect as changepoint_detect
 from engine.enums import Severity, Signal
 from engine.events.registry import DeploymentEvent, EventRegistry
 from engine.fetcher import fetch_metrics
@@ -66,6 +71,39 @@ _RECOVERABLE_ANALYSIS_ERRORS = (
 _ItemT = TypeVar("_ItemT")
 _MetricItemT = TypeVar("_MetricItemT")
 _SortKey: TypeAlias = tuple[float | int | str, ...] | float | int | str
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzerOutputInputs:
+    metric_anomalies: list[MetricAnomaly]
+    change_points: list[ChangePoint]
+    root_causes: list[RootCauseModel]
+    ranked_causes: list[RankedCause]
+    anomaly_clusters: list[AnomalyCluster]
+    granger_results: list[GrangerResult]
+    warnings: list[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class PrecisionQualityGateInputs:
+    metric_anomalies: list[MetricAnomaly]
+    change_points: list[ChangePoint]
+    root_causes: list[RootCauseModel]
+    ranked_causes: list[RankedCause]
+    duration_seconds: float
+    suppression_counts: dict[str, int]
+    warnings: list[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class MetricSeriesJob:
+    req: AnalyzeRequest
+    query_string: str
+    metric_name: str
+    ts: list[float]
+    vals: list[float]
+    z_threshold: float
+    analysis_window_seconds: float
 
 
 def _to_root_cause_model(rc: object) -> RootCauseModel:
@@ -133,12 +171,6 @@ def _series_key(query_string: str, metric_name: str) -> str:
     return f"{query_string}::{metric_name}"
 
 
-def _trim_to_len(values: list[float], target_len: int) -> list[float]:
-    if len(values) == target_len:
-        return values
-    return values[:target_len]
-
-
 def _dedupe_metric_anomalies(items: list[MetricAnomaly]) -> list[MetricAnomaly]:
     selected: dict[tuple[str, int, str], MetricAnomaly] = {}
     for item in items:
@@ -162,7 +194,13 @@ def _dedupe_metric_anomalies(items: list[MetricAnomaly]) -> list[MetricAnomaly]:
     return sorted(selected.values(), key=lambda a: (a.timestamp, a.metric_name))
 
 
-def _dedupe_change_points(items: List[ChangePoint]) -> List[ChangePoint]:
+def _trim_to_len(values: list[float], target_len: int) -> list[float]:
+    if len(values) == target_len:
+        return values
+    return values[:target_len]
+
+
+def _dedupe_change_points(items: list[ChangePoint]) -> list[ChangePoint]:
     selected: dict[tuple[str, int, str], ChangePoint] = {}
     for item in items:
         key = (
@@ -216,24 +254,28 @@ def _cap_list(
 
 
 def _limit_analyzer_output(
-    *,
-    metric_anomalies: list[MetricAnomaly],
-    change_points: List[ChangePoint],
-    root_causes: list[RootCauseModel],
-    ranked_causes: list[RankedCause],
-    anomaly_clusters: list[AnomalyCluster],
-    granger_results: list[GrangerResult],
-    warnings: list[str],
+    inputs: AnalyzerOutputInputs | None = None,
+    **legacy_kwargs: Any,
 ) -> tuple[
     list[MetricAnomaly],
-    List[ChangePoint],
+    list[ChangePoint],
     list[RootCauseModel],
     list[RankedCause],
     list[AnomalyCluster],
     list[GrangerResult],
 ]:
+    if inputs is None:
+        inputs = AnalyzerOutputInputs(
+            metric_anomalies=legacy_kwargs.get("metric_anomalies", []),
+            change_points=legacy_kwargs.get("change_points", []),
+            root_causes=legacy_kwargs.get("root_causes", []),
+            ranked_causes=legacy_kwargs.get("ranked_causes", []),
+            anomaly_clusters=legacy_kwargs.get("anomaly_clusters", []),
+            granger_results=legacy_kwargs.get("granger_results", []),
+            warnings=legacy_kwargs.get("warnings", []),
+        )
     metric_anomalies_limited = _cap_list(
-        metric_anomalies,
+        inputs.metric_anomalies,
         settings.analyzer_max_metric_anomalies,
         key_func=lambda item: (
             getattr(getattr(item, "severity", Severity.LOW), "weight", lambda: 0)(),
@@ -241,60 +283,54 @@ def _limit_analyzer_output(
             float(getattr(item, "timestamp", 0.0)),
         ),
     )
-    if len(metric_anomalies_limited) < len(metric_anomalies):
-        warnings.append(
-            f"Metric anomalies capped to top {len(metric_anomalies_limited)} from {len(metric_anomalies)} "
+    if len(metric_anomalies_limited) < len(inputs.metric_anomalies):
+        inputs.warnings.append(
+            f"Metric anomalies capped to top {len(metric_anomalies_limited)} from {len(inputs.metric_anomalies)} "
             "by severity and z-score."
         )
 
     change_points_limited = _cap_list(
-        change_points,
+        inputs.change_points,
         settings.analyzer_max_change_points,
         key_func=lambda item: (float(getattr(item, "magnitude", 0.0)), float(getattr(item, "timestamp", 0.0))),
     )
-    if len(change_points_limited) < len(change_points):
-        warnings.append(
-            f"Change points capped to top {len(change_points_limited)} from {len(change_points)} by magnitude."
+    if len(change_points_limited) < len(inputs.change_points):
+        inputs.warnings.append(
+            f"Change points capped to top {len(change_points_limited)} from {len(inputs.change_points)} by magnitude."
         )
 
     root_causes_limited = _cap_list(
-        root_causes,
+        inputs.root_causes,
         settings.analyzer_max_root_causes,
         key_func=lambda item: float(getattr(item, "confidence", 0.0)),
     )
-    if len(root_causes_limited) < len(root_causes):
-        warnings.append(f"Root causes capped to top {len(root_causes_limited)} by confidence.")
+    if len(root_causes_limited) < len(inputs.root_causes):
+        inputs.warnings.append(f"Root causes capped to top {len(root_causes_limited)} by confidence.")
 
     ranked_limited = _cap_list(
-        ranked_causes,
+        inputs.ranked_causes,
         settings.analyzer_max_root_causes,
         key_func=lambda item: float(getattr(item, "final_score", 0.0)),
     )
 
     clusters_limited = _cap_list(
-        anomaly_clusters,
+        inputs.anomaly_clusters,
         settings.analyzer_max_clusters,
         key_func=lambda item: int(getattr(item, "size", 0)),
     )
-    if len(clusters_limited) < len(anomaly_clusters):
-        warnings.append(f"Anomaly clusters capped to top {len(clusters_limited)} by size.")
+    if len(clusters_limited) < len(inputs.anomaly_clusters):
+        inputs.warnings.append(f"Anomaly clusters capped to top {len(clusters_limited)} by size.")
 
     granger_limited = _cap_list(
-        granger_results,
+        inputs.granger_results,
         settings.analyzer_max_granger_pairs,
         key_func=lambda item: float(getattr(item, "strength", 0.0)),
     )
-    if len(granger_limited) < len(granger_results):
-        warnings.append(f"Granger pairs capped to top {len(granger_limited)} by strength.")
+    if len(granger_limited) < len(inputs.granger_results):
+        inputs.warnings.append(f"Granger pairs capped to top {len(granger_limited)} by strength.")
 
-    return (
-        metric_anomalies_limited,
-        change_points_limited,
-        root_causes_limited,
-        ranked_limited,
-        clusters_limited,
-        granger_limited,
-    )
+    ma, cp, rc = metric_anomalies_limited, change_points_limited, root_causes_limited
+    return ma, cp, rc, ranked_limited, clusters_limited, granger_limited
 
 
 def _signal_key(value: object) -> str:
@@ -444,20 +480,32 @@ def _filter_log_bursts_for_precision_rca(
 
 
 def _apply_precision_quality_gates(
-    *,
-    metric_anomalies: list[MetricAnomaly],
-    change_points: List[ChangePoint],
-    root_causes: list[RootCauseModel],
-    ranked_causes: list[RankedCause],
-    duration_seconds: float,
-    suppression_counts: dict[str, int],
-    warnings: list[str],
-) -> tuple[list[MetricAnomaly], List[ChangePoint], list[RootCauseModel], list[RankedCause], AnalysisQuality]:
-    profile = str(getattr(settings, "quality_gating_profile", "precision_strict_v1")).strip() or "precision_strict_v1"
-    is_precision = _is_precision_profile()
+    inputs: PrecisionQualityGateInputs | None = None,
+    **legacy_kwargs: Any,
+) -> tuple[list[MetricAnomaly], list[ChangePoint], list[RootCauseModel], list[RankedCause], AnalysisQuality]:
+    kw = legacy_kwargs
+    inputs = inputs or PrecisionQualityGateInputs(
+        metric_anomalies=kw.get("metric_anomalies", []),
+        change_points=kw.get("change_points", []),
+        root_causes=kw.get("root_causes", []),
+        ranked_causes=kw.get("ranked_causes", []),
+        duration_seconds=float(kw.get("duration_seconds", 0.0)),
+        suppression_counts=kw.get("suppression_counts", {}),
+        warnings=kw.get("warnings", []),
+    )
+    metric_anomalies, change_points, root_causes, ranked_causes, duration_seconds, suppression_counts, warnings = (
+        inputs.metric_anomalies,
+        inputs.change_points,
+        inputs.root_causes,
+        inputs.ranked_causes,
+        inputs.duration_seconds,
+        inputs.suppression_counts,
+        inputs.warnings,
+    )
+
     hours = max(float(duration_seconds) / 3600.0, 1.0 / 60.0)
 
-    if is_precision and metric_anomalies:
+    if _is_precision_profile() and metric_anomalies:
         max_density = max(0.0, float(getattr(settings, "quality_max_anomaly_density_per_metric_per_hour", 0.0)))
         if max_density > 0:
             keep_per_metric = max(1, int(math.ceil(max_density * hours)))
@@ -492,7 +540,7 @@ def _apply_precision_quality_gates(
                     f"Quality gate suppressed {suppressed} metric anomaly(ies) above density cap "
                     f"{max_density}/metric/hour."
                 )
-    if is_precision and change_points:
+    if _is_precision_profile() and change_points:
         max_density_cp = max(
             0.0,
             float(getattr(settings, "quality_max_change_point_density_per_metric_per_hour", 0.0)),
@@ -503,7 +551,7 @@ def _apply_precision_quality_gates(
             for change_point in change_points:
                 metric_name = str(getattr(change_point, "metric_name", "metric")).strip() or "metric"
                 by_metric_cp[metric_name].append(change_point)
-            filtered_cp: List[ChangePoint] = []
+            filtered_cp: list[ChangePoint] = []
             suppressed_cp = 0
             for change_point_items in by_metric_cp.values():
                 if len(change_point_items) <= keep_per_metric_cp:
@@ -534,7 +582,7 @@ def _apply_precision_quality_gates(
         max_without = max(1, int(getattr(settings, "quality_max_root_causes_without_multisignal", 1)))
         low_conf_cutoff = max(float(getattr(settings, "rca_min_confidence_display", 0.05)), 0.10)
 
-        if is_precision:
+        if _is_precision_profile():
             filtered_root_causes: list[RootCauseModel] = []
             suppressed_low_conf = 0
             for cause in root_causes:
@@ -542,8 +590,7 @@ def _apply_precision_quality_gates(
                     suppressed_low_conf += 1
                     continue
                 filtered_root_causes.append(cause)
-            if filtered_root_causes:
-                root_causes = filtered_root_causes
+            root_causes = filtered_root_causes or root_causes
             if suppressed_low_conf > 0:
                 suppression_counts["low_confidence_root_causes"] = (
                     suppression_counts.get("low_confidence_root_causes", 0) + suppressed_low_conf
@@ -582,7 +629,11 @@ def _apply_precision_quality_gates(
             if not getattr(cause, "corroboration_summary", None):
                 cause.corroboration_summary = _root_cause_corroboration_summary(cause)
             diagnostics = dict(getattr(cause, "suppression_diagnostics", {}) or {})
-            diagnostics.setdefault("gating_profile", profile)
+            diagnostics.setdefault(
+                "gating_profile",
+                str(getattr(settings, "quality_gating_profile", "precision_strict_v1")).strip()
+                or "precision_strict_v1",
+            )
             signal_count = _root_cause_signal_count(cause)
             diagnostics.setdefault("signal_count", signal_count)
             diagnostics["min_corroboration_signals"] = min_corr
@@ -592,7 +643,8 @@ def _apply_precision_quality_gates(
     quality = AnalysisQuality(
         anomaly_density=_compute_anomaly_density(metric_anomalies, duration_seconds),
         suppression_counts={k: int(v) for k, v in suppression_counts.items() if int(v) > 0},
-        gating_profile=profile,
+        gating_profile=str(getattr(settings, "quality_gating_profile", "precision_strict_v1")).strip()
+        or "precision_strict_v1",
         confidence_calibration_version=str(
             getattr(settings, "quality_confidence_calibration_version", "calib_2026_02_25")
         ),
@@ -601,14 +653,18 @@ def _apply_precision_quality_gates(
 
 
 async def _process_one_metric_series(
-    req: AnalyzeRequest,
-    query_string: str,
-    metric_name: str,
-    ts: list[float],
-    vals: list[float],
-    z_threshold: float,
-    analysis_window_seconds: float,
-) -> tuple[list[MetricAnomaly], List[ChangePoint], TrajectoryForecast | None, DegradationSignal | None]:
+    **legacy_kwargs: Any,
+) -> tuple[list[MetricAnomaly], list[ChangePoint], TrajectoryForecast | None, DegradationSignal | None]:
+    job = MetricSeriesJob(
+        req=legacy_kwargs["req"],
+        query_string=legacy_kwargs["query_string"],
+        metric_name=legacy_kwargs["metric_name"],
+        ts=legacy_kwargs["ts"],
+        vals=legacy_kwargs["vals"],
+        z_threshold=legacy_kwargs["z_threshold"],
+        analysis_window_seconds=legacy_kwargs["analysis_window_seconds"],
+    )
+    req, metric_name, ts, vals, z_threshold = job.req, job.metric_name, job.ts, job.vals, job.z_threshold
     try:
         # result is persisted by store; value not used later
         _ = await baseline_store.compute_and_persist(req.tenant_id, metric_name, ts, vals, z_threshold)
@@ -624,18 +680,25 @@ async def _process_one_metric_series(
     )
     sigma_multiplier = max(1.0, sigma_multiplier)
     try:
-        change_points = changepoint_detect(ts, vals, threshold_sigma=sigma_multiplier, metric_name=metric_name)
+        change_points = changepoint_detect(
+            job.ts,
+            job.vals,
+            threshold_sigma=sigma_multiplier,
+            metric_name=metric_name,
+        )
     except TypeError:
         # Backward-compatible path for monkeypatched/legacy detector signatures.
-        change_points = changepoint_detect(ts, vals, sigma_multiplier)
+        change_points = changepoint_detect(job.ts, job.vals, sigma_multiplier)
 
-    threshold = next((v for k, v in FORECAST_THRESHOLDS.items() if k in query_string), None)
-    if threshold and analysis_window_seconds >= float(getattr(settings, "analyzer_forecast_min_window_seconds", 0.0)):
+    threshold = next((v for k, v in FORECAST_THRESHOLDS.items() if k in job.query_string), None)
+    if threshold and job.analysis_window_seconds >= float(
+        getattr(settings, "analyzer_forecast_min_window_seconds", 0.0)
+    ):
         fc = forecast(metric_name, ts, vals, threshold, req.forecast_horizon_seconds)
     else:
         fc = None
 
-    if analysis_window_seconds >= float(getattr(settings, "analyzer_degradation_min_window_seconds", 0.0)):
+    if job.analysis_window_seconds >= float(getattr(settings, "analyzer_degradation_min_window_seconds", 0.0)):
         deg = analyze_degradation(metric_name, ts, vals)
     else:
         deg = None
@@ -646,27 +709,27 @@ async def _process_one_metric_series(
 async def _process_metrics(
     provider: DataSourceProvider,
     req: AnalyzeRequest,
-    all_metric_queries: List[str],
+    all_metric_queries: list[str],
     z_threshold: float,
     analysis_window_seconds: float,
-) -> Tuple[
+) -> tuple[
     list[MetricAnomaly],
-    List[ChangePoint],
+    list[ChangePoint],
     list[TrajectoryForecast],
     list[DegradationSignal],
-    Dict[str, List[float]],
+    dict[str, list[float]],
     list[MetricSeriesDistributionStats],
 ]:
     metrics_raw = await fetch_metrics(provider, all_metric_queries, req.start, req.end, req.step)
     requested_services = _normalize_services(req.services)
     if requested_services:
-        filtered_metrics_raw: List[Tuple[str, JSONDict]] = []
+        filtered_metrics_raw: list[tuple[str, JSONDict]] = []
         for query_string, resp in metrics_raw:
             filtered_resp = _filter_metric_response_by_services(resp, requested_services)
             filtered_metrics_raw.append((query_string, filtered_resp if isinstance(filtered_resp, dict) else {}))
         metrics_raw = filtered_metrics_raw
 
-    series_list: List[Tuple[str, str, list[float], list[float]]] = [
+    series_list: list[tuple[str, str, list[float], list[float]]] = [
         (query_string, metric_name, ts, vals)
         for query_string, resp in metrics_raw
         for metric_name, ts, vals in anomaly.iter_series(resp, query_hint=query_string)
@@ -680,25 +743,18 @@ async def _process_metrics(
             distribution_by_key[sk] = row
     distribution_stats = list(distribution_by_key.values())
 
+    shared_kwargs = {"req": req, "z_threshold": z_threshold, "analysis_window_seconds": analysis_window_seconds}
     tasks = [
-        _process_one_metric_series(
-            req,
-            query_string,
-            metric_name,
-            ts,
-            vals,
-            z_threshold,
-            analysis_window_seconds,
-        )
-        for query_string, metric_name, ts, vals in series_list
+        _process_one_metric_series(**shared_kwargs, query_string=q, metric_name=m, ts=t, vals=v)
+        for q, m, t, v in series_list
     ]
     processed = await asyncio.gather(*tasks, return_exceptions=True)
 
     metric_anomalies: list[MetricAnomaly] = []
-    change_points: List[ChangePoint] = []
+    change_points: list[ChangePoint] = []
     forecasts: list[TrajectoryForecast] = []
     degradation_signals: list[DegradationSignal] = []
-    series_map: Dict[str, List[float]] = {}
+    series_map: dict[str, list[float]] = {}
 
     for (query_string, metric_name, _ts, vals), result in zip(series_list, processed):
         series_map[_series_key(query_string, metric_name)] = vals
@@ -721,45 +777,14 @@ def _slo_series_pairs(
     tot_raw: anomaly.series.WrappedMimirResponse,
     warnings: list[str],
 ) -> list[tuple[list[float], list[float], list[float]]]:
-    err_series = list(anomaly.iter_series(err_raw, query_hint=SLO_ERROR_QUERY))
-    tot_series = list(anomaly.iter_series(tot_raw, query_hint=SLO_TOTAL_QUERY))
-
-    if len(err_series) != len(tot_series):
-        warnings.append(
-            f"SLO series mismatch: errors={len(err_series)} totals={len(tot_series)}. "
-            f"Using first {min(len(err_series), len(tot_series))} pair(s)."
-        )
-
-    pairs = []
-    for idx in range(min(len(err_series), len(tot_series))):
-        _, err_ts, err_vals = err_series[idx]
-        _, _tot_ts, tot_vals = tot_series[idx]
-        if len(err_vals) != len(tot_vals):
-            n = min(len(err_vals), len(tot_vals))
-            warnings.append(f"SLO sample length mismatch at pair {idx}: errors={len(err_vals)} totals={len(tot_vals)}.")
-            err_vals = _trim_to_len(err_vals, n)
-            tot_vals = _trim_to_len(tot_vals, n)
-            err_ts = _trim_to_len(err_ts, n)
-        if err_vals and tot_vals and err_ts:
-            pairs.append((err_ts, err_vals, tot_vals))
-    return pairs
+    return _slo_series_pairs_impl(
+        err_raw,
+        tot_raw,
+        warnings,
+        error_query=SLO_ERROR_QUERY,
+        total_query=SLO_TOTAL_QUERY,
+    )
 
 
-def _select_granger_series(series_map: Dict[str, List[float]]) -> Dict[str, List[float]]:
-    min_samples = max(2, int(settings.analyzer_granger_min_samples))
-    max_series = max(2, int(settings.analyzer_granger_max_series))
-
-    eligible: list[tuple[str, float]] = []
-    for name, values in series_map.items():
-        arr = np.array(values, dtype=float)
-        finite = arr[np.isfinite(arr)]
-        if finite.size < min_samples:
-            continue
-        var = float(np.var(finite))
-        if var <= 0:
-            continue
-        eligible.append((name, var))
-
-    eligible.sort(key=lambda x: x[1], reverse=True)
-    selected_names = {name for name, _ in eligible[:max_series]}
-    return {name: vals for name, vals in series_map.items() if name in selected_names}
+def _select_granger_series(series_map: dict[str, list[float]]) -> dict[str, list[float]]:
+    return _select_granger_series_impl(series_map)

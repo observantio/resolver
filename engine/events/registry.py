@@ -12,8 +12,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from engine.events.models import DeploymentEvent
 
 __all__ = ["DeploymentEvent", "EventRegistry"]
@@ -21,18 +19,18 @@ __all__ = ["DeploymentEvent", "EventRegistry"]
 
 class EventRegistry:
     def __init__(self) -> None:
-        self._events: List[DeploymentEvent] = []
+        self._events: list[DeploymentEvent] = []
 
     def register(self, event: DeploymentEvent) -> None:
         self._events.append(event)
 
-    def in_window(self, start: float, end: float) -> List[DeploymentEvent]:
+    def in_window(self, start: float, end: float) -> list[DeploymentEvent]:
         return [e for e in self._events if start <= e.timestamp <= end]
 
-    def for_service(self, service: str) -> List[DeploymentEvent]:
+    def for_service(self, service: str) -> list[DeploymentEvent]:
         return [e for e in self._events if e.service == service]
 
-    def list_all(self) -> List[DeploymentEvent]:
+    def list_all(self) -> list[DeploymentEvent]:
         return list(self._events)
 
     def clear(self) -> None:

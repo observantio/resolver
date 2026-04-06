@@ -13,12 +13,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
-from engine.enums import Severity
 from config import settings
+from engine.enums import Severity
 
 
 @dataclass(frozen=True)
@@ -62,7 +61,7 @@ def analyze(
     ts: Sequence[float],
     vals: Sequence[float],
     min_degradation_rate: float | None = None,
-) -> Optional[DegradationSignal]:
+) -> DegradationSignal | None:
     if min_degradation_rate is None:
         min_degradation_rate = settings.forecast_min_degradation_rate
     if len(vals) < settings.forecast_degradation_min_length:

@@ -11,7 +11,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import math
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,7 +20,7 @@ from api.responses.analysis import MetricSeriesDistributionStats
 from config import settings
 
 
-def _finite_array(vals: List[float]) -> NDArray[np.float64]:
+def _finite_array(vals: list[float]) -> NDArray[np.float64]:
     arr = np.asarray(vals, dtype=float)
     finite = arr[np.isfinite(arr)]
     return cast(NDArray[np.float64], finite)
@@ -60,7 +60,7 @@ def _sample_excess_kurtosis(vals: NDArray[np.float64]) -> float:
 def compute_series_distribution_stats(
     series_key: str,
     metric_name: str,
-    vals: List[float],
+    vals: list[float],
 ) -> MetricSeriesDistributionStats | None:
     finite = _finite_array(vals)
     n = int(finite.size)

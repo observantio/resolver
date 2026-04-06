@@ -10,8 +10,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Tuple
-
 from engine.enums import ChangeType, Severity
 
 from .base import NpModel
@@ -25,7 +23,7 @@ class MetricAnomaly(NpModel):
     z_score: float
     mad_score: float
     isolation_score: float
-    expected_range: Tuple[float, float]
+    expected_range: tuple[float, float]
     severity: Severity
     description: str
     iqr_score: float = 0.0

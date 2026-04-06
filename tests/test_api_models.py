@@ -10,9 +10,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import pytest
+from pydantic import ValidationError
 
 from api.requests import AnalyzeRequest, CorrelateRequest, DeploymentEventRequest, SloRequest
-from pydantic import ValidationError
 
 
 def test_deployment_request_requires_tenant():

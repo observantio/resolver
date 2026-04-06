@@ -13,7 +13,6 @@ import asyncio
 
 import pytest
 
-import datasources.retry as retry_module
 from datasources.retry import retry
 
 

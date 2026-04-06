@@ -10,16 +10,17 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+import logging
 import os
 import re
-import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional, Protocol
+from typing import Protocol
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from db_models import Base
@@ -35,8 +36,8 @@ def _new_session(factory: _SessionFactory) -> Session:
     return factory()
 
 
-_ENGINE: Optional[Engine] = None
-_SESSION_FACTORY: Optional[_SessionFactory] = None
+_ENGINE: Engine | None = None
+_SESSION_FACTORY: _SessionFactory | None = None
 
 
 def _ensure_postgres_database_exists(database_url: str) -> None:

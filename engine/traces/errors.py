@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
-from typing import List
 
 from api.responses import ErrorPropagation
 from config import settings
@@ -21,7 +20,7 @@ from engine.topology import DependencyGraph
 from engine.traces.common import iter_trace_spans, span_has_error
 
 
-def detect_propagation(tempo_response: Mapping[str, object]) -> List[ErrorPropagation]:
+def detect_propagation(tempo_response: Mapping[str, object]) -> list[ErrorPropagation]:
     service_errors: dict[str, int] = defaultdict(int)
     service_total: dict[str, int] = defaultdict(int)
     graph = DependencyGraph()
@@ -52,7 +51,7 @@ def detect_propagation(tempo_response: Mapping[str, object]) -> List[ErrorPropag
     if not sources:
         return []
 
-    results: List[ErrorPropagation] = []
+    results: list[ErrorPropagation] = []
 
     for source in sources:
         affected_services = sorted(graph.blast_radius(source).affected_downstream)

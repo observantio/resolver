@@ -12,7 +12,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 import pytest
 
 from config import settings
-from engine.forecast.trajectory import _linear_fit, _r_squared, forecast, TrajectoryForecast
+from engine.forecast.trajectory import TrajectoryForecast, _linear_fit, _r_squared, forecast
 
 
 def test_linear_fit_and_r2():

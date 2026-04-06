@@ -16,13 +16,13 @@ from api.requests import CorrelateRequest
 from api.routes.common import get_provider
 from api.routes.exception import handle_exceptions
 from config import DEFAULT_METRIC_QUERIES
+from custom_types.json import JSONDict
 from engine import anomaly, logs
 from engine.correlation import correlate, link_logs_to_metrics
 from engine.fetcher import fetch_metrics
 from engine.log_query import build_log_query
 from engine.registry import get_registry
 from services.security_service import enforce_request_tenant, require_permission_dependency
-from custom_types.json import JSONDict
 
 router = APIRouter(tags=["Correlation"])
 

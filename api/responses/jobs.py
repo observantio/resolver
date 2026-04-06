@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -42,18 +41,18 @@ class AnalyzeJobSummary(BaseModel):
     report_id: str
     status: JobStatus
     created_at: datetime
-    started_at: Optional[datetime] = None
-    finished_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    error: Optional[str] = None
-    summary_preview: Optional[str] = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    duration_ms: int | None = None
+    error: str | None = None
+    summary_preview: str | None = None
     tenant_id: str
     requested_by: str
 
 
 class AnalyzeJobListResponse(BaseModel):
     items: list[AnalyzeJobSummary]
-    next_cursor: Optional[str] = None
+    next_cursor: str | None = None
 
 
 class AnalyzeJobResultResponse(BaseModel):
@@ -62,7 +61,7 @@ class AnalyzeJobResultResponse(BaseModel):
     status: JobStatus
     tenant_id: str
     requested_by: str
-    result: Optional[JSONDict] = None
+    result: JSONDict | None = None
 
 
 class AnalyzeReportResponse(BaseModel):
@@ -71,7 +70,7 @@ class AnalyzeReportResponse(BaseModel):
     status: JobStatus
     tenant_id: str
     requested_by: str
-    result: Optional[JSONDict] = None
+    result: JSONDict | None = None
 
 
 class AnalyzeReportDeleteResponse(BaseModel):

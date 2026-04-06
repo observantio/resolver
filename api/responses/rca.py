@@ -10,12 +10,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from pydantic import ConfigDict, Field
 
 from custom_types.json import JSONDict
-
 from engine.enums import Severity, Signal
 
 from .base import NpModel
@@ -26,13 +23,13 @@ class ApiRootCause(NpModel):
 
     hypothesis: str
     confidence: float = Field(ge=0.0, le=1.0)
-    evidence: List[str]
-    contributing_signals: List[Signal]
+    evidence: list[str]
+    contributing_signals: list[Signal]
     recommended_action: str
     severity: Severity
-    corroboration_summary: Optional[str] = None
+    corroboration_summary: str | None = None
     suppression_diagnostics: JSONDict = Field(default_factory=dict)
-    selection_score_components: Dict[str, float] = Field(default_factory=dict)
+    selection_score_components: dict[str, float] = Field(default_factory=dict)
 
 
 # Backward-compatible alias for existing imports.

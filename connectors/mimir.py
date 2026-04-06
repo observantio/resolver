@@ -1,5 +1,3 @@
-from typing import Optional
-
 import httpx
 
 from config import DATASOURCE_TIMEOUT, HEALTH_PATH
@@ -18,7 +16,7 @@ class MimirConnector(MetricsConnector):
         base_url: str,
         tenant_id: str,
         timeout: int = DATASOURCE_TIMEOUT,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(tenant_id, base_url, timeout, headers)
 

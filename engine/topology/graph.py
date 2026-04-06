@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Dict, List, Set
 
 from config import settings
 
@@ -21,14 +20,14 @@ from config import settings
 @dataclass(frozen=True)
 class BlastRadius:
     root_service: str
-    affected_downstream: List[str]
+    affected_downstream: list[str]
     depth: int
 
 
 class DependencyGraph:
     def __init__(self) -> None:
-        self._forward: Dict[str, Set[str]] = defaultdict(set)
-        self._reverse: Dict[str, Set[str]] = defaultdict(set)
+        self._forward: dict[str, set[str]] = defaultdict(set)
+        self._reverse: dict[str, set[str]] = defaultdict(set)
 
     def add_call(self, caller: str, callee: str) -> None:
         if caller == callee or not caller or not callee:
@@ -97,8 +96,8 @@ class DependencyGraph:
     def blast_radius(self, root: str, max_depth: int | None = None) -> BlastRadius:
         if max_depth is None:
             max_depth = settings.topology_max_depth
-        affected: List[str] = []
-        seen: Set[str] = {root}
+        affected: list[str] = []
+        seen: set[str] = {root}
         queue: deque[tuple[str, int]] = deque([(root, 0)])
 
         while queue:
@@ -113,9 +112,9 @@ class DependencyGraph:
 
         return BlastRadius(root_service=root, affected_downstream=affected, depth=max_depth)
 
-    def find_upstream_roots(self, service: str) -> List[str]:
-        roots: List[str] = []
-        seen: Set[str] = set()
+    def find_upstream_roots(self, service: str) -> list[str]:
+        roots: list[str] = []
+        seen: set[str] = set()
         queue: deque[str] = deque([service])
 
         while queue:
@@ -131,12 +130,12 @@ class DependencyGraph:
 
         return roots
 
-    def critical_path(self, source: str, target: str) -> List[str]:
+    def critical_path(self, source: str, target: str) -> list[str]:
         if source == target:
             return [source]
 
-        queue: deque[List[str]] = deque([[source]])
-        seen: Set[str] = set()
+        queue: deque[list[str]] = deque([[source]])
+        seen: set[str] = set()
 
         while queue:
             path = queue.popleft()
@@ -151,5 +150,5 @@ class DependencyGraph:
 
         return []
 
-    def all_services(self) -> Set[str]:
+    def all_services(self) -> set[str]:
         return set(self._forward) | set(self._reverse)

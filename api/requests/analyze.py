@@ -10,16 +10,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import Field
 
 from ._time_range import TimeRangeRequest
 
 
 class AnalyzeRequest(TimeRangeRequest):
-    config_yaml: Optional[str] = None
-    sensitivity: Optional[float] = Field(default=3.0, ge=1.0, le=6.0)
+    config_yaml: str | None = None
+    sensitivity: float | None = Field(default=3.0, ge=1.0, le=6.0)
     apdex_threshold_ms: float = 500.0
     slo_target: float = Field(default=0.999, ge=0.0, le=1.0)
     correlation_window_seconds: float = Field(default=60.0, ge=10.0, le=600.0)

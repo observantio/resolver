@@ -14,7 +14,7 @@ import asyncio
 import json
 import logging
 from json import JSONDecodeError
-from typing import Dict, List, TypedDict
+from typing import TypedDict
 
 from config import GRANGER_TTL
 from engine.causal.granger import GrangerResult
@@ -90,7 +90,7 @@ def _coerce_record(value: object) -> GrangerRecord | None:
     }
 
 
-async def load(tenant_id: str, service: str) -> List[GrangerRecord]:
+async def load(tenant_id: str, service: str) -> list[GrangerRecord]:
     try:
         raw = await redis_get(keys.granger(tenant_id, service))
         if raw:
@@ -112,10 +112,10 @@ async def save_and_merge(
     tenant_id: str,
     service: str,
     fresh_results: list[GrangerResult],
-) -> List[GrangerRecord]:
+) -> list[GrangerRecord]:
     cached = await load(tenant_id, service)
 
-    stored: Dict[str, GrangerRecord] = {_pair_key(r["cause_metric"], r["effect_metric"]): r for r in cached}
+    stored: dict[str, GrangerRecord] = {_pair_key(r["cause_metric"], r["effect_metric"]): r for r in cached}
     for r in fresh_results:
         pk = _pair_key(r.cause_metric, r.effect_metric)
         existing = stored.get(pk)
@@ -138,9 +138,9 @@ async def save_and_merge(
     return merged
 
 
-async def load_all_services(tenant_id: str, services: List[str]) -> List[GrangerRecord]:
+async def load_all_services(tenant_id: str, services: list[str]) -> list[GrangerRecord]:
     per_service = await asyncio.gather(*[load(tenant_id, svc) for svc in services])
-    all_results: Dict[str, GrangerRecord] = {}
+    all_results: dict[str, GrangerRecord] = {}
     for svc_results in per_service:
         for r in svc_results:
             pk = _pair_key(r["cause_metric"], r["effect_metric"])

@@ -14,13 +14,12 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter, defaultdict
-from collections.abc import Mapping
-from typing import Iterator, List, Tuple, TypedDict
+from collections.abc import Iterator, Mapping
+from typing import TypedDict
 
-from config import settings
-
-from engine.enums import Severity
 from api.responses import LogPattern
+from config import settings
+from engine.enums import Severity
 
 _NOISE = re.compile(settings.logs_noise_regex, re.I)
 
@@ -40,7 +39,7 @@ class PatternBucket(TypedDict):
     tokens: list[str]
 
 
-def _iter_entries(loki_response: Mapping[str, object]) -> Iterator[Tuple[float, str]]:
+def _iter_entries(loki_response: Mapping[str, object]) -> Iterator[tuple[float, str]]:
     data = loki_response.get("data")
     if not isinstance(data, dict):
         return
@@ -71,7 +70,7 @@ def _classify(line: str) -> Severity:
     return Severity.LOW
 
 
-def _entropy(tokens: List[str]) -> float:
+def _entropy(tokens: list[str]) -> float:
     if not tokens:
         return 0.0
     counts = Counter(tokens)
@@ -79,7 +78,7 @@ def _entropy(tokens: List[str]) -> float:
     return -sum((c / total) * math.log2(c / total) for c in counts.values())
 
 
-def analyze(loki_response: Mapping[str, object]) -> List[LogPattern]:
+def analyze(loki_response: Mapping[str, object]) -> list[LogPattern]:
     buckets: dict[str, PatternBucket] = defaultdict(
         lambda: {
             "count": 0,
@@ -105,7 +104,7 @@ def analyze(loki_response: Mapping[str, object]) -> List[LogPattern]:
         if len(b["tokens"]) < settings.logs_token_cap:
             b["tokens"].extend(key.split())
 
-    results: List[LogPattern] = []
+    results: list[LogPattern] = []
     for pattern, b in buckets.items():
         if b["first"] == float("inf"):
             continue

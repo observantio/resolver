@@ -40,25 +40,22 @@ def _base_production_env() -> dict[str, str]:
 
 
 def test_rejects_invalid_context_algorithm():
-    with patch.dict(os.environ, {"RESOLVER_CONTEXT_ALGORITHMS": "RS256"}, clear=False):
-        with pytest.raises(ValueError):
-            _reload_config_module()
+    with patch.dict(os.environ, {"RESOLVER_CONTEXT_ALGORITHMS": "RS256"}, clear=False), pytest.raises(ValueError):
+        _reload_config_module()
 
 
 def test_production_rejects_missing_expected_service_token():
     env = _base_production_env()
     env["RESOLVER_EXPECTED_SERVICE_TOKEN"] = ""
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError):
+        _reload_config_module()
 
 
 def test_production_rejects_weak_context_verify_key():
     env = _base_production_env()
     env["RESOLVER_CONTEXT_VERIFY_KEY"] = "changeme"
-    with patch.dict(os.environ, env, clear=False):
-        with pytest.raises(ValueError):
-            _reload_config_module()
+    with patch.dict(os.environ, env, clear=False), pytest.raises(ValueError):
+        _reload_config_module()
 
 
 def test_production_accepts_strong_security_config():

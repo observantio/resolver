@@ -11,10 +11,10 @@ import asyncio
 import copy
 import math
 import sys
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from types import ModuleType
-from typing import AsyncIterator, Optional
 
 import yaml
 from fastapi import HTTPException, status
@@ -85,12 +85,12 @@ _MODULE_PREFIXES = (
 class _RequestOverrideModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    step: Optional[str] = None
-    sensitivity: Optional[float] = Field(default=None, ge=1.0, le=6.0)
-    apdex_threshold_ms: Optional[float] = None
-    slo_target: Optional[float] = Field(default=None, ge=0.0, le=1.0)
-    correlation_window_seconds: Optional[float] = Field(default=None, ge=10.0, le=600.0)
-    forecast_horizon_seconds: Optional[float] = Field(default=None, ge=60.0, le=86400.0)
+    step: str | None = None
+    sensitivity: float | None = Field(default=None, ge=1.0, le=6.0)
+    apdex_threshold_ms: float | None = None
+    slo_target: float | None = Field(default=None, ge=0.0, le=1.0)
+    correlation_window_seconds: float | None = Field(default=None, ge=10.0, le=600.0)
+    forecast_horizon_seconds: float | None = Field(default=None, ge=60.0, le=86400.0)
 
 
 class _ConfigDocumentModel(BaseModel):
@@ -302,7 +302,7 @@ class AnalysisConfigService:
         self,
         req: AnalyzeRequest,
         *,
-        explicit_fields: Optional[set[str]] = None,
+        explicit_fields: set[str] | None = None,
     ) -> PreparedAnalysisRequest:
         document = self._parse_document(getattr(req, "config_yaml", None))
         request_updates = document.request.model_dump(exclude_none=True)

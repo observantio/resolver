@@ -10,22 +10,22 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-import math
 import logging
-from typing import Dict, List, Union
+import math
 
 from config import DEFAULT_WEIGHTS, REGISTRY_ALPHA
 from engine.enums import Signal
 from engine.events.registry import DeploymentEvent
-from store import events as event_store, weights as weight_store
+from store import events as event_store
+from store import weights as weight_store
 
 log = logging.getLogger(__name__)
 
 SIGNAL_KEYS: tuple[Signal, ...] = (Signal.METRICS, Signal.LOGS, Signal.TRACES)
 
 
-def _default_weights() -> Dict[Signal, float]:
-    defaults: Dict[Signal, float] = {}
+def _default_weights() -> dict[Signal, float]:
+    defaults: dict[Signal, float] = {}
     for signal in SIGNAL_KEYS:
         configured = DEFAULT_WEIGHTS.get(signal.value)
         if isinstance(configured, (int, float)) and math.isfinite(float(configured)) and float(configured) >= 0.0:
@@ -38,7 +38,7 @@ def _default_weights() -> Dict[Signal, float]:
     return defaults
 
 
-def _coerce_weights(raw: object) -> Dict[Signal, float]:
+def _coerce_weights(raw: object) -> dict[Signal, float]:
     weights = _default_weights()
     if not isinstance(raw, dict):
         return weights
@@ -69,7 +69,7 @@ def _coerce_weights(raw: object) -> Dict[Signal, float]:
     return weights
 
 
-def _serialize_weights(weights: Dict[Signal, float]) -> Dict[str, float]:
+def _serialize_weights(weights: dict[Signal, float]) -> dict[str, float]:
     return {k.value: v for k, v in weights.items()}
 
 
@@ -89,18 +89,18 @@ def _coerce_update_count(value: object) -> int:
 
 
 class TenantState:
-    __slots__ = ("_weights", "_update_count")
+    __slots__ = ("_update_count", "_weights")
 
-    def __init__(self, weights: Dict[Signal, float], update_count: int) -> None:
-        self._weights: Dict[Signal, float] = _coerce_weights(weights)
+    def __init__(self, weights: dict[Signal, float], update_count: int) -> None:
+        self._weights: dict[Signal, float] = _coerce_weights(weights)
         self._update_count = update_count
 
     @property
-    def weights(self) -> Dict[Signal, float]:
+    def weights(self) -> dict[Signal, float]:
         return dict(self._weights)
 
     @property
-    def weights_serializable(self) -> Dict[str, float]:
+    def weights_serializable(self) -> dict[str, float]:
         return _serialize_weights(self._weights)
 
     @property
@@ -150,7 +150,7 @@ class TenantState:
 
 class TenantRegistry:
     def __init__(self) -> None:
-        self._states: Dict[str, TenantState] = {}
+        self._states: dict[str, TenantState] = {}
 
     async def get_state(self, tenant_id: str) -> TenantState:
         if tenant_id not in self._states:
@@ -165,7 +165,7 @@ class TenantRegistry:
             self._states[tenant_id] = state
         return self._states[tenant_id]
 
-    async def update_weight(self, tenant_id: str, signal: Union[Signal, str], was_correct: bool) -> TenantState:
+    async def update_weight(self, tenant_id: str, signal: Signal | str, was_correct: bool) -> TenantState:
         if isinstance(signal, str):
             signal = Signal(signal)
         state = await self.get_state(tenant_id)
@@ -183,13 +183,13 @@ class TenantRegistry:
     async def register_event(self, tenant_id: str, event: DeploymentEvent) -> None:
         await event_store.append(tenant_id, event)
 
-    async def get_events(self, tenant_id: str) -> List[event_store.StoredEvent]:
+    async def get_events(self, tenant_id: str) -> list[event_store.StoredEvent]:
         return await event_store.load(tenant_id)
 
     async def clear_events(self, tenant_id: str) -> None:
         await event_store.clear(tenant_id)
 
-    async def events_in_window(self, tenant_id: str, start: float, end: float) -> List[event_store.StoredEvent]:
+    async def events_in_window(self, tenant_id: str, start: float, end: float) -> list[event_store.StoredEvent]:
         events = await event_store.load(tenant_id)
         return [e for e in events if start <= e["timestamp"] <= end]
 

@@ -5,20 +5,20 @@ Core module implementing `jobs` functionality for the analysis engine.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, status
+
 from api.requests import AnalyzeJobCreateRequest
 from api.responses import (
-    JobStatus,
     AnalyzeJobCreateResponse,
     AnalyzeJobListResponse,
     AnalyzeJobResultResponse,
     AnalyzeJobSummary,
     AnalyzeReportDeleteResponse,
     AnalyzeReportResponse,
+    JobStatus,
 )
 from api.responses.jobs import AnalyzeJobSummary as JobView
-from services.security_service import ensure_permission, get_internal_context
-from services.security_service import InternalContext
 from services.rca_job_service import rca_job_service
+from services.security_service import InternalContext, ensure_permission, get_internal_context
 
 router = APIRouter(tags=["RCA Jobs"])
 
