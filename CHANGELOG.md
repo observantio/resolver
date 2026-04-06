@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Pinned resolver runtime dependencies in `pyproject.toml` to explicit `==` versions for reproducible installs/builds.
 - Applied a clean pylint reformat/refactor pass across resolver with safe line-wrapping/readability updates.
 - Enforced strict naming consistency for module state, enum members, and internal variables/constants to align with configured pylint rules.
 - Removed legacy uppercase alias usage from tests and aligned analyzer compatibility exports with strict snake_case lint policy.

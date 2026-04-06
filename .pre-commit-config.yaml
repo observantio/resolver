@@ -17,6 +17,24 @@ repos:
         exclude: (^|/)tests/
         types: [python]
 
+      - id: resolver-ruff-check
+        name: Resolver ruff check (autofix)
+        language: system
+        entry: .venv/bin/python
+        args: [-m, ruff, check, --config, pyproject.toml, --fix, --fix-only]
+        files: \.py$
+        exclude: (^|/)tests/
+        types: [python]
+
+      - id: resolver-ruff-format
+        name: Resolver ruff format
+        language: system
+        entry: .venv/bin/python
+        args: [-m, ruff, format, --config, pyproject.toml]
+        files: \.py$
+        exclude: (^|/)tests/
+        types: [python]
+
       - id: resolver-mypy
         name: Resolver mypy
         language: system
