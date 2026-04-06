@@ -11,7 +11,9 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import re
+import tomllib
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
@@ -31,6 +33,17 @@ _NON_OPERATION_KEYS = {"summary", "description", "parameters", "servers"}
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
 _STEP_PATTERN = r"^[1-9][0-9]*[smhd]$"
 _STANDARD_ERROR_CODES = {"400", "401", "403", "404", "429", "500", "502", "503"}
+_DEFAULT_APP_VERSION = "0.0.1"
+
+
+def _project_version() -> str:
+    pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    try:
+        project = tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project", {})
+    except (OSError, tomllib.TOMLDecodeError):
+        return _DEFAULT_APP_VERSION
+    version = project.get("version")
+    return version if isinstance(version, str) and version.strip() else _DEFAULT_APP_VERSION
 
 
 def _status_description(status_code: int) -> str:
@@ -264,6 +277,9 @@ def install_custom_openapi(app: FastAPI) -> None:
         if not isinstance(schema_value, dict):
             return schema_value
         schema = schema_value
+        info = schema.get("info")
+        if isinstance(info, dict):
+            info["version"] = _project_version()
 
         _ensure_security_schemes(schema)
         _ensure_error_schema(schema)

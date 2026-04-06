@@ -3,7 +3,7 @@ info:
   title: Resolver Analysis Engine
   description: AI-powered root cause analysis and anomaly detection over logs, metrics,
     and traces.
-  version: 1.0.0
+  version: 0.0.3
 paths:
   /api/v1/health:
     get:
