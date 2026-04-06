@@ -8,6 +8,7 @@ __pycache__/
 *.db
 .ruff_cache
 .coverage
+coverage.xml
 .vscode/
 .hypothesis/
 .venv/
