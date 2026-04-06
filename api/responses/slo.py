@@ -12,4 +12,4 @@ from __future__ import annotations
 
 from engine.slo.models import BudgetStatus, SloBurnAlert
 
-__all__ = ["SloBurnAlert", "BudgetStatus"]
+__all__ = ["BudgetStatus", "SloBurnAlert"]

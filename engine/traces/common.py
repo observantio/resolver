@@ -4,7 +4,7 @@ Shared helpers for iterating Tempo trace spans.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from custom_types.json import JSONDict
 

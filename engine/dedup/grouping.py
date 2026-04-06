@@ -12,7 +12,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Generic, List, TypeVar
+from typing import Generic, TypeVar
 
 from api.responses import MetricAnomaly
 from config import settings
@@ -23,22 +23,22 @@ T = TypeVar("T")
 @dataclass
 class AnomalyGroup(Generic[T]):
     representative: T
-    members: List[T] = field(default_factory=list)
+    members: list[T] = field(default_factory=list)
     count: int = 1
 
 
 def group_metric_anomalies(
-    anomalies: List[MetricAnomaly],
+    anomalies: list[MetricAnomaly],
     time_window: float | None = None,
     by_metric: bool = True,
-) -> List[AnomalyGroup[MetricAnomaly]]:
+) -> list[AnomalyGroup[MetricAnomaly]]:
     if time_window is None:
         time_window = settings.dedup_time_window
     if not anomalies:
         return []
 
     sorted_a = sorted(anomalies, key=lambda a: a.timestamp)
-    groups: List[AnomalyGroup[MetricAnomaly]] = []
+    groups: list[AnomalyGroup[MetricAnomaly]] = []
     current = AnomalyGroup(representative=sorted_a[0], members=[sorted_a[0]])
 
     for a in sorted_a[1:]:

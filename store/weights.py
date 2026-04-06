@@ -13,12 +13,12 @@ from __future__ import annotations
 import json
 import logging
 from json import JSONDecodeError
-from typing import Dict, Optional, TypedDict
+from typing import TypedDict
 
 from config import WEIGHTS_TTL
 from custom_types.json import is_json_object
 from store import keys
-from store.client import redis_get, redis_set, redis_delete
+from store.client import redis_delete, redis_get, redis_set
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class StoredWeights(TypedDict):
     update_count: int
 
 
-async def load(tenant_id: str) -> Optional[StoredWeights]:
+async def load(tenant_id: str) -> StoredWeights | None:
     try:
         raw = await redis_get(keys.weights(tenant_id))
         if raw:
@@ -58,7 +58,7 @@ async def load(tenant_id: str) -> Optional[StoredWeights]:
     return None
 
 
-async def save(tenant_id: str, weight_map: Dict[str, float], update_count: int) -> None:
+async def save(tenant_id: str, weight_map: dict[str, float], update_count: int) -> None:
     payload = {"weights": weight_map, "update_count": update_count}
     try:
         await redis_set(keys.weights(tenant_id), json.dumps(payload), ttl=WEIGHTS_TTL)

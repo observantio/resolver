@@ -8,8 +8,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends, Query
 
 from api.requests import CorrelateRequest
@@ -46,7 +44,7 @@ async def metric_trajectory(
     provider = get_provider(req.tenant_id)
     metrics_raw = await fetch_requested_metrics(provider, req)
 
-    results: List[JSONDict] = []
+    results: list[JSONDict] = []
     for query_string, resp in metrics_raw:
         for metric_name, ts, vals in anomaly.iter_series(resp, query_hint=query_string):
             threshold = next((v for k, v in FORECAST_THRESHOLDS.items() if k in metric_name), None)

@@ -8,7 +8,7 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.topology.graph import DependencyGraph, BlastRadius
+from engine.topology.graph import BlastRadius, DependencyGraph
 
 
 def test_dependency_graph():

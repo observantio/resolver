@@ -11,15 +11,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import List, Tuple
 
+from config import settings
 from engine.enums import Severity
 from engine.slo.models import SloBurnAlert
-from config import settings
 
 
-def _get_windows() -> List[Tuple[str, float, float, Severity]]:
-    windows: List[Tuple[str, float, float, Severity]] = []
+def _get_windows() -> list[tuple[str, float, float, Severity]]:
+    windows: list[tuple[str, float, float, Severity]] = []
     for label, window_s, thr, sev in settings.slo_burn_windows:
         sev_enum = Severity.LOW
         if isinstance(sev, Severity):
@@ -43,7 +42,7 @@ def evaluate(
     total_counts: Sequence[float],
     ts: Sequence[float],
     target_availability: float = settings.slo_default_target_availability,
-) -> List[SloBurnAlert]:
+) -> list[SloBurnAlert]:
     if not error_counts or not total_counts or len(ts) < 2:
         return []
 
@@ -65,7 +64,7 @@ def evaluate(
         return []
 
     burn_rate = error_rate / allowed_error_rate
-    alerts: List[SloBurnAlert] = []
+    alerts: list[SloBurnAlert] = []
 
     for label, window_s, threshold, sev in _get_windows():
         if duration < window_s * 0.5:

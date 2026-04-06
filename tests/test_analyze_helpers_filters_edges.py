@@ -16,9 +16,9 @@ from types import SimpleNamespace
 import pytest
 
 from api.requests import AnalyzeRequest
-from api.responses import LogBurst, LogPattern, MetricAnomaly, RootCause as RootCauseModel
-from engine.analyze import filters
-from engine.analyze import helpers
+from api.responses import LogBurst, LogPattern, MetricAnomaly
+from api.responses import RootCause as RootCauseModel
+from engine.analyze import filters, helpers
 from engine.changepoint import ChangePoint
 from engine.enums import ChangeType, Severity, Signal
 
@@ -217,7 +217,9 @@ def test_signal_scoring_and_periodic_detection_branches(monkeypatch):
 
     assert helpers._is_strongly_periodic_log_bursts([]) is False
     non_periodic = [
-        LogBurst(window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW)
+        LogBurst(
+            window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW
+        )
         for v in [1.0, 2.0, 2.0, 3.0]
     ]
     assert helpers._is_strongly_periodic_log_bursts(non_periodic) is False
@@ -328,7 +330,9 @@ async def test_process_metric_series_and_metrics_pipeline_branches(monkeypatch):
 
     monkeypatch.setattr(helpers, "fetch_metrics", _fake_fetch_metrics)
     monkeypatch.setattr(helpers, "_normalize_services", lambda _s: {"svc"})
-    monkeypatch.setattr(helpers, "_filter_metric_response_by_services", lambda resp, _svc: resp if resp != {"bad": 1} else [])
+    monkeypatch.setattr(
+        helpers, "_filter_metric_response_by_services", lambda resp, _svc: resp if resp != {"bad": 1} else []
+    )
 
     def _iter_series(resp, query_hint=None):
         if query_hint == "q1":
@@ -336,7 +340,11 @@ async def test_process_metric_series_and_metrics_pipeline_branches(monkeypatch):
         return iter([("m2", [1.0, 2.0], [20.0, 21.0])])
 
     monkeypatch.setattr(helpers.anomaly, "iter_series", _iter_series)
-    monkeypatch.setattr(helpers, "compute_series_distribution_stats", lambda sk, mn, vals: None if mn == "m1" else SimpleNamespace(series_key=sk))
+    monkeypatch.setattr(
+        helpers,
+        "compute_series_distribution_stats",
+        lambda sk, mn, vals: None if mn == "m1" else SimpleNamespace(series_key=sk),
+    )
 
     async def _process_one(req, query_string, metric_name, ts, vals, z_threshold, analysis_window_seconds):
         if metric_name == "m1":
@@ -468,40 +476,71 @@ def test_periodic_and_log_burst_filter_remaining_branches(monkeypatch):
 
     # median out of accepted range (>180)
     wide = [
-        LogBurst(window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW)
+        LogBurst(
+            window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW
+        )
         for v in [0.0, 500.0, 1000.0, 1500.0]
     ]
     assert helpers._is_strongly_periodic_log_bursts(wide) is False
 
     # high coefficient of variation
     noisy = [
-        LogBurst(window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW)
+        LogBurst(
+            window_start=v, window_end=v + 5.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW
+        )
         for v in [0.0, 20.0, 200.0, 230.0, 500.0]
     ]
     assert helpers._is_strongly_periodic_log_bursts(noisy) is False
 
     bursts = [
-        LogBurst(window_start=1000.0 + i * 60.0, window_end=1005.0 + i * 60.0, rate_per_second=1.0, baseline_rate=0.1, ratio=10, severity=Severity.LOW)
+        LogBurst(
+            window_start=1000.0 + i * 60.0,
+            window_end=1005.0 + i * 60.0,
+            rate_per_second=1.0,
+            baseline_rate=0.1,
+            ratio=10,
+            severity=Severity.LOW,
+        )
         for i in range(4)
     ]
-    patterns = [LogPattern(pattern="x", count=4, first_seen=1.0, last_seen=2.0, rate_per_minute=1.0, entropy=0.1, severity=Severity.LOW, sample="x")]
+    patterns = [
+        LogPattern(
+            pattern="x",
+            count=4,
+            first_seen=1.0,
+            last_seen=2.0,
+            rate_per_minute=1.0,
+            entropy=0.1,
+            severity=Severity.LOW,
+            sample="x",
+        )
+    ]
     suppression_counts: dict[str, int] = {}
     warnings: list[str] = []
 
     monkeypatch.setattr(helpers.settings, "quality_gating_profile", "recall")
-    assert helpers._filter_log_bursts_for_precision_rca(
-        log_bursts=bursts, log_patterns=patterns, suppression_counts=suppression_counts, warnings=warnings
-    ) == bursts
+    assert (
+        helpers._filter_log_bursts_for_precision_rca(
+            log_bursts=bursts, log_patterns=patterns, suppression_counts=suppression_counts, warnings=warnings
+        )
+        == bursts
+    )
 
     monkeypatch.setattr(helpers.settings, "quality_gating_profile", "precision_strict_v1")
-    assert helpers._filter_log_bursts_for_precision_rca(
-        log_bursts=bursts, log_patterns=[], suppression_counts=suppression_counts, warnings=warnings
-    ) == bursts
+    assert (
+        helpers._filter_log_bursts_for_precision_rca(
+            log_bursts=bursts, log_patterns=[], suppression_counts=suppression_counts, warnings=warnings
+        )
+        == bursts
+    )
 
     # non-periodic path under precision + low severity patterns
-    assert helpers._filter_log_bursts_for_precision_rca(
-        log_bursts=noisy, log_patterns=patterns, suppression_counts=suppression_counts, warnings=warnings
-    ) == noisy
+    assert (
+        helpers._filter_log_bursts_for_precision_rca(
+            log_bursts=noisy, log_patterns=patterns, suppression_counts=suppression_counts, warnings=warnings
+        )
+        == noisy
+    )
 
 
 @pytest.mark.asyncio

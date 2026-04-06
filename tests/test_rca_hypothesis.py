@@ -9,10 +9,10 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.rca.hypothesis import _signals_from_event, _action_for_category, generate, RootCause
-from engine.enums import RcaCategory, Severity, ChangeType
-from engine.correlation.temporal import CorrelatedEvent
 from api.responses import MetricAnomaly, ServiceLatency
+from engine.correlation.temporal import CorrelatedEvent
+from engine.enums import ChangeType, RcaCategory, Severity
+from engine.rca.hypothesis import RootCause, _action_for_category, _signals_from_event, generate
 
 
 class DummyEvent:
@@ -180,7 +180,7 @@ def test_generate_includes_process_entity_from_metric_labels():
     anomaly = MetricAnomaly(
         metric_id="m",
         metric_name=(
-            "process_cpu_time_seconds_total{service_name=cache," "process_executable_name=redis-server,process_pid=274}"
+            "process_cpu_time_seconds_total{service_name=cache,process_executable_name=redis-server,process_pid=274}"
         ),
         timestamp=1,
         value=100,

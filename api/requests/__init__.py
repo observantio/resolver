@@ -18,14 +18,14 @@ from .topology import TopologyRequest
 from .traces import TraceRequest
 
 __all__ = [
-    "AnalyzeRequest",
     "AnalyzeJobCreateRequest",
-    "MetricRequest",
+    "AnalyzeRequest",
     "ChangepointRequest",
-    "LogRequest",
-    "TraceRequest",
-    "SloRequest",
     "CorrelateRequest",
-    "TopologyRequest",
     "DeploymentEventRequest",
+    "LogRequest",
+    "MetricRequest",
+    "SloRequest",
+    "TopologyRequest",
+    "TraceRequest",
 ]

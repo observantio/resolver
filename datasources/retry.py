@@ -13,8 +13,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import time
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Awaitable, Callable, Type, Tuple, TypeVar, cast
+from typing import TypeVar, cast
 
 F = TypeVar("F", bound=Callable[..., object])
 
@@ -24,7 +25,7 @@ def retry(
     attempts: int = 3,
     delay: float = 1.0,
     backoff: float = 2.0,
-    exceptions: Tuple[Type[Exception], ...] = (Exception,),
+    exceptions: tuple[type[Exception], ...] = (Exception,),
 ) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         is_async = inspect.iscoroutinefunction(func)

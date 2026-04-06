@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 
@@ -42,7 +41,7 @@ def _classify(before: float, after: float, std: float) -> ChangeType:
     return ChangeType.DRIFT
 
 
-def _detect_oscillation(arr: np.ndarray, window: int | None = None) -> List[int]:
+def _detect_oscillation(arr: np.ndarray, window: int | None = None) -> list[int]:
     if window is None:
         window = settings.cusum_window
     sign_changes = np.diff(np.sign(np.diff(arr)))
@@ -58,7 +57,7 @@ def detect(
     vals: Sequence[float],
     threshold_sigma: float | None = None,
     metric_name: str = "metric",
-) -> List[ChangePoint]:
+) -> list[ChangePoint]:
     if threshold_sigma is None:
         threshold_sigma = settings.cusum_threshold_sigma
     if len(vals) < 10:
@@ -75,7 +74,7 @@ def detect(
     k = settings.cusum_k * sigma
     h = threshold_sigma * sigma
     cusum_pos = cusum_neg = 0.0
-    results: List[ChangePoint] = []
+    results: list[ChangePoint] = []
 
     for i in range(1, len(arr)):
         cusum_pos = max(0.0, cusum_pos + arr[i] - mu - k)

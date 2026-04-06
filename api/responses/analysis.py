@@ -10,8 +10,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from pydantic import Field
 
 from engine.causal.bayesian import BayesianScore
@@ -24,12 +22,12 @@ from engine.forecast.trajectory import TrajectoryForecast
 from engine.ml.clustering import AnomalyCluster
 from engine.ml.ranking import RankedCause
 
-from .base import NpModel
 from .anomalies import MetricAnomaly
+from .base import NpModel
 from .logs import LogBurst, LogPattern
-from .traces import ErrorPropagation, ServiceLatency
-from .slo import SloBurnAlert
 from .rca import RootCause
+from .slo import SloBurnAlert
+from .traces import ErrorPropagation, ServiceLatency
 
 
 class MetricSeriesDistributionStats(NpModel):
@@ -51,8 +49,8 @@ class MetricSeriesDistributionStats(NpModel):
 
 
 class AnalysisQuality(NpModel):
-    anomaly_density: Dict[str, float] = Field(default_factory=dict)
-    suppression_counts: Dict[str, int] = Field(default_factory=dict)
+    anomaly_density: dict[str, float] = Field(default_factory=dict)
+    suppression_counts: dict[str, int] = Field(default_factory=dict)
     gating_profile: str
     confidence_calibration_version: str
 
@@ -62,23 +60,23 @@ class AnalysisReport(NpModel):
     start: int
     end: int
     duration_seconds: int
-    metric_anomalies: List[MetricAnomaly]
-    log_bursts: List[LogBurst]
-    log_patterns: List[LogPattern]
-    service_latency: List[ServiceLatency]
-    error_propagation: List[ErrorPropagation]
-    slo_alerts: List[SloBurnAlert] = []
-    root_causes: List[RootCause]
-    ranked_causes: List[RankedCause] = []
-    change_points: List[ChangePoint] = []
-    log_metric_links: List[LogMetricLink] = []
-    forecasts: List[TrajectoryForecast] = []
-    degradation_signals: List[DegradationSignal] = []
-    anomaly_clusters: List[AnomalyCluster] = []
-    granger_results: List[GrangerResult] = []
-    bayesian_scores: List[BayesianScore] = []
-    analysis_warnings: List[str] = []
+    metric_anomalies: list[MetricAnomaly]
+    log_bursts: list[LogBurst]
+    log_patterns: list[LogPattern]
+    service_latency: list[ServiceLatency]
+    error_propagation: list[ErrorPropagation]
+    slo_alerts: list[SloBurnAlert] = []
+    root_causes: list[RootCause]
+    ranked_causes: list[RankedCause] = []
+    change_points: list[ChangePoint] = []
+    log_metric_links: list[LogMetricLink] = []
+    forecasts: list[TrajectoryForecast] = []
+    degradation_signals: list[DegradationSignal] = []
+    anomaly_clusters: list[AnomalyCluster] = []
+    granger_results: list[GrangerResult] = []
+    bayesian_scores: list[BayesianScore] = []
+    analysis_warnings: list[str] = []
     overall_severity: Severity
     summary: str
-    quality: Optional[AnalysisQuality] = None
-    metric_series_statistics: List[MetricSeriesDistributionStats] = Field(default_factory=list)
+    quality: AnalysisQuality | None = None
+    metric_series_statistics: list[MetricSeriesDistributionStats] = Field(default_factory=list)

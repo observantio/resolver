@@ -9,7 +9,7 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.correlation.temporal import CorrelatedEvent, correlate
 from engine.correlation.signals import LogMetricLink, link_logs_to_metrics
+from engine.correlation.temporal import CorrelatedEvent, correlate
 
-__all__ = ["CorrelatedEvent", "correlate", "LogMetricLink", "link_logs_to_metrics"]
+__all__ = ["CorrelatedEvent", "LogMetricLink", "correlate", "link_logs_to_metrics"]

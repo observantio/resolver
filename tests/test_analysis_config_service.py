@@ -238,9 +238,9 @@ settings:
         "severity_weights": {"low": 1, "medium": 5, "high": 7, "critical": 11},
         "mad_threshold": 9.5,
     }
-    assert analyzer_module.DEFAULT_METRIC_QUERIES == original_metric_queries
-    assert registry_module.DEFAULT_WEIGHTS == original_default_weights
-    assert enums_module.SEVERITY_WEIGHTS == original_severity_weights
+    assert original_metric_queries == analyzer_module.DEFAULT_METRIC_QUERIES
+    assert original_default_weights == registry_module.DEFAULT_WEIGHTS
+    assert original_severity_weights == enums_module.SEVERITY_WEIGHTS
     assert analyzer_module.settings.mad_threshold == original_mad_threshold
 
 

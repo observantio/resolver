@@ -12,12 +12,12 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import math
 import re
-from typing import List, Set, Callable
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
-from api.responses import MetricAnomaly, LogBurst, ServiceLatency
+from api.responses import LogBurst, MetricAnomaly, ServiceLatency
 from config import settings
 
 
@@ -25,9 +25,9 @@ from config import settings
 class CorrelatedEvent:
     window_start: float
     window_end: float
-    metric_anomalies: List[MetricAnomaly] = field(default_factory=list)
-    log_bursts: List[LogBurst] = field(default_factory=list)
-    service_latency: List[ServiceLatency] = field(default_factory=list)
+    metric_anomalies: list[MetricAnomaly] = field(default_factory=list)
+    log_bursts: list[LogBurst] = field(default_factory=list)
+    service_latency: list[ServiceLatency] = field(default_factory=list)
     signal_count: int = 0
     confidence: float = 0.0
 
@@ -95,19 +95,19 @@ def _safe_float(value: object) -> float | None:
 
 
 def correlate(
-    metric_anomalies: List[MetricAnomaly],
-    log_bursts: List[LogBurst],
-    service_latency: List[ServiceLatency],
+    metric_anomalies: list[MetricAnomaly],
+    log_bursts: list[LogBurst],
+    service_latency: list[ServiceLatency],
     window_seconds: float | None = None,
     *,
     weight_fn: Callable[[float, float, float], float] | None = None,
-) -> List[CorrelatedEvent]:
+) -> list[CorrelatedEvent]:
     if window_seconds is None:
         window_seconds = settings.correlation_window_seconds
 
     anchor_candidates: list[object] = [a.timestamp for a in metric_anomalies]
     anchor_candidates.extend(getattr(b, "start", getattr(b, "window_start", None)) for b in log_bursts)
-    anchor_times: List[float] = []
+    anchor_times: list[float] = []
     for value in anchor_candidates:
         parsed = _safe_float(value)
         if parsed is not None:
@@ -117,8 +117,8 @@ def correlate(
     if not anchor_times:
         return []
 
-    events: List[CorrelatedEvent] = []
-    used: Set[float] = set()
+    events: list[CorrelatedEvent] = []
+    used: set[float] = set()
 
     for anchor in anchor_times:
         if anchor in used:

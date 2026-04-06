@@ -12,19 +12,19 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from api.routes.health import router as health_router
 from api.routes.analyze import router as analyze_router
-from api.routes.metrics import router as metrics_router
-from api.routes.logs import router as logs_router
-from api.routes.traces import router as traces_router
+from api.routes.causal import router as causal_router
 from api.routes.correlation import router as correlation_router
-from api.routes.slo import router as slo_router
-from api.routes.topology import router as topology_router
 from api.routes.events import router as events_router
 from api.routes.forecast import router as forecast_router
-from api.routes.causal import router as causal_router
-from api.routes.ml import router as ml_router
+from api.routes.health import router as health_router
 from api.routes.jobs import router as jobs_router
+from api.routes.logs import router as logs_router
+from api.routes.metrics import router as metrics_router
+from api.routes.ml import router as ml_router
+from api.routes.slo import router as slo_router
+from api.routes.topology import router as topology_router
+from api.routes.traces import router as traces_router
 
 router = APIRouter()
 

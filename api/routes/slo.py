@@ -18,7 +18,8 @@ from api.routes.exception import handle_exceptions
 from config import settings
 from custom_types.json import JSONDict
 from engine import anomaly
-from engine.slo import evaluate as slo_evaluate, remaining_minutes
+from engine.slo import evaluate as slo_evaluate
+from engine.slo import remaining_minutes
 from services.security_service import enforce_request_tenant, require_permission_dependency
 
 router = APIRouter(tags=["SLO"])

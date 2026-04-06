@@ -8,8 +8,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from types import SimpleNamespace
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import HTTPException
@@ -35,7 +34,7 @@ def _ctx() -> InternalContext:
 
 
 def _job_view(status: JobStatus = JobStatus.QUEUED) -> JobView:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return JobView(
         job_id="job-1",
         report_id="report-1",

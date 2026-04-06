@@ -7,7 +7,7 @@ repos:
         entry: >-
           bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
           cd "$R" || exit 1;
-          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          P=""; for c in "$PWD/../.venv/bin/python" "$PWD/../venv/bin/python" "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
           [[ -n "$c" && -x "$c" ]] || continue;
           "$c" -c "import pytest" 2>/dev/null && { P="$c"; break; }; done;
           [[ -n "$P" ]] || { echo "error: no Python with pytest; use .venv and pip install -e .[dev]" >&2; exit 1; };
@@ -20,8 +20,15 @@ repos:
       - id: resolver-ruff-check
         name: Resolver ruff check (autofix)
         language: system
-        entry: .venv/bin/python
-        args: [-m, ruff, check, --config, pyproject.toml, --fix, --fix-only]
+        entry: >-
+          bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
+          cd "$R" || exit 1;
+          P=""; for c in "$PWD/../.venv/bin/python" "$PWD/../venv/bin/python" "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          [[ -n "$c" && -x "$c" ]] || continue;
+          "$c" -c "import ruff" 2>/dev/null && { P="$c"; break; }; done;
+          [[ -n "$P" ]] || { echo "error: no Python with ruff; use .venv and pip install -e .[dev]" >&2; exit 1; };
+          "$P" -m ruff check --config pyproject.toml --fix --fix-only'
+        pass_filenames: false
         files: \.py$
         exclude: (^|/)tests/
         types: [python]
@@ -29,8 +36,15 @@ repos:
       - id: resolver-ruff-format
         name: Resolver ruff format
         language: system
-        entry: .venv/bin/python
-        args: [-m, ruff, format, --config, pyproject.toml]
+        entry: >-
+          bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
+          cd "$R" || exit 1;
+          P=""; for c in "$PWD/../.venv/bin/python" "$PWD/../venv/bin/python" "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          [[ -n "$c" && -x "$c" ]] || continue;
+          "$c" -c "import ruff" 2>/dev/null && { P="$c"; break; }; done;
+          [[ -n "$P" ]] || { echo "error: no Python with ruff; use .venv and pip install -e .[dev]" >&2; exit 1; };
+          "$P" -m ruff format --config pyproject.toml'
+        pass_filenames: false
         files: \.py$
         exclude: (^|/)tests/
         types: [python]
@@ -41,7 +55,7 @@ repos:
         entry: >-
           bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
           cd "$R" || exit 1;
-          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          P=""; for c in "$PWD/../.venv/bin/python" "$PWD/../venv/bin/python" "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
           [[ -n "$c" && -x "$c" ]] || continue;
           "$c" -c "import mypy, numpy, sqlalchemy, pydantic, httpx" 2>/dev/null && { P="$c"; break; }; done;
           [[ -n "$P" ]] || { echo "error: no Python with mypy + resolver deps; pip install -e .[dev] in resolver/" >&2; exit 1; };
@@ -57,7 +71,7 @@ repos:
         entry: >-
           bash -lc 'R="$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")";
           cd "$R" || exit 1;
-          P=""; for c in "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
+          P=""; for c in "$PWD/../.venv/bin/python" "$PWD/../venv/bin/python" "$PWD/.venv/bin/python" "$PWD/venv/bin/python" "$(command -v python3)" "$(command -v python)"; do
           [[ -n "$c" && -x "$c" ]] || continue;
           "$c" -c "import pylint, numpy, sqlalchemy, pydantic, httpx" 2>/dev/null && { P="$c"; break; }; done;
           [[ -n "$P" ]] || { echo "error: no Python with pylint + resolver deps; pip install -e .[dev] in resolver/" >&2; exit 1; };

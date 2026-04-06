@@ -13,11 +13,12 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from api.routes.exception import handle_exceptions
+
 from api.requests import AnalyzeRequest
 from api.responses import AnalysisReport, AnalyzeConfigTemplateResponse
-from services.analyze_service import run_analysis
+from api.routes.exception import handle_exceptions
 from services.analysis_config_service import analysis_config_service
+from services.analyze_service import run_analysis
 from services.security_service import require_permission_dependency
 
 router = APIRouter(tags=["RCA"])

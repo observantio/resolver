@@ -12,4 +12,4 @@ http://www.apache.org/licenses/LICENSE-2.0
 from engine.logs.frequency import detect_bursts
 from engine.logs.patterns import analyze
 
-__all__ = ["detect_bursts", "analyze"]
+__all__ = ["analyze", "detect_bursts"]

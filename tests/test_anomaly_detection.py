@@ -10,19 +10,18 @@ http://www.apache.org/licenses/LICENSE-2.0
 """
 
 import numpy as np
-import pytest
 
 from api.responses import MetricAnomaly
 from engine.anomaly.detection import (
     _apply_density_cap,
+    _change_type,
+    _compress_runs,
+    _cusum_changepoints,
     _iqr_score_value,
     _mad_scores,
-    _cusum_changepoints,
-    _change_type,
-    _severity,
     _series_median_iqr,
+    _severity,
     _tukey_outlier_class,
-    _compress_runs,
     detect,
 )
 from engine.enums import ChangeType, Severity

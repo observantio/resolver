@@ -8,21 +8,19 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-import asyncio
 import importlib
-import sys
 import types
 
 import httpx
 import pytest
 from fastapi.routing import APIRoute
 
-from api.responses import JobStatus
-from api.routes import health as health_route
-from services import analyze_service
 import api.responses as response_exports
 import main as app_main
+from api.responses import JobStatus
+from api.routes import health as health_route
 from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO
+from services import analyze_service
 
 
 @pytest.mark.asyncio
@@ -78,7 +76,7 @@ def test_response_exports_dynamic_lookup_and_missing_attr():
     assert response_exports.JobStatus is JobStatus
     assert response_exports.AnalyzeJobSummary.__name__ == "AnalyzeJobSummary"
     with pytest.raises(AttributeError):
-        getattr(response_exports, "DoesNotExist")
+        response_exports.DoesNotExist
 
 
 @pytest.mark.asyncio

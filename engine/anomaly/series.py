@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Mapping
-from typing import Iterator, Optional, TypeAlias
+from collections.abc import Iterator, Mapping
+from typing import TypeAlias
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ _PROMQL_EXCLUDED_TOKENS = {
 }
 
 
-def _metric_hint_from_query(query_hint: Optional[str]) -> Optional[str]:
+def _metric_hint_from_query(query_hint: str | None) -> str | None:
     text = str(query_hint or "").strip()
     if not text:
         return None
@@ -93,7 +93,7 @@ def _metric_hint_from_query(query_hint: Optional[str]) -> Optional[str]:
     return None
 
 
-def _fallback_metric_name(metric: MetricRecord, query_hint: Optional[str]) -> str:
+def _fallback_metric_name(metric: MetricRecord, query_hint: str | None) -> str:
     hinted = _metric_hint_from_query(query_hint)
     if hinted:
         return hinted
@@ -109,7 +109,7 @@ def _fallback_metric_name(metric: MetricRecord, query_hint: Optional[str]) -> st
 
 def iter_series(
     mimir_response: WrappedMimirResponse,
-    query_hint: Optional[str] = None,
+    query_hint: str | None = None,
 ) -> Iterator[tuple[str, list[float], list[float]]]:
     if isinstance(mimir_response, tuple):
         if len(mimir_response) == 2 and isinstance(mimir_response[1], dict):

@@ -12,18 +12,17 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import math
-from typing import List
 
 from api.responses import ErrorPropagation
-from engine.correlation.temporal import CorrelatedEvent
-from engine.events.registry import DeploymentEvent
-from engine.enums import RcaCategory
 from config import settings
+from engine.correlation.temporal import CorrelatedEvent
+from engine.enums import RcaCategory
+from engine.events.registry import DeploymentEvent
 
 
 def score_deployment_correlation(
     anomaly_ts: float,
-    deployments: List[DeploymentEvent],
+    deployments: list[DeploymentEvent],
     window_seconds: float | None = None,
 ) -> float:
     if window_seconds is None:
@@ -69,7 +68,7 @@ def score_correlated_event(event: CorrelatedEvent) -> float:
 
 def categorize(
     event: CorrelatedEvent,
-    deployments: List[DeploymentEvent],
+    deployments: list[DeploymentEvent],
 ) -> RcaCategory:
     deploy_score = score_deployment_correlation(event.window_start, deployments) if deployments else 0.0
 

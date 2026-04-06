@@ -11,16 +11,14 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from config import settings
 from engine.slo.models import BudgetStatus
 
 
 def remaining_minutes(
     service: str,
-    error_counts: List[float],
-    total_counts: List[float],
+    error_counts: list[float],
+    total_counts: list[float],
     target_availability: float = 0.999,
 ) -> BudgetStatus:
     total = sum(total_counts)

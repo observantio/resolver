@@ -10,7 +10,8 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
+from engine.forecast.degradation import DegradationSignal
+from engine.forecast.degradation import analyze as analyze_degradation
 from engine.forecast.trajectory import TrajectoryForecast, forecast
-from engine.forecast.degradation import DegradationSignal, analyze as analyze_degradation
 
-__all__ = ["TrajectoryForecast", "forecast", "DegradationSignal", "analyze_degradation"]
+__all__ = ["DegradationSignal", "TrajectoryForecast", "analyze_degradation", "forecast"]

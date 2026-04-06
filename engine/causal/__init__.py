@@ -10,20 +10,25 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
+from engine.causal.bayesian import BayesianScore
+from engine.causal.bayesian import score as bayesian_score
 from engine.causal.granger import (
     GrangerResult,
-    granger_pair_analysis as test_pair,
+)
+from engine.causal.granger import (
     granger_multiple_pairs as test_all_pairs,
 )
-from engine.causal.bayesian import BayesianScore, score as bayesian_score
+from engine.causal.granger import (
+    granger_pair_analysis as test_pair,
+)
 from engine.causal.graph import CausalGraph, InterventionResult
 
 __all__ = [
-    "GrangerResult",
-    "test_pair",
-    "test_all_pairs",
     "BayesianScore",
-    "bayesian_score",
     "CausalGraph",
+    "GrangerResult",
     "InterventionResult",
+    "bayesian_score",
+    "test_all_pairs",
+    "test_pair",
 ]

@@ -11,8 +11,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import pytest
 
-from api.routes import events as events_route
 from api.requests import DeploymentEventRequest
+from api.routes import events as events_route
 
 
 class DummyRegistry:

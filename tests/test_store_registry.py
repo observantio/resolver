@@ -10,8 +10,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 import pytest
 
-from engine.enums import Signal
 from engine import registry as sreg
+from engine.enums import Signal
 from store import weights as wstore
 
 

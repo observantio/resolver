@@ -9,11 +9,11 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-import pytest
 import httpx
+import pytest
 
-from datasources.helpers import fetch_json, fetch_text
 from datasources.exceptions import InvalidQuery, QueryTimeout
+from datasources.helpers import fetch_json, fetch_text
 
 
 class DummyResponse:

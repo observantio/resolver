@@ -14,13 +14,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import import_module
-from typing import List, Optional, Protocol
+from typing import Protocol
 
 import numpy as np
 
 from config import settings
-from engine.rca.hypothesis import RootCause
 from engine.correlation.temporal import CorrelatedEvent
+from engine.rca.hypothesis import RootCause
 
 
 @dataclass(frozen=True)
@@ -31,7 +31,7 @@ class RankedCause:
     feature_importance: dict[str, float]
 
 
-def _extract_features(cause: RootCause, event: Optional[CorrelatedEvent] = None) -> List[float]:
+def _extract_features(cause: RootCause, event: CorrelatedEvent | None = None) -> list[float]:
     return [
         cause.confidence,
         cause.severity.weight() / settings.ranking_severity_divisor,
@@ -58,7 +58,7 @@ _FEATURE_NAMES = [
 ]
 
 
-def _ranking_pseudo_labels(causes: List[RootCause]) -> list[int]:
+def _ranking_pseudo_labels(causes: list[RootCause]) -> list[int]:
     """
     Top half of hypotheses by rule confidence = positive class (avoids trivial single-class RF).
     """
@@ -101,9 +101,9 @@ class RandomForestClassifierFactory(Protocol):
 
 
 def rank(
-    causes: List[RootCause],
-    correlated_events: Optional[List[CorrelatedEvent]] = None,
-) -> List[RankedCause]:
+    causes: list[RootCause],
+    correlated_events: list[CorrelatedEvent] | None = None,
+) -> list[RankedCause]:
     if not causes:
         return []
 
@@ -114,13 +114,13 @@ def rank(
                 events_map[a.metric_name] = ev
 
     feature_matrix = []
-    event_refs: List[Optional[CorrelatedEvent]] = []
+    event_refs: list[CorrelatedEvent | None] = []
     for cause in causes:
         ref_metric = next(
             (s.split(":")[1] for s in cause.contributing_signals if s.startswith("metric:")),
             None,
         )
-        event_ref: Optional[CorrelatedEvent] = events_map.get(ref_metric) if ref_metric else None
+        event_ref: CorrelatedEvent | None = events_map.get(ref_metric) if ref_metric else None
         event_refs.append(event_ref)
         feature_matrix.append(_extract_features(cause, event_ref))
 
@@ -151,7 +151,7 @@ def rank(
         ml_scores = np.array([c.confidence for c in causes])
         importances_global = None
 
-    results: List[RankedCause] = []
+    results: list[RankedCause] = []
     for i, cause in enumerate(causes):
         ms = float(ml_scores[i])
         if importances_global is not None:

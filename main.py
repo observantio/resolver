@@ -15,20 +15,20 @@ import contextlib
 import logging
 import sys
 import time
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Dict, Optional
 
 import httpx
 import uvicorn
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
 from api.routes import router
 from api.routes.common import close_providers
 from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO, Settings, settings
-from database import init_database, init_db, dispose_database
+from database import dispose_database, init_database, init_db
 from datasources.exceptions import BackendStartupTimeout
 from middleware.openapi import install_custom_openapi
 from services.rca_job_service import rca_job_service
@@ -42,7 +42,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 _BACKEND_READY = False
-_BACKEND_STATUS: Dict[str, str] = {}
+_BACKEND_STATUS: dict[str, str] = {}
 OPENAPI_TAGS = [
     {"name": "Health", "description": "Service and backend readiness endpoints."},
     {"name": "RCA", "description": "Root cause analysis workflows and templates."},
@@ -75,7 +75,7 @@ def _generate_operation_id(route: APIRoute) -> str:
 
 class ResolverReadyResponse(BaseModel):
     ready: bool = Field(description="Whether resolver dependencies are currently ready.")
-    backends: Dict[str, str] = Field(
+    backends: dict[str, str] = Field(
         default_factory=dict,
         description="Per-backend readiness details keyed by backend name.",
     )
@@ -85,7 +85,7 @@ async def wait_for(
     name: str,
     url: str,
     timeout: float,
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
     accept_status: tuple[int, ...] = (200, 204, 404),
 ) -> None:
     deadline = time.monotonic() + timeout
@@ -99,7 +99,7 @@ async def wait_for(
                     log.info("%s ready (attempt %d, status %d)", name, attempt, resp.status_code)
                     return
                 log.debug("%s probe returned %d (attempt %d)", name, resp.status_code, attempt)
-            except (httpx.RequestError, asyncio.TimeoutError) as exc:
+            except (TimeoutError, httpx.RequestError) as exc:
                 log.debug("%s not reachable (attempt %d): %s", name, attempt, exc)
             await asyncio.sleep(2)
     raise BackendStartupTimeout(f"{name} did not become ready within {timeout}s")

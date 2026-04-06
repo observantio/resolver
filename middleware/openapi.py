@@ -10,8 +10,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from http import HTTPStatus
 import re
+from http import HTTPStatus
 from typing import Any
 
 from fastapi import FastAPI

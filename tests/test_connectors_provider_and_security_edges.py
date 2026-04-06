@@ -16,6 +16,7 @@ import pytest
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+import services.security_service as security_service
 from connectors.loki import LokiConnector
 from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
@@ -23,7 +24,6 @@ from datasources.base import BaseConnector
 from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTimeout
 from datasources.helpers import fetch_json, fetch_text
 from datasources.provider import DataSourceProvider
-import services.security_service as security_service
 
 
 class _DummyConnector(BaseConnector):

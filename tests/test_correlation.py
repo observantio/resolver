@@ -9,11 +9,11 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.correlation.temporal import CorrelatedEvent, correlate
-from engine.correlation.signals import link_logs_to_metrics
+from api.responses import LogBurst, MetricAnomaly, ServiceLatency
 from config import settings
-from api.responses import MetricAnomaly, LogBurst, ServiceLatency
-from engine.enums import Severity, ChangeType
+from engine.correlation.signals import link_logs_to_metrics
+from engine.correlation.temporal import CorrelatedEvent, correlate
+from engine.enums import ChangeType, Severity
 
 
 def make_anomaly(t):

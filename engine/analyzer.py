@@ -28,15 +28,22 @@ from api.responses import (
     LogPattern,
     MetricAnomaly,
     MetricSeriesDistributionStats,
-    RootCause as RootCauseModel,
     ServiceLatency,
+)
+from api.responses import (
+    RootCause as RootCauseModel,
+)
+from api.responses import (
     SloBurnAlert as SloBurnAlertModel,
 )
 from config import DEFAULT_METRIC_QUERIES, SLO_ERROR_QUERY, SLO_TOTAL_QUERY, settings
 from datasources.provider import DataSourceProvider
 from engine import anomaly, logs, rca, traces
-from engine.anomaly.series import WrappedMimirResponse
+from engine.analyze.filters import filter_metric_response_by_services as _filter_metric_response_by_services
+from engine.analyze.filters import normalize_services as _normalize_services
 from engine.analyze.helpers import (
+    AnalyzerOutputInputs,
+    PrecisionQualityGateInputs,
     _apply_precision_quality_gates,
     _build_compat_registry,
     _build_selection_score_components,
@@ -50,10 +57,10 @@ from engine.analyze.helpers import (
     _slo_series_pairs,
     _to_root_cause_model,
 )
-from engine.analyze.filters import filter_metric_response_by_services as _filter_metric_response_by_services
-from engine.analyze.filters import normalize_services as _normalize_services
-from engine.changepoint import ChangePoint, detect as changepoint_detect
+from engine.anomaly.series import WrappedMimirResponse
 from engine.causal import BayesianScore, CausalGraph, GrangerResult, bayesian_score, test_all_pairs
+from engine.changepoint import ChangePoint
+from engine.changepoint import detect as changepoint_detect
 from engine.correlation import CorrelatedEvent, LogMetricLink, correlate, link_logs_to_metrics
 from engine.dedup import group_metric_anomalies
 from engine.enums import Severity
@@ -86,6 +93,36 @@ _RECOVERABLE_ANALYSIS_ERRORS = (
     TypeError,
     ValueError,
 )
+
+
+@dataclasses.dataclass(frozen=True)
+class AnalyzerRuntimeState:
+    warnings: list[str]
+    suppression_counts: dict[str, int]
+
+
+@dataclasses.dataclass(frozen=True)
+class CorrelateStageInputs:
+    metric_anomalies: list[MetricAnomaly]
+    log_bursts: list[LogBurst]
+    rca_log_bursts: list[LogBurst]
+    service_latency: list[ServiceLatency]
+
+
+@dataclasses.dataclass(frozen=True)
+class CausalStageInputs:
+    series_map: dict[str, list[float]]
+    metric_anomalies: list[MetricAnomaly]
+    rca_log_bursts: list[LogBurst]
+    log_patterns: list[LogPattern]
+    service_latency: list[ServiceLatency]
+    error_propagation: list[ErrorPropagation]
+    correlated_events: list[CorrelatedEvent]
+    graph: DependencyGraph
+    change_points: list[ChangePoint]
+    forecasts: list[TrajectoryForecast]
+    degradation_signals: list[DegradationSignal]
+    anomaly_clusters: list[AnomalyCluster]
 
 
 def _overall_severity(*groups: Sequence[object]) -> Severity:
@@ -178,8 +215,7 @@ async def _run_metrics_stage(
     all_metric_queries: list[str],
     z_threshold: float,
     analysis_window_seconds: float,
-    warnings: list[str],
-    suppression_counts: dict[str, int],
+    state: AnalyzerRuntimeState,
 ) -> tuple[
     list[MetricAnomaly],
     list[ChangePoint],
@@ -202,10 +238,8 @@ async def _run_metrics_stage(
             timeout=float(settings.analyzer_metrics_timeout_seconds),
         )
     except TimeoutError:
-        msg = (
-            f"Metrics stage timed out after {settings.analyzer_metrics_timeout_seconds}s; " "returning partial report."
-        )
-        warnings.append(msg)
+        msg = f"Metrics stage timed out after {settings.analyzer_metrics_timeout_seconds}s; returning partial report."
+        state.warnings.append(msg)
         log.warning(msg)
         (
             metric_anomalies,
@@ -217,7 +251,7 @@ async def _run_metrics_stage(
         ) = ([], [], [], [], {}, [])
     except _RECOVERABLE_ANALYSIS_ERRORS as exc:
         msg = f"Metrics unavailable: {exc}"
-        warnings.append(msg)
+        state.warnings.append(msg)
         log.warning(msg)
         (
             metric_anomalies,
@@ -234,14 +268,14 @@ async def _run_metrics_stage(
     forecasts = _dedupe_by_metric_with_severity(forecasts)
     degradation_signals = _dedupe_by_metric_with_severity(degradation_signals)
     if raw_metric_anomaly_count > len(metric_anomalies):
-        suppression_counts["duplicate_metric_anomalies"] = raw_metric_anomaly_count - len(metric_anomalies)
-        warnings.append(
+        state.suppression_counts["duplicate_metric_anomalies"] = raw_metric_anomaly_count - len(metric_anomalies)
+        state.warnings.append(
             f"Deduplicated metric anomalies from {raw_metric_anomaly_count} to {len(metric_anomalies)} "
             "to reduce duplicate series noise."
         )
     if raw_change_point_count > len(change_points):
-        suppression_counts["duplicate_change_points"] = raw_change_point_count - len(change_points)
-        warnings.append(
+        state.suppression_counts["duplicate_change_points"] = raw_change_point_count - len(change_points)
+        state.warnings.append(
             f"Deduplicated change points from {raw_change_point_count} to {len(change_points)} "
             "to reduce duplicate series noise."
         )
@@ -446,24 +480,21 @@ def _normalize_ranked_root_causes(
 
 async def _run_correlate_cluster_stage(
     tenant_id: str,
-    metric_anomalies: list[MetricAnomaly],
-    log_bursts: list[LogBurst],
-    rca_log_bursts: list[LogBurst],
-    service_latency: list[ServiceLatency],
     req: AnalyzeRequest,
     registry: TenantRegistry,
+    inputs: CorrelateStageInputs,
 ) -> tuple[list[LogMetricLink], TenantState, list[CorrelatedEvent], list[AnomalyCluster]]:
     correlate_started = time.perf_counter()
-    log_metric_links = link_logs_to_metrics(metric_anomalies, log_bursts)
+    log_metric_links = link_logs_to_metrics(inputs.metric_anomalies, inputs.log_bursts)
     state = await registry.get_state(tenant_id)
     correlated_events = correlate(
-        metric_anomalies,
-        rca_log_bursts,
-        service_latency,
+        inputs.metric_anomalies,
+        inputs.rca_log_bursts,
+        inputs.service_latency,
         window_seconds=req.correlation_window_seconds,
         weight_fn=state.weighted_confidence,
     )
-    anomaly_clusters = cluster(metric_anomalies)
+    anomaly_clusters = cluster(inputs.metric_anomalies)
     log.debug("analyzer stage=correlate duration=%.4fs", time.perf_counter() - correlate_started)
     return log_metric_links, state, correlated_events, anomaly_clusters
 
@@ -474,20 +505,8 @@ async def _run_causal_rank_and_quality(
     req: AnalyzeRequest,
     *,
     registry: TenantRegistry,
-    series_map: dict[str, list[float]],
-    metric_anomalies: list[MetricAnomaly],
-    rca_log_bursts: list[LogBurst],
-    log_patterns: list[LogPattern],
-    service_latency: list[ServiceLatency],
-    error_propagation: list[ErrorPropagation],
-    correlated_events: list[CorrelatedEvent],
-    graph: DependencyGraph,
-    change_points: list[ChangePoint],
-    forecasts: list[TrajectoryForecast],
-    degradation_signals: list[DegradationSignal],
-    anomaly_clusters: list[AnomalyCluster],
-    warnings: list[str],
-    suppression_counts: dict[str, int],
+    inputs: CausalStageInputs,
+    state: AnalyzerRuntimeState,
 ) -> tuple[
     list[MetricAnomaly],
     list[ChangePoint],
@@ -501,14 +520,20 @@ async def _run_causal_rank_and_quality(
     list[BayesianScore],
 ]:
     causal_started = time.perf_counter()
-    series_for_granger = _select_granger_series(series_map)
+    metric_anomalies = inputs.metric_anomalies
+    change_points = inputs.change_points
+    forecasts = inputs.forecasts
+    degradation_signals = inputs.degradation_signals
+    anomaly_clusters = inputs.anomaly_clusters
+
+    series_for_granger = _select_granger_series(inputs.series_map)
     granger_started = time.perf_counter()
     fresh_granger = (
         test_all_pairs(series_for_granger, max_lag=settings.granger_max_lag) if len(series_for_granger) >= 2 else []
     )
     granger_elapsed = time.perf_counter() - granger_started
     if granger_elapsed > float(settings.analyzer_causal_timeout_seconds):
-        warnings.append(
+        state.warnings.append(
             f"Causal granger stage exceeded target {settings.analyzer_causal_timeout_seconds}s "
             f"(actual {granger_elapsed:.2f}s)."
         )
@@ -519,7 +544,7 @@ async def _run_causal_rank_and_quality(
             timeout=1.0,
         )
     except _RECOVERABLE_ANALYSIS_ERRORS as exc:
-        warnings.append(f"Failed to persist granger results: {exc}")
+        state.warnings.append(f"Failed to persist granger results: {exc}")
 
     causal_graph = CausalGraph()
     causal_graph.from_granger_results(fresh_granger)
@@ -537,24 +562,26 @@ async def _run_causal_rank_and_quality(
     bayesian_scores = bayesian_score(
         has_deployment_event=bool(deployment_events),
         has_metric_spike=bool(metric_anomalies),
-        has_log_burst=bool(rca_log_bursts),
-        has_latency_spike=bool(service_latency),
-        has_error_propagation=bool(error_propagation),
+        has_log_burst=bool(inputs.rca_log_bursts),
+        has_latency_spike=bool(inputs.service_latency),
+        has_error_propagation=bool(inputs.error_propagation),
     )
 
     root_causes = rca.generate(
         metric_anomalies,
-        rca_log_bursts,
-        log_patterns,
-        service_latency,
-        error_propagation,
-        correlated_events=correlated_events,
-        graph=graph,
+        inputs.rca_log_bursts,
+        inputs.log_patterns,
+        inputs.service_latency,
+        inputs.error_propagation,
+        correlated_events=inputs.correlated_events,
+        graph=inputs.graph,
         event_registry=_build_compat_registry(deployment_events),
     )
-    ranked_causes = rank(root_causes, correlated_events)
+    ranked_causes = rank(root_causes, inputs.correlated_events)
     pydantic_root_causes, ranked_causes = _normalize_ranked_root_causes(
-        ranked_causes, warnings, suppression_counts
+        ranked_causes,
+        state.warnings,
+        state.suppression_counts,
     )
     (
         metric_anomalies,
@@ -564,22 +591,26 @@ async def _run_causal_rank_and_quality(
         anomaly_clusters,
         fresh_granger,
     ) = _limit_analyzer_output(
-        metric_anomalies=metric_anomalies,
-        change_points=change_points,
-        root_causes=pydantic_root_causes,
-        ranked_causes=ranked_causes,
-        anomaly_clusters=anomaly_clusters,
-        granger_results=fresh_granger,
-        warnings=warnings,
+        AnalyzerOutputInputs(
+            metric_anomalies=metric_anomalies,
+            change_points=change_points,
+            root_causes=pydantic_root_causes,
+            ranked_causes=ranked_causes,
+            anomaly_clusters=anomaly_clusters,
+            granger_results=fresh_granger,
+            warnings=state.warnings,
+        )
     )
     metric_anomalies, change_points, pydantic_root_causes, ranked_causes, quality = _apply_precision_quality_gates(
-        metric_anomalies=metric_anomalies,
-        change_points=change_points,
-        root_causes=pydantic_root_causes,
-        ranked_causes=ranked_causes,
-        duration_seconds=float(req.end - req.start),
-        suppression_counts=suppression_counts,
-        warnings=warnings,
+        PrecisionQualityGateInputs(
+            metric_anomalies=metric_anomalies,
+            change_points=change_points,
+            root_causes=pydantic_root_causes,
+            ranked_causes=ranked_causes,
+            duration_seconds=float(req.end - req.start),
+            suppression_counts=state.suppression_counts,
+            warnings=state.warnings,
+        )
     )
     log.debug("analyzer stage=causal duration=%.4fs", time.perf_counter() - causal_started)
     return (
@@ -605,6 +636,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     primary_service = normalized_services[0] if normalized_services else None
     warnings: list[str] = []
     suppression_counts: dict[str, int] = {}
+    state = AnalyzerRuntimeState(warnings=warnings, suppression_counts=suppression_counts)
     analysis_window_seconds = float(max(0, req.end - req.start))
 
     log_query = _build_log_query(req.services, req.log_query)
@@ -633,8 +665,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         all_metric_queries,
         z_threshold,
         analysis_window_seconds,
-        warnings,
-        suppression_counts,
+        state,
     )
 
     log_bursts, log_patterns = await _run_logs_stage(
@@ -664,15 +695,16 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         suppression_counts=suppression_counts,
         warnings=warnings,
     )
-    # Keep raw links for investigation UX; filtered bursts are used for RCA correlation/scoring only.
     log_metric_links, _, correlated_events, anomaly_clusters = await _run_correlate_cluster_stage(
         tenant_id,
-        metric_anomalies,
-        log_bursts,
-        rca_log_bursts,
-        service_latency,
         req,
         registry,
+        CorrelateStageInputs(
+            metric_anomalies=metric_anomalies,
+            log_bursts=log_bursts,
+            rca_log_bursts=rca_log_bursts,
+            service_latency=service_latency,
+        ),
     )
 
     (
@@ -691,20 +723,21 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         primary_service,
         req,
         registry=registry,
-        series_map=series_map,
-        metric_anomalies=metric_anomalies,
-        rca_log_bursts=rca_log_bursts,
-        log_patterns=log_patterns,
-        service_latency=service_latency,
-        error_propagation=error_propagation,
-        correlated_events=correlated_events,
-        graph=graph,
-        change_points=change_points,
-        forecasts=forecasts,
-        degradation_signals=degradation_signals,
-        anomaly_clusters=anomaly_clusters,
-        warnings=warnings,
-        suppression_counts=suppression_counts,
+        inputs=CausalStageInputs(
+            series_map=series_map,
+            metric_anomalies=metric_anomalies,
+            rca_log_bursts=rca_log_bursts,
+            log_patterns=log_patterns,
+            service_latency=service_latency,
+            error_propagation=error_propagation,
+            correlated_events=correlated_events,
+            graph=graph,
+            change_points=change_points,
+            forecasts=forecasts,
+            degradation_signals=degradation_signals,
+            anomaly_clusters=anomaly_clusters,
+        ),
+        state=state,
     )
 
     severity = _overall_severity(

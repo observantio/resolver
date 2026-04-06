@@ -12,16 +12,16 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from importlib import import_module
 import math
-from typing import Callable, List, Protocol
+from collections.abc import Callable, Sequence
+from importlib import import_module
+from typing import Protocol
 
 import numpy as np
 
-from engine.enums import ChangeType, Severity
 from api.responses import MetricAnomaly
 from config import settings
+from engine.enums import ChangeType, Severity
 
 linregress: Callable[[np.ndarray, np.ndarray], tuple[float, float, float, float, float]] = import_module(
     "scipy.stats"
@@ -143,7 +143,7 @@ def _is_precision_profile() -> bool:
     return str(getattr(settings, "quality_gating_profile", "")).strip().lower().startswith("precision")
 
 
-def _apply_density_cap(anomalies: List[MetricAnomaly], timestamps: np.ndarray) -> List[MetricAnomaly]:
+def _apply_density_cap(anomalies: list[MetricAnomaly], timestamps: np.ndarray) -> list[MetricAnomaly]:
     if not anomalies:
         return anomalies
     max_density = float(getattr(settings, "quality_max_anomaly_density_per_metric_per_hour", 0.0))
@@ -173,7 +173,7 @@ def _apply_density_cap(anomalies: List[MetricAnomaly], timestamps: np.ndarray) -
     return sorted(kept, key=lambda a: a.timestamp)
 
 
-def _compress_runs(anomalies: List[MetricAnomaly]) -> List[MetricAnomaly]:
+def _compress_runs(anomalies: list[MetricAnomaly]) -> list[MetricAnomaly]:
     if not anomalies or len(anomalies) <= settings.anomaly_run_keep_max:
         return anomalies
 
@@ -229,7 +229,7 @@ def detect(
     timestamps: Sequence[float],
     values: Sequence[float],
     sensitivity: float | None = None,
-) -> List[MetricAnomaly]:
+) -> list[MetricAnomaly]:
     if len(values) < settings.min_samples:
         return []
 
@@ -279,7 +279,7 @@ def detect(
 
     slope, *_ = linregress(np.arange(len(clean)), clean)
 
-    anomalies: List[MetricAnomaly] = []
+    anomalies: list[MetricAnomaly] = []
     for t, v, z, m, c, iso_l, iso_s in zip(ts, arr, z_scores, mad_scores, cusum_flags, iso_labels, iso_scores):
         iq = _iqr_score_value(float(v), med, iqr)
         tukey = _tukey_outlier_class(float(v), q1, q3, iqr)

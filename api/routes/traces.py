@@ -8,8 +8,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends
 
 from api.requests import TraceRequest
@@ -25,11 +23,11 @@ router = APIRouter(tags=["Traces"])
 
 @router.post(
     "/anomalies/traces",
-    response_model=List[ServiceLatency],
+    response_model=list[ServiceLatency],
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def trace_anomalies(req: TraceRequest) -> List[ServiceLatency]:
+async def trace_anomalies(req: TraceRequest) -> list[ServiceLatency]:
     req = enforce_request_tenant(req)
     filters: TraceFilters = {}
     if req.service:

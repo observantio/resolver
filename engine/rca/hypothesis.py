@@ -11,29 +11,29 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import re
-from typing import List, Optional
+from dataclasses import dataclass, field
 
 from pydantic import ConfigDict
+
 from api.responses import (
-    MetricAnomaly,
+    ErrorPropagation,
     LogBurst,
     LogPattern,
+    MetricAnomaly,
     ServiceLatency,
-    ErrorPropagation,
 )
+from config import settings
 from engine.correlation.temporal import CorrelatedEvent
+from engine.enums import RcaCategory, Severity
 from engine.events.registry import DeploymentEvent, EventRegistry
-from engine.topology.graph import DependencyGraph
 from engine.rca.scoring import (
+    categorize,
     score_correlated_event,
     score_deployment_correlation,
     score_error_propagation,
-    categorize,
 )
-from engine.enums import Severity, RcaCategory
-from config import settings
+from engine.topology.graph import DependencyGraph
 
 _METRIC_LABEL_RE = re.compile(r"\{([^}]*)\}")
 _PROCESS_NAME_KEYS = (
@@ -58,16 +58,58 @@ class HypothesisRootCause:
     confidence: float
     severity: Severity
     category: RcaCategory
-    evidence: List[str] = field(default_factory=list)
-    contributing_signals: List[str] = field(default_factory=list)
-    affected_services: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
+    contributing_signals: list[str] = field(default_factory=list)
+    affected_services: list[str] = field(default_factory=list)
     recommended_action: str = ""
-    deployment: Optional[DeploymentEvent] = None
+    deployment: DeploymentEvent | None = None
     corroboration_summary: str = ""
 
 
 # Backward-compatible alias for existing imports.
 RootCause = HypothesisRootCause
+
+
+@dataclass(frozen=True)
+class RcaSignalInputs:
+    metric_anomalies: list[MetricAnomaly] = field(default_factory=list)
+    log_bursts: list[LogBurst] = field(default_factory=list)
+    log_patterns: list[LogPattern] = field(default_factory=list)
+    service_latency: list[ServiceLatency] = field(default_factory=list)
+    error_propagation: list[ErrorPropagation] = field(default_factory=list)
+
+
+def _coerce_signal_inputs(
+    signal_inputs: RcaSignalInputs | list[MetricAnomaly] | None,
+    legacy_signal_groups: tuple[object, ...],
+) -> RcaSignalInputs:
+    if isinstance(signal_inputs, RcaSignalInputs):
+        return signal_inputs
+
+    groups: list[object] = []
+    if signal_inputs is not None:
+        groups.append(signal_inputs)
+    groups.extend(legacy_signal_groups)
+
+    def _as_list(value: object) -> list[object]:
+        return value if isinstance(value, list) else []
+
+    if not groups:
+        return RcaSignalInputs()
+
+    metric_anomalies = _as_list(groups[0])
+    log_bursts = _as_list(groups[1]) if len(groups) > 1 else []
+    log_patterns = _as_list(groups[2]) if len(groups) > 2 else []
+    service_latency = _as_list(groups[3]) if len(groups) > 3 else []
+    error_propagation = _as_list(groups[4]) if len(groups) > 4 else []
+
+    return RcaSignalInputs(
+        metric_anomalies=[item for item in metric_anomalies if isinstance(item, MetricAnomaly)],
+        log_bursts=[item for item in log_bursts if isinstance(item, LogBurst)],
+        log_patterns=[item for item in log_patterns if isinstance(item, LogPattern)],
+        service_latency=[item for item in service_latency if isinstance(item, ServiceLatency)],
+        error_propagation=[item for item in error_propagation if isinstance(item, ErrorPropagation)],
+    )
 
 
 def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:
@@ -84,7 +126,7 @@ def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:
     return (weight, z, mad)
 
 
-def _metric_names_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: int = 2) -> List[str]:
+def _metric_names_for_hypothesis(metric_anomalies: list[MetricAnomaly], limit: int = 2) -> list[str]:
     """
     Pick metric names to cite in the hypothesis from a correlated event.
 
@@ -107,7 +149,7 @@ def _metric_names_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: i
     return ordered[:limit]
 
 
-def _process_entities_for_hypothesis(metric_anomalies: List[MetricAnomaly], limit: int = 2) -> List[str]:
+def _process_entities_for_hypothesis(metric_anomalies: list[MetricAnomaly], limit: int = 2) -> list[str]:
     """
     Top process hotspots by anomaly strength, not lexicographic entity string.
     """
@@ -128,7 +170,7 @@ def _process_entities_for_hypothesis(metric_anomalies: List[MetricAnomaly], limi
     return ordered[:limit]
 
 
-def _evidence_score(entries: List[str]) -> float:
+def _evidence_score(entries: list[str]) -> float:
     total = 0.0
     for entry in entries:
         text = str(entry)
@@ -141,7 +183,7 @@ def _evidence_score(entries: List[str]) -> float:
     return total
 
 
-def _dedupe_causes(causes: List[RootCause]) -> List[RootCause]:
+def _dedupe_causes(causes: list[RootCause]) -> list[RootCause]:
     selected: dict[tuple[str, str], RootCause] = {}
     for cause in causes:
         key = (str(cause.category.value), str(cause.hypothesis))
@@ -166,7 +208,7 @@ def _dedupe_causes(causes: List[RootCause]) -> List[RootCause]:
     return list(selected.values())
 
 
-def _signals_from_event(event: CorrelatedEvent) -> List[str]:
+def _signals_from_event(event: CorrelatedEvent) -> list[str]:
     signals: list[str] = []
     metric_names = list(dict.fromkeys(a.metric_name for a in event.metric_anomalies if a.metric_name))
     if metric_names:
@@ -225,7 +267,7 @@ def _process_entity_from_metric_name(metric_name: str) -> str:
     return process_name
 
 
-def _corroboration_summary(signals: List[str]) -> str:
+def _corroboration_summary(signals: list[str]) -> str:
     roots = []
     for signal in signals:
         text = str(signal or "").strip().lower()
@@ -263,17 +305,15 @@ def _action_for_category(category: RcaCategory | None, service: str = "") -> str
 
 
 def generate(
-    metric_anomalies: List[MetricAnomaly],
-    log_bursts: List[LogBurst],
-    log_patterns: List[LogPattern],
-    service_latency: List[ServiceLatency],
-    error_propagation: List[ErrorPropagation],
-    correlated_events: Optional[List[CorrelatedEvent]] = None,
-    graph: Optional[DependencyGraph] = None,
-    event_registry: Optional[EventRegistry] = None,
-) -> List[RootCause]:
-    _ = (metric_anomalies, log_bursts, service_latency)
-    causes: List[RootCause] = []
+    signal_inputs: RcaSignalInputs | list[MetricAnomaly] | None,
+    *legacy_signal_groups: object,
+    correlated_events: list[CorrelatedEvent] | None = None,
+    graph: DependencyGraph | None = None,
+    event_registry: EventRegistry | None = None,
+) -> list[RootCause]:
+    inputs = _coerce_signal_inputs(signal_inputs, legacy_signal_groups)
+    _ = (inputs.metric_anomalies, inputs.log_bursts, inputs.service_latency)
+    causes: list[RootCause] = []
     deployments = event_registry.list_all() if event_registry else []
 
     for event in correlated_events or []:
@@ -286,7 +326,7 @@ def generate(
         deploy_score = score_deployment_correlation(event.window_start, deployments)
         confidence = round(min(settings.rca_score_cap, base_score + deploy_score * 0.2), 3)
 
-        deploy_event: Optional[DeploymentEvent] = None
+        deploy_event: DeploymentEvent | None = None
         window_seconds = float(settings.rca_deploy_window_seconds)
         window_start = float(event.window_start) - window_seconds
         window_end = float(event.window_start) + window_seconds
@@ -304,7 +344,7 @@ def generate(
         if nearby_deploys:
             deploy_event = min(nearby_deploys, key=_deployment_distance)
 
-        affected: List[str] = []
+        affected: list[str] = []
         root_svc = ""
         if event.service_latency and graph:
             root_svc = event.service_latency[0].service
@@ -356,7 +396,7 @@ def generate(
             )
         )
 
-    for prop in error_propagation:
+    for prop in inputs.error_propagation:
         svc = prop.source_service
         affected = getattr(prop, "affected_services", [])
         conf = score_error_propagation([prop])
@@ -375,22 +415,21 @@ def generate(
             )
         )
 
-    critical_patterns = [p for p in log_patterns if p.severity.weight() >= settings.rca_severity_weight_threshold]
+    critical_patterns = [
+        p for p in inputs.log_patterns if p.severity.weight() >= settings.rca_severity_weight_threshold
+    ]
     if critical_patterns:
         causes.append(
             RootCause(
                 hypothesis=(
-                    f"[log_pattern] {len(critical_patterns)} critical pattern(s): "
-                    f"{critical_patterns[0].pattern[:80]}"
+                    f"[log_pattern] {len(critical_patterns)} critical pattern(s): {critical_patterns[0].pattern[:80]}"
                 ),
                 confidence=settings.rca_log_pattern_score,
                 severity=Severity.HIGH,
                 category=RcaCategory.UNKNOWN,
                 contributing_signals=[f"log:{p.pattern[:40]}" for p in critical_patterns[:3]],
                 recommended_action="Review high-severity log patterns for error root cause.",
-                corroboration_summary=_corroboration_summary(
-                    [f"log:{p.pattern[:40]}" for p in critical_patterns[:3]]
-                ),
+                corroboration_summary=_corroboration_summary([f"log:{p.pattern[:40]}" for p in critical_patterns[:3]]),
             )
         )
 

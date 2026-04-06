@@ -1,5 +1,3 @@
-from typing import Optional
-
 import httpx
 
 from config import DATASOURCE_TIMEOUT, HEALTH_PATH
@@ -17,7 +15,7 @@ class TempoConnector(TracesConnector):
         base_url: str,
         tenant_id: str,
         timeout: int = DATASOURCE_TIMEOUT,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(tenant_id, base_url, timeout, headers)
 
@@ -27,7 +25,7 @@ class TempoConnector(TracesConnector):
         filters: TraceFilters,
         start: int,
         end: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> JSONDict:
         params: dict[str, str | int | float | bool] = {"start": start, "end": end, **filters}
         if limit is not None:

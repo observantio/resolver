@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import logging
 from json import JSONDecodeError
-from typing import List, Optional
 
 from config import BASELINE_TTL, BLEND_ALPHA
 from engine.baseline.compute import Baseline, compute
@@ -62,7 +61,7 @@ def _blend(cached: Baseline, fresh: Baseline) -> Baseline:
     )
 
 
-async def load(tenant_id: str, metric_name: str) -> Optional[Baseline]:
+async def load(tenant_id: str, metric_name: str) -> Baseline | None:
     try:
         raw = await redis_get(keys.baseline(tenant_id, metric_name))
         if raw:
@@ -82,8 +81,8 @@ async def save(tenant_id: str, metric_name: str, baseline: Baseline) -> None:
 async def compute_and_persist(
     tenant_id: str,
     metric_name: str,
-    ts: List[float],
-    vals: List[float],
+    ts: list[float],
+    vals: list[float],
     z_threshold: float = 3.0,
 ) -> Baseline:
     fresh = compute(ts, vals, z_threshold=z_threshold)

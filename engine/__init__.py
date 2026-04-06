@@ -8,6 +8,6 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.enums import Severity, Signal, ChangeType, RcaCategory
+from engine.enums import ChangeType, RcaCategory, Severity, Signal
 
-__all__ = ["Severity", "Signal", "ChangeType", "RcaCategory"]
+__all__ = ["ChangeType", "RcaCategory", "Severity", "Signal"]

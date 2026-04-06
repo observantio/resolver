@@ -11,11 +11,10 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
+import engine.ml.clustering as clustering
 from api.responses import MetricAnomaly
 from engine.enums import ChangeType, Severity
-import engine.ml.clustering as clustering
 
 
 def _anomaly(

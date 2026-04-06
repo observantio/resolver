@@ -13,10 +13,8 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
 
 from config import settings
-
 from engine.causal.granger import GrangerResult
 
 
@@ -31,16 +29,16 @@ class CausalEdge:
 @dataclass
 class InterventionResult:
     target: str
-    expected_effect_on: Dict[str, float] = field(default_factory=dict)
-    causal_path: List[str] = field(default_factory=list)
+    expected_effect_on: dict[str, float] = field(default_factory=dict)
+    causal_path: list[str] = field(default_factory=list)
     total_effect: float = 0.0
 
 
 class CausalGraph:
     def __init__(self) -> None:
-        self._edges: List[CausalEdge] = []
-        self._forward: Dict[str, List[CausalEdge]] = defaultdict(list)
-        self._reverse: Dict[str, Set[str]] = defaultdict(set)
+        self._edges: list[CausalEdge] = []
+        self._forward: dict[str, list[CausalEdge]] = defaultdict(list)
+        self._reverse: dict[str, set[str]] = defaultdict(set)
 
     def add_edge(self, cause: str, effect: str, strength: float, lag_seconds: float = 0.0) -> None:
         edge = CausalEdge(cause=cause, effect=effect, strength=strength, lag_seconds=lag_seconds)
@@ -53,15 +51,15 @@ class CausalGraph:
             if r.is_causal:
                 self.add_edge(r.cause_metric, r.effect_metric, r.strength)
 
-    def topological_sort(self) -> List[str]:
+    def topological_sort(self) -> list[str]:
         nodes = self.all_nodes()
-        in_degree: Dict[str, int] = {n: 0 for n in nodes}
+        in_degree: dict[str, int] = {n: 0 for n in nodes}
         for node in self._forward:
             for edge in self._forward[node]:
                 in_degree[edge.effect] = in_degree.get(edge.effect, 0) + 1
 
         queue = deque(n for n in nodes if in_degree.get(n, 0) == 0)
-        order: List[str] = []
+        order: list[str] = []
         while queue:
             node = queue.popleft()
             order.append(node)
@@ -72,7 +70,7 @@ class CausalGraph:
 
         return order
 
-    def root_causes(self) -> List[str]:
+    def root_causes(self) -> list[str]:
         all_effects = {e.effect for e in self._edges}
         all_causes = set(self._forward)
         return sorted(all_causes - all_effects)
@@ -80,10 +78,10 @@ class CausalGraph:
     def simulate_intervention(self, target: str, max_depth: int | None = None) -> InterventionResult:
         if max_depth is None:
             max_depth = settings.causal_graph_max_depth
-        effects: Dict[str, float] = {}
-        path: List[str] = []
-        queue: deque[Tuple[str, float, int]] = deque([(target, 1.0, 0)])
-        seen: Set[str] = {target}
+        effects: dict[str, float] = {}
+        path: list[str] = []
+        queue: deque[tuple[str, float, int]] = deque([(target, 1.0, 0)])
+        seen: set[str] = {target}
 
         while queue:
             node, cumulative_strength, depth = queue.popleft()
@@ -107,9 +105,9 @@ class CausalGraph:
             total_effect=round(sum(effects.values()), settings.causal_round_precision),
         )
 
-    def find_common_causes(self, node_a: str, node_b: str) -> List[str]:
-        def ancestors(node: str) -> Set[str]:
-            seen: Set[str] = set()
+    def find_common_causes(self, node_a: str, node_b: str) -> list[str]:
+        def ancestors(node: str) -> set[str]:
+            seen: set[str] = set()
             q: deque[str] = deque([node])
             while q:
                 n = q.popleft()
@@ -121,5 +119,5 @@ class CausalGraph:
 
         return sorted(ancestors(node_a) & ancestors(node_b))
 
-    def all_nodes(self) -> Set[str]:
+    def all_nodes(self) -> set[str]:
         return set(self._forward) | {e.effect for e in self._edges}

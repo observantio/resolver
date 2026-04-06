@@ -8,8 +8,6 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from typing import Optional
-
 from .base import LogsConnector, MetricsConnector, TracesConnector
 from .data_config import DataSourceSettings
 from .factory import DataSourceFactory
@@ -27,13 +25,13 @@ class DataSourceProvider:
         self.metrics = DataSourceFactory.create_metrics(settings, tenant_id)
         self.traces = DataSourceFactory.create_traces(settings, tenant_id)
 
-    async def query_logs(self, query: str, start: int, end: int, limit: Optional[int] = None) -> JSONDict:
+    async def query_logs(self, query: str, start: int, end: int, limit: int | None = None) -> JSONDict:
         return await self.logs.query_range(query=query, start=start, end=end, limit=limit)
 
     async def query_metrics(self, query: str, start: int, end: int, step: str) -> JSONDict:
         return await self.metrics.query_range(query=query, start=start, end=end, step=step)
 
-    async def query_traces(self, filters: TraceFilters, start: int, end: int, limit: Optional[int] = None) -> JSONDict:
+    async def query_traces(self, filters: TraceFilters, start: int, end: int, limit: int | None = None) -> JSONDict:
         return await self.traces.query_range(filters=filters, start=start, end=end, limit=limit)
 
     async def aclose(self) -> None:

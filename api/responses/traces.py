@@ -10,8 +10,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from engine.enums import Severity
 
 from .base import NpModel
@@ -27,12 +25,12 @@ class ServiceLatency(NpModel):
     error_rate: float
     sample_count: int
     severity: Severity
-    window_start: Optional[float] = None
-    window_end: Optional[float] = None
+    window_start: float | None = None
+    window_end: float | None = None
 
 
 class ErrorPropagation(NpModel):
     source_service: str
-    affected_services: List[str]
+    affected_services: list[str]
     error_rate: float
     severity: Severity

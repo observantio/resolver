@@ -8,8 +8,8 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.slo.burn import evaluate, SloBurnAlert
-from engine.slo.budget import remaining_minutes, BudgetStatus
+from engine.slo.budget import BudgetStatus, remaining_minutes
+from engine.slo.burn import SloBurnAlert, evaluate
 
 
 def test_slo_evaluate_empty():

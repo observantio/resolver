@@ -8,8 +8,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends
 
 from api.requests import LogRequest
@@ -24,11 +22,11 @@ router = APIRouter(tags=["Logs"])
 
 @router.post(
     "/anomalies/logs/patterns",
-    response_model=List[LogPattern],
+    response_model=list[LogPattern],
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def log_patterns(req: LogRequest) -> List[LogPattern]:
+async def log_patterns(req: LogRequest) -> list[LogPattern]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
         get_provider(req.tenant_id).query_logs(
@@ -40,11 +38,11 @@ async def log_patterns(req: LogRequest) -> List[LogPattern]:
 
 @router.post(
     "/anomalies/logs/bursts",
-    response_model=List[LogBurst],
+    response_model=list[LogBurst],
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def log_bursts(req: LogRequest) -> List[LogBurst]:
+async def log_bursts(req: LogRequest) -> list[LogBurst]:
     req = enforce_request_tenant(req)
     raw = await safe_call(
         get_provider(req.tenant_id).query_logs(

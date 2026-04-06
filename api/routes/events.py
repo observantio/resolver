@@ -9,8 +9,6 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from fastapi import APIRouter, Depends, HTTPException
 
 from api.requests import DeploymentEventRequest
@@ -29,7 +27,7 @@ router = APIRouter(tags=["Events"])
     dependencies=[Depends(require_permission_dependency("create:rca"))],
 )
 @handle_exceptions
-async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None = None) -> Dict[str, str]:
+async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None = None) -> dict[str, str]:
     req = enforce_request_tenant(req)
     tid = get_context_tenant(tenant_id or req.tenant_id)
     if not isinstance(tid, str) or not tid.strip():
@@ -48,7 +46,7 @@ async def register_deployment(req: DeploymentEventRequest, tenant_id: str | None
     dependencies=[Depends(require_permission_dependency("read:rca"))],
 )
 @handle_exceptions
-async def list_deployments(tenant_id: str) -> List[JSONDict]:
+async def list_deployments(tenant_id: str) -> list[JSONDict]:
     return [
         {
             "service": item["service"],
@@ -69,7 +67,7 @@ async def list_deployments(tenant_id: str) -> List[JSONDict]:
     dependencies=[Depends(require_permission_dependency("delete:rca"))],
 )
 @handle_exceptions
-async def clear_deployments(tenant_id: str) -> Dict[str, str]:
+async def clear_deployments(tenant_id: str) -> dict[str, str]:
     resolved_tenant = get_context_tenant(tenant_id)
     await get_registry().clear_events(resolved_tenant)
     return {"status": "cleared", "tenant_id": resolved_tenant}

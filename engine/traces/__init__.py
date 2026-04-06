@@ -8,7 +8,7 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
-from engine.traces.latency import analyze
 from engine.traces.errors import detect_propagation
+from engine.traces.latency import analyze
 
 __all__ = ["analyze", "detect_propagation"]

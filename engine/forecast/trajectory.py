@@ -13,12 +13,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
-from engine.enums import Severity
 from config import settings
+from engine.enums import Severity
 
 
 @dataclass(frozen=True)
@@ -27,7 +26,7 @@ class TrajectoryForecast:
     current_value: float
     slope_per_second: float
     predicted_value_at_horizon: float
-    time_to_threshold_seconds: Optional[float]
+    time_to_threshold_seconds: float | None
     breach_threshold: float
     confidence: float
     severity: Severity
@@ -56,7 +55,7 @@ def forecast(
     vals: Sequence[float],
     threshold: float,
     horizon_seconds: float | None = None,
-) -> Optional[TrajectoryForecast]:
+) -> TrajectoryForecast | None:
     if horizon_seconds is None:
         horizon_seconds = settings.forecast_trajectory_horizon_cutoff
     if len(vals) < settings.forecast_trajectory_min_length:
@@ -72,7 +71,7 @@ def forecast(
     current = slope * now_offset + intercept
     predicted_at_horizon = slope * (now_offset + horizon_seconds) + intercept
 
-    time_to_threshold: Optional[float] = None
+    time_to_threshold: float | None = None
     if slope > 0 and current < threshold:
         time_to_threshold = (threshold - current) / slope
     elif slope < 0 and current > threshold:
