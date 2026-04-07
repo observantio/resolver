@@ -5,11 +5,6 @@
   <img src="assets/square.png" alt="Resolver square icon" width="150" />
 
   <p>
-    <img src="https://img.shields.io/badge/Signals-Logs%20%7C%20Metrics%20%7C%20Traces-1d4ed8?style=flat-square" alt="Signals" />
-    <img src="https://img.shields.io/badge/Service-Resolver-0f766e?style=flat-square" alt="Service" />
-    <img src="https://img.shields.io/badge/Focus-RCA%20%7C%20Correlation%20%7C%20Causality-7c3aed?style=flat-square" alt="Focus" />
-  </p>
-  <p>
     <a href="https://github.com/observantio/watchdog/blob/main/README.md">
       <img src="https://img.shields.io/badge/Control%20Plane-Watchdog-0f766e?style=flat-square&logo=github&logoColor=white" alt="Watchdog" />
     </a>
