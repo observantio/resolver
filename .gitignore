@@ -12,3 +12,4 @@ coverage.xml
 .vscode/
 .hypothesis/
 .venv/
+mutants/

@@ -10,6 +10,8 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+import tomllib
+
 from fastapi import FastAPI
 
 from middleware import openapi as openapi_middleware
@@ -38,6 +40,60 @@ def test_apply_inferred_responses_for_secured_and_ready_paths() -> None:
     assert "401" not in ready_responses
     assert "403" not in ready_responses
     assert ready_responses["503"]["description"] == "Service Unavailable"
+
+
+def test_project_version_helpers_cover_success_and_fallback(monkeypatch) -> None:
+    original_read_text = openapi_middleware.Path.read_text
+
+    monkeypatch.setattr(
+        openapi_middleware.Path,
+        "read_text",
+        lambda self, encoding="utf-8": "[project]\nversion = '9.9.9'\n",
+    )
+    assert openapi_middleware._project_version() == "9.9.9"
+
+    monkeypatch.setattr(
+        openapi_middleware.Path,
+        "read_text",
+        lambda self, encoding="utf-8": "[project]\nversion = ''\n",
+    )
+    assert openapi_middleware._project_version() == openapi_middleware._DEFAULT_APP_VERSION
+
+    monkeypatch.setattr(
+        openapi_middleware.Path,
+        "read_text",
+        lambda self, encoding="utf-8": (_ for _ in ()).throw(OSError("boom")),
+    )
+    assert openapi_middleware._project_version() == openapi_middleware._DEFAULT_APP_VERSION
+
+    monkeypatch.setattr(
+        openapi_middleware.Path,
+        "read_text",
+        lambda self, encoding="utf-8": "bad-toml",
+    )
+    monkeypatch.setattr(
+        openapi_middleware.tomllib,
+        "loads",
+        lambda _text: (_ for _ in ()).throw(tomllib.TOMLDecodeError("bad", "", 0)),
+    )
+    assert openapi_middleware._project_version() == openapi_middleware._DEFAULT_APP_VERSION
+
+    monkeypatch.setattr(openapi_middleware.Path, "read_text", original_read_text)
+
+
+def test_install_custom_openapi_sets_info_version(monkeypatch) -> None:
+    app = FastAPI(title="Resolver", version="ignored", description="desc")
+    openapi_middleware.install_custom_openapi(app)
+
+    monkeypatch.setattr(
+        openapi_middleware,
+        "get_openapi",
+        lambda **_kwargs: {"info": {"title": "Resolver"}, "paths": {}},
+    )
+    monkeypatch.setattr(openapi_middleware, "_project_version", lambda: "1.2.3")
+
+    generated = app.openapi()
+    assert generated["info"]["version"] == "1.2.3"
 
 
 def test_install_custom_openapi_cache_and_schema_walk(monkeypatch) -> None:
@@ -105,7 +161,7 @@ def test_install_custom_openapi_cache_and_schema_walk(monkeypatch) -> None:
     ]
     ready_responses = generated["paths"]["/api/v1/ready"]["get"]["responses"]
     assert ready_responses["503"]["description"] == "Service Unavailable"
-    assert generated["jsonSchemaDialect"] == "https://json-schema.org/draft/2020-12/schema"
+    assert generated["jsonSchemaDialect"] == "https://spec.openapis.org/oas/3.1/dialect/base"
     schemes = generated["components"]["securitySchemes"]
     assert schemes["ServiceToken"]["name"] == "x-service-token"
     assert schemes["ContextBearer"]["scheme"] == "bearer"
