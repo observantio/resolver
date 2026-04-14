@@ -2,11 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v0.0.4] - 2026-04-14
 
 ### Changed
 
-- Verified resolver service compatibility with profile-aware chart installation (production/compact) and installer-managed database URL wiring.
+- Verified resolver service compatibility with profile-aware chart installation (production/compact), including resolver TLS support and installer-managed database URL wiring.
 
 ## [v0.0.3] - 2026-04-07
 
