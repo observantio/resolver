@@ -14,12 +14,14 @@ import asyncio
 import json
 import logging
 from json import JSONDecodeError
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from config import GRANGER_TTL
-from engine.causal.granger import GrangerResult
 from store import keys
 from store.client import redis_get, redis_set
+
+if TYPE_CHECKING:
+    from engine.causal.granger import GrangerResult
 
 log = logging.getLogger(__name__)
 

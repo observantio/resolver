@@ -63,6 +63,81 @@ filterwarnings = [
   "ignore::DeprecationWarning:starlette\\..*",
 ]
 
+[tool.mutmut]
+paths_to_mutate = [
+  "config.py",
+  "database.py",
+  "db_models.py",
+  "custom_types/__init__.py",
+  "custom_types/json.py",
+  "api/requests/__init__.py",
+  "api/requests/_time_range.py",
+  "api/requests/analyze.py",
+  "api/requests/correlation.py",
+  "api/requests/events.py",
+  "api/requests/logs.py",
+  "api/requests/metrics.py",
+  "api/requests/slo.py",
+  "api/requests/topology.py",
+  "api/requests/traces.py",
+  "api/responses/__init__.py",
+  "api/responses/jobs.py",
+  "api/routes/analyze.py",
+  "api/routes/causal.py",
+  "api/routes/common.py",
+  "api/routes/correlation.py",
+  "api/routes/events.py",
+  "api/routes/exception.py",
+  "api/routes/forecast.py",
+  "api/routes/health.py",
+  "api/routes/jobs.py",
+  "api/routes/logs.py",
+  "api/routes/metrics.py",
+  "api/routes/ml.py",
+  "api/routes/slo.py",
+  "api/routes/topology.py",
+  "api/routes/traces.py",
+  "services/analyze_service.py",
+  "services/analysis_config_service.py",
+  "services/rca_job_service.py",
+  "services/security_service.py",
+  "engine/__init__.py",
+  "engine/events/__init__.py",
+  "engine/events/models.py",
+  "engine/events/registry.py",
+  "engine/enums.py",
+  "store/client.py",
+  "store/events.py",
+  "store/granger.py",
+  "store/keys.py",
+  "store/weights.py",
+]
+also_copy = [
+  "api",
+  "connectors",
+  "services",
+  "engine",
+  "custom_types",
+  "datasources",
+  "store",
+  "config.py",
+  "database.py",
+  "db_models.py",
+]
+tests_dir = ["tests/test_route_exception_wrapper.py"]
+do_not_mutate = [
+  "*/tests/*",
+  "*/mutants/*",
+  "*/openapi.json",
+  "*/openapi.yaml",
+  "*/assets/*",
+  "*/configs/*",
+  "*/templates/*",
+  "*/migrations/*",
+]
+pytest_add_cli_args = ["-q"]
+mutate_only_covered_lines = true
+
 [tool.coverage.run]
 branch = true
 omit = [

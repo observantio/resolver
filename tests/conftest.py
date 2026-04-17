@@ -44,12 +44,15 @@ def clear_fallback(monkeypatch):
     monkeypatch.setattr(client, "redis_set", fake_set)
     monkeypatch.setattr(client, "redis_delete", fake_delete)
 
-    import store.baseline as bstore
-    import store.events as estore
-    import store.granger as gstore
-    import store.weights as wstore
+    modules = []
+    for module_name in ("store.weights", "store.baseline", "store.granger", "store.events"):
+        try:
+            mod = __import__(module_name, fromlist=["_placeholder"])
+        except ImportError:
+            continue
+        modules.append(mod)
 
-    for mod in (wstore, bstore, gstore, estore):
+    for mod in modules:
         for name in ("redis_get", "redis_set", "redis_delete"):
             if hasattr(mod, name):
                 monkeypatch.setattr(mod, name, locals()[f"fake_{name.split('_')[1]}"])
