@@ -10,16 +10,32 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 from __future__ import annotations
 
+from importlib import import_module
 import json
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING, Any, cast
 
 from config import BASELINE_TTL, BLEND_ALPHA
-from engine.baseline.compute import Baseline, compute
 from store import keys
 from store.client import redis_get, redis_set
 
+if TYPE_CHECKING:
+    from engine.baseline.compute import Baseline
+
 log = logging.getLogger(__name__)
+
+
+def _load_compute_module() -> Any:
+    return import_module("engine.baseline.compute")
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"Baseline", "compute"}:
+        value = getattr(_load_compute_module(), name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _to_json(b: Baseline) -> str:
@@ -36,8 +52,9 @@ def _to_json(b: Baseline) -> str:
 
 
 def _from_json(data: str) -> Baseline:
+    baseline_cls = _baseline_cls()
     d = json.loads(data)
-    return Baseline(
+    return baseline_cls(
         mean=d["mean"],
         std=d["std"],
         lower=d["lower"],
@@ -48,10 +65,11 @@ def _from_json(data: str) -> Baseline:
 
 
 def _blend(cached: Baseline, fresh: Baseline) -> Baseline:
+    baseline_cls = _baseline_cls()
     a = 1.0 - BLEND_ALPHA
     blended_mean = a * cached.mean + BLEND_ALPHA * fresh.mean
     blended_std = a * cached.std + BLEND_ALPHA * fresh.std
-    return Baseline(
+    return baseline_cls(
         mean=round(blended_mean, 6),
         std=round(max(blended_std, 1e-9), 6),
         lower=round(blended_mean - 3 * blended_std, 6),
@@ -85,9 +103,23 @@ async def compute_and_persist(
     vals: list[float],
     z_threshold: float = 3.0,
 ) -> Baseline:
-    fresh = compute(ts, vals, z_threshold=z_threshold)
+    fresh = _compute(ts, vals, z_threshold=z_threshold)
     cached = await load(tenant_id, metric_name)
 
     result = _blend(cached, fresh) if cached and cached.sample_count >= 20 else fresh
     await save(tenant_id, metric_name, result)
     return result
+
+
+def _baseline_cls() -> type[Any]:
+    baseline_cls = globals().get("Baseline")
+    if baseline_cls is None:
+        baseline_cls = __getattr__("Baseline")
+    return cast(type[Any], baseline_cls)
+
+
+def _compute(ts: list[float], vals: list[float], z_threshold: float) -> Baseline:
+    compute_fn = globals().get("compute")
+    if compute_fn is None:
+        compute_fn = __getattr__("compute")
+    return compute_fn(ts, vals, z_threshold=z_threshold)

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-04-17
+
+### Changed
+
+- Deferred resolver route router construction until the module-level `router` attribute is accessed, reducing import-time dependency coupling.
+- Added resolver mutation-testing configuration for `mutmut`, including resolver API routes, services, store modules, and selective test invocation.
+- Lazily load baseline and granger engine classes via module `__getattr__` hooks to avoid import-time engine dependencies in store modules.
+- Hardened shared Redis patching in resolver tests by importing store modules dynamically and only patching available attributes.
+- Improved exception wrapper tests to preserve original HTTP exception identity and validate sync/async handler shape preservation.
+
 ## [v0.0.4] - 2026-04-14
 
 ### Changed
