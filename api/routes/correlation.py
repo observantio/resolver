@@ -45,7 +45,7 @@ async def correlate_signals(req: CorrelateRequest) -> JSONDict:
             start=req.start * 1_000_000_000,
             end=req.end * 1_000_000_000,
         ),
-        fetch_metrics(provider, all_queries, req.start, req.end, req.step),
+        fetch_metrics(provider, all_queries, req.start, req.end, step=req.step),
         return_exceptions=True,
     )
 

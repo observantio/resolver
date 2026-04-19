@@ -41,8 +41,18 @@ def evaluate(
     error_counts: Sequence[float],
     total_counts: Sequence[float],
     ts: Sequence[float],
-    target_availability: float = settings.slo_default_target_availability,
+    *,
+    target_availability: float | None = None,
 ) -> list[SloBurnAlert]:
+    resolved_target = target_availability
+    if resolved_target is not None:
+        try:
+            resolved_target = float(str(resolved_target))
+        except (TypeError, ValueError):
+            resolved_target = settings.slo_default_target_availability
+    if resolved_target is None:
+        resolved_target = settings.slo_default_target_availability
+
     if not error_counts or not total_counts or len(ts) < 2:
         return []
 
@@ -59,7 +69,7 @@ def evaluate(
         return []
 
     error_rate = errors / total
-    allowed_error_rate = 1.0 - target_availability
+    allowed_error_rate = 1.0 - resolved_target
     if allowed_error_rate <= 0:
         return []
 

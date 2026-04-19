@@ -40,6 +40,7 @@ def score(
     has_metric_spike: bool,
     has_log_burst: bool,
     has_latency_spike: bool,
+    *,
     has_error_propagation: bool,
 ) -> list[BayesianScore]:
     evidence: dict[str, bool] = {

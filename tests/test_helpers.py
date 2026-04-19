@@ -13,7 +13,7 @@ import httpx
 import pytest
 
 from datasources.exceptions import InvalidQuery, QueryTimeout
-from datasources.helpers import fetch_json, fetch_text
+from datasources.helpers import FetchRequestOptions, fetch_json, fetch_text
 
 
 class DummyResponse:
@@ -48,7 +48,7 @@ class DummyClient:
 async def test_fetch_json_success(monkeypatch):
     resp = DummyResponse(status_code=200, json_data={"foo": "bar"})
     monkeypatch.setattr(httpx, "AsyncClient", lambda timeout: DummyClient(resp))
-    got = await fetch_json("url", params={"a": 1}, headers={})
+    got = await fetch_json("url", options=FetchRequestOptions(params={"a": 1}, headers={}))
     assert got == {"foo": "bar"}
 
 

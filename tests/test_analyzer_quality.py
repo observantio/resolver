@@ -23,6 +23,7 @@ from engine.analyzer import (
     _select_granger_series,
     _to_root_cause_model,
 )
+from engine.analyze.helpers import AnalyzerOutputInputs, PrecisionQualityGateInputs
 from engine.causal.granger import GrangerResult
 from engine.changepoint import ChangePoint
 from engine.enums import ChangeType, RcaCategory, Severity, Signal
@@ -136,13 +137,15 @@ def test_limit_analyzer_output_caps_noise_lists():
         clusters_limited,
         granger_limited,
     ) = _limit_analyzer_output(
-        metric_anomalies=anomalies,
-        change_points=change_points,
-        root_causes=root_causes,
-        ranked_causes=ranked,
-        anomaly_clusters=clusters,
-        granger_results=granger,
-        warnings=warnings,
+        AnalyzerOutputInputs(
+            metric_anomalies=anomalies,
+            change_points=change_points,
+            root_causes=root_causes,
+            ranked_causes=ranked,
+            anomaly_clusters=clusters,
+            granger_results=granger,
+            warnings=warnings,
+        )
     )
 
     assert len(anomalies_limited) <= 250
@@ -248,13 +251,15 @@ def test_apply_precision_quality_gates_enforces_density_and_root_cause_filters(m
     suppression_counts: dict[str, int] = {}
 
     anomalies_after, change_points_after, causes_after, ranked_after, quality = _apply_precision_quality_gates(
-        metric_anomalies=anomalies,
-        change_points=change_points,
-        root_causes=causes,
-        ranked_causes=ranked,
-        duration_seconds=3600.0,
-        suppression_counts=suppression_counts,
-        warnings=warnings,
+        PrecisionQualityGateInputs(
+            metric_anomalies=anomalies,
+            change_points=change_points,
+            root_causes=causes,
+            ranked_causes=ranked,
+            duration_seconds=3600.0,
+            suppression_counts=suppression_counts,
+            warnings=warnings,
+        )
     )
 
     assert len(anomalies_after) == 1

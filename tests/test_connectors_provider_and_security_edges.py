@@ -22,7 +22,7 @@ from connectors.mimir import MimirConnector
 from connectors.tempo import TempoConnector
 from datasources.base import BaseConnector
 from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTimeout
-from datasources.helpers import fetch_json, fetch_text
+from datasources.helpers import FetchRequestOptions, fetch_json, fetch_text
 from datasources.provider import DataSourceProvider
 
 
@@ -75,28 +75,35 @@ async def test_datasource_helpers_and_provider(monkeypatch):
     assert connector.client.is_closed is True
 
     async_client = _AsyncClient(_Response({"ok": True}))
-    assert await fetch_json("https://api", client=async_client) == {"ok": True}
-    assert await fetch_text("https://api", client=_AsyncClient(_Response(text="body"))) == "body"
-    assert await fetch_json("https://api", client=_AsyncClient(_Response([1, 2, 3]))) == {}
+    assert await fetch_json("https://api", options=FetchRequestOptions(client=async_client)) == {"ok": True}
+    assert (
+        await fetch_text("https://api", options=FetchRequestOptions(client=_AsyncClient(_Response(text="body"))))
+        == "body"
+    )
+    assert await fetch_json("https://api", options=FetchRequestOptions(client=_AsyncClient(_Response([1, 2, 3])))) == {}
 
     with pytest.raises(InvalidQuery):
-        await fetch_json("https://api", client=_AsyncClient(_Response(status_code=400, text="bad")))
+        await fetch_json("https://api", options=FetchRequestOptions(client=_AsyncClient(_Response(status_code=400, text="bad"))))
     with pytest.raises(QueryTimeout):
-        await fetch_json("https://api", client=_AsyncClient(error=httpx.TimeoutException("timeout")))
+        await fetch_json("https://api", options=FetchRequestOptions(client=_AsyncClient(error=httpx.TimeoutException("timeout"))))
     with pytest.raises(DataSourceUnavailable):
         await fetch_json(
             "https://api",
-            client=_AsyncClient(error=httpx.RequestError("down", request=httpx.Request("GET", "https://api"))),
+            options=FetchRequestOptions(
+                client=_AsyncClient(error=httpx.RequestError("down", request=httpx.Request("GET", "https://api")))
+            ),
         )
 
     with pytest.raises(InvalidQuery):
-        await fetch_text("https://api", client=_AsyncClient(_Response(status_code=500, text="bad")))
+        await fetch_text("https://api", options=FetchRequestOptions(client=_AsyncClient(_Response(status_code=500, text="bad"))))
     with pytest.raises(QueryTimeout):
-        await fetch_text("https://api", client=_AsyncClient(error=httpx.TimeoutException("timeout")))
+        await fetch_text("https://api", options=FetchRequestOptions(client=_AsyncClient(error=httpx.TimeoutException("timeout"))))
     with pytest.raises(DataSourceUnavailable):
         await fetch_text(
             "https://api",
-            client=_AsyncClient(error=httpx.RequestError("down", request=httpx.Request("GET", "https://api"))),
+            options=FetchRequestOptions(
+                client=_AsyncClient(error=httpx.RequestError("down", request=httpx.Request("GET", "https://api")))
+            ),
         )
 
     async def _logs_query_range(**kwargs):
@@ -115,15 +122,26 @@ async def test_datasource_helpers_and_provider(monkeypatch):
     monkeypatch.setattr("datasources.provider.DataSourceFactory.create_metrics", lambda settings, tenant_id: metrics)
     monkeypatch.setattr("datasources.provider.DataSourceFactory.create_traces", lambda settings, tenant_id: traces)
     provider = DataSourceProvider("tenant", SimpleNamespace())
-    assert await provider.query_logs("{job='x'}", 1, 2, 3) == {
+    assert await provider.query_logs("{job='x'}", 1, 2, limit=3) == {
         "logs": {"query": "{job='x'}", "start": 1, "end": 2, "limit": 3}
     }
-    assert await provider.query_metrics("up", 1, 2, "60s") == {
+    assert await provider.query_metrics("up", 1, 2, step="60s") == {
         "metrics": {"query": "up", "start": 1, "end": 2, "step": "60s"}
     }
-    assert await provider.query_traces({"service.name": "api"}, 1, 2, 4) == {
+    assert await provider.query_traces({"service.name": "api"}, 1, 2, limit=4) == {
         "traces": {"filters": {"service.name": "api"}, "start": 1, "end": 2, "limit": 4}
     }
+    assert await provider.query_logs("{job='x'}", 1, 2, limit="NaN") == {
+        "logs": {"query": "{job='x'}", "start": 1, "end": 2, "limit": None}
+    }
+    assert await provider.query_traces({"service.name": "api"}, 1, 2, limit=object()) == {
+        "traces": {"filters": {"service.name": "api"}, "start": 1, "end": 2, "limit": None}
+    }
+    assert await provider.query_logs("{job='x'}", 1, 2) == {
+        "logs": {"query": "{job='x'}", "start": 1, "end": 2, "limit": None}
+    }
+    with pytest.raises(TypeError, match="step is required"):
+        await provider.query_metrics("up", 1, 2)
     await provider.aclose()
 
 
@@ -135,14 +153,12 @@ async def _awaitable():
 async def test_specific_connectors_build_expected_requests(monkeypatch):
     recorded = []
 
-    async def fake_query_backend_json(connector, path, params, invalid_msg, timeout_msg, unavailable_msg):
-        recorded.append((connector.__class__.__name__, path, params, invalid_msg, timeout_msg, unavailable_msg))
+    async def fake_query_backend_json(connector, path, params, messages=None):
+        recorded.append((connector.__class__.__name__, path, params, messages))
         return {"path": path, "params": params}
 
-    async def fake_fetch_text(
-        url, headers=None, timeout=30, client=None, invalid_msg="", timeout_msg="", unavailable_msg=""
-    ):
-        recorded.append(("fetch_text", url, headers, timeout, invalid_msg, timeout_msg, unavailable_msg))
+    async def fake_fetch_text(url, options=None, messages=None):
+        recorded.append(("fetch_text", url, options, messages))
         return "metrics"
 
     monkeypatch.setattr("connectors.loki.query_backend_json", fake_query_backend_json)
@@ -160,7 +176,7 @@ async def test_specific_connectors_build_expected_requests(monkeypatch):
         "params": {"query": '{app=~".+"}', "start": 1, "end": 2, "limit": 100},
     }
     assert await mimir.scrape() == "metrics"
-    assert await mimir.query_range("up", 1, 2, "60s") == {
+    assert await mimir.query_range("up", 1, 2, step="60s") == {
         "path": "/prometheus/api/v1/query_range",
         "params": {"query": "up", "start": 1, "end": 2, "step": "60s"},
     }
@@ -168,6 +184,19 @@ async def test_specific_connectors_build_expected_requests(monkeypatch):
         "path": "/api/search",
         "params": {"start": 1, "end": 2, "service.name": "api", "limit": 5},
     }
+
+
+@pytest.mark.asyncio
+async def test_mimir_query_range_compatibility_errors(monkeypatch):
+    async def _raising_query_backend_json(*args, **kwargs):
+        raise TypeError("boom")
+
+    monkeypatch.setattr("connectors.mimir.query_backend_json", _raising_query_backend_json)
+    connector = MimirConnector("https://mimir", "tenant")
+    with pytest.raises(TypeError, match="boom"):
+        await connector.query_range("up", 1, 2, step="60s")
+    with pytest.raises(TypeError, match="step is required"):
+        await connector.query_range("up", 1, 2)
 
 
 def _set_security_defaults() -> None:

@@ -13,7 +13,7 @@ from engine.slo.burn import SloBurnAlert, evaluate
 
 
 def test_slo_evaluate_empty():
-    assert evaluate("svc", [], [], [], 0.99) == []
+    assert evaluate("svc", [], [], [], target_availability=0.99) == []
 
 
 def test_slo_evaluate_burn():

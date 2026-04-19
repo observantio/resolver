@@ -34,7 +34,7 @@ class DummyProvider:
 async def test_fetch_metrics_filters_exceptions():
     provider = DummyProvider(None)
     queries = ["a", "bad", "c"]
-    res = await fetch_metrics(provider, queries, 0, 1, "15s")
+    res = await fetch_metrics(provider, queries, 0, 1, step="15s")
     assert isinstance(res, list)
     assert all(isinstance(r, tuple) and isinstance(r[1], dict) for r in res)
     assert len(res) == 2

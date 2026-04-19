@@ -19,17 +19,18 @@ SerializableValue: TypeAlias = object
 
 
 def _coerce(obj: SerializableValue) -> SerializableValue:
+    result: SerializableValue = obj
     if isinstance(obj, dict):
-        return {k: _coerce(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_coerce(v) for v in obj]
-    if isinstance(obj, np.integer):
-        return int(obj)
-    if isinstance(obj, np.floating):
-        return float(obj)
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    return obj
+        result = {k: _coerce(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        result = [_coerce(v) for v in obj]
+    elif isinstance(obj, np.integer):
+        result = int(obj)
+    elif isinstance(obj, np.floating):
+        result = float(obj)
+    elif isinstance(obj, np.ndarray):
+        result = obj.tolist()
+    return result
 
 
 class NpModel(BaseModel):

@@ -3,7 +3,7 @@ import re
 import httpx
 
 from config import DATASOURCE_TIMEOUT, HEALTH_PATH
-from connectors.common import query_backend_json
+from connectors.common import BackendErrorMessages, query_backend_json
 from datasources.base import LogsConnector
 from datasources.retry import retry
 from datasources.types import JSONDict
@@ -16,10 +16,11 @@ class LokiConnector(LogsConnector):
         self,
         base_url: str,
         tenant_id: str,
+        *,
         timeout: int = DATASOURCE_TIMEOUT,
         headers: dict[str, str] | None = None,
     ) -> None:
-        super().__init__(tenant_id, base_url, timeout, headers)
+        super().__init__(tenant_id, base_url, timeout=timeout, headers=headers)
 
     @staticmethod
     def _normalize_query(query: str) -> str:
@@ -36,6 +37,7 @@ class LokiConnector(LogsConnector):
         query: str,
         start: int,
         end: int,
+        *,
         limit: int | None = None,
     ) -> JSONDict:
         params: dict[str, str | int | float | bool] = {
@@ -45,11 +47,14 @@ class LokiConnector(LogsConnector):
         }
         if limit is not None:
             params["limit"] = limit
+        messages = BackendErrorMessages(
+            invalid="Loki query failed",
+            timeout="Loki query timed out",
+            unavailable="Cannot reach Loki at",
+        )
         return await query_backend_json(
             self,
-            path="/loki/api/v1/query_range",
-            params=params,
-            invalid_msg="Loki query failed",
-            timeout_msg="Loki query timed out",
-            unavailable_msg="Cannot reach Loki at",
+            "/loki/api/v1/query_range",
+            params,
+            messages=messages,
         )

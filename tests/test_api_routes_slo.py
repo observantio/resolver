@@ -27,7 +27,7 @@ class DummyProvider:
         return {"data": {"result": [{"metric": {}, "values": [[1, "0"]]}]}}
 
 
-def dummy_slo_evaluate(service, err_vals, tot_vals, ts, target):
+def dummy_slo_evaluate(service, err_vals, tot_vals, ts, target_availability=None):
     return []
 
 
@@ -94,7 +94,7 @@ async def test_slo_burn_handles_mismatched_series_lengths(monkeypatch):
 
     seen = {"calls": 0}
 
-    def tracking_eval(service, err_vals, tot_vals, ts, target):
+    def tracking_eval(service, err_vals, tot_vals, ts, target_availability=None):
         seen["calls"] += 1
         assert len(err_vals) == len(tot_vals) == len(ts)
         return []
@@ -122,7 +122,7 @@ async def test_slo_burn_serializes_budget_status(monkeypatch):
     monkeypatch.setattr(
         slo_route,
         "slo_evaluate",
-        lambda service, err_vals, tot_vals, ts, target: [SimpleNamespace(name="fast-burn")],
+        lambda service, err_vals, tot_vals, ts, target_availability=None: [SimpleNamespace(name="fast-burn")],
     )
     monkeypatch.setattr(
         slo_route,

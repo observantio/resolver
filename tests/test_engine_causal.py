@@ -9,15 +9,19 @@ License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
 """
 
+import pytest
+
 from engine.causal.bayesian import score as bayesian_score
-from engine.causal.granger import GrangerResult, granger_multiple_pairs, granger_pair_analysis
+from engine.causal.granger import GrangerAnalysisOptions, GrangerResult, granger_multiple_pairs, granger_pair_analysis
 from engine.causal.graph import CausalGraph, InterventionResult
 
 
 def test_bayesian_score_consistency():
-    results = bayesian_score(True, False, False, False, False)
+    results = bayesian_score(True, False, False, False, has_error_propagation=False)
     assert abs(sum(r.posterior for r in results) - 1.0) < 1e-6
     assert results[0].category.value == "deployment"
+    with pytest.raises(TypeError):
+        bayesian_score(True, False, False, False)
 
 
 def test_causal_graph_basic():
@@ -42,7 +46,7 @@ def test_granger_pair_and_all():
     effect_arr[0] = 0.0
     effect = effect_arr.tolist()
 
-    res = granger_pair_analysis("c", cause, "e", effect, max_lag=1)
+    res = granger_pair_analysis("c", cause, "e", effect, options=GrangerAnalysisOptions(max_lag=1))
     assert isinstance(res, GrangerResult)
     assert res.cause_metric == "c"
     assert res.effect_metric == "e"

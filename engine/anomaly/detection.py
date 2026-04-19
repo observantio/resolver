@@ -74,19 +74,19 @@ def _tukey_outlier_class(
     q3: float,
     iqr: float,
 ) -> str:
-    if iqr <= 0:
-        return "none"
-    mild_k = float(getattr(settings, "tukey_mild_k", 1.5))
-    extreme_k = float(getattr(settings, "tukey_extreme_k", 3.0))
-    if value > q3 + extreme_k * iqr:
-        return "extreme_high"
-    if value > q3 + mild_k * iqr:
-        return "mild_high"
-    if value < q1 - extreme_k * iqr:
-        return "extreme_low"
-    if value < q1 - mild_k * iqr:
-        return "mild_low"
-    return "none"
+    category = "none"
+    if iqr > 0:
+        mild_k = float(getattr(settings, "tukey_mild_k", 1.5))
+        extreme_k = float(getattr(settings, "tukey_extreme_k", 3.0))
+        if value > q3 + extreme_k * iqr:
+            category = "extreme_high"
+        elif value > q3 + mild_k * iqr:
+            category = "mild_high"
+        elif value < q1 - extreme_k * iqr:
+            category = "extreme_low"
+        elif value < q1 - mild_k * iqr:
+            category = "mild_low"
+    return category
 
 
 def _cusum_changepoints(arr: np.ndarray, threshold: float | None = None) -> np.ndarray:

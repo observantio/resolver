@@ -1,12 +1,4 @@
-"""
-Analyzer Module for Root Cause Analysis and Correlation of Anomalies.
-
-Copyright (c) 2026 Stefan Kumarasinghe
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-"""
+"""Analyzer pipeline orchestration."""
 
 from __future__ import annotations
 
@@ -57,6 +49,13 @@ from engine.analyze.helpers import (
     _slo_series_pairs,
     _to_root_cause_model,
 )
+from engine.analyze.stage_context import (
+    AnalysisScope,
+    CausalStageInputs,
+    CorrelateStageInputs,
+    MetricsStageInputs,
+    TracesStageInputs,
+)
 from engine.anomaly.series import WrappedMimirResponse
 from engine.causal import BayesianScore, CausalGraph, GrangerResult, bayesian_score, test_all_pairs
 from engine.changepoint import ChangePoint
@@ -101,31 +100,7 @@ class AnalyzerRuntimeState:
     suppression_counts: dict[str, int]
 
 
-@dataclasses.dataclass(frozen=True)
-class CorrelateStageInputs:
-    metric_anomalies: list[MetricAnomaly]
-    log_bursts: list[LogBurst]
-    rca_log_bursts: list[LogBurst]
-    service_latency: list[ServiceLatency]
-
-
-@dataclasses.dataclass(frozen=True)
-class CausalStageInputs:
-    series_map: dict[str, list[float]]
-    metric_anomalies: list[MetricAnomaly]
-    rca_log_bursts: list[LogBurst]
-    log_patterns: list[LogPattern]
-    service_latency: list[ServiceLatency]
-    error_propagation: list[ErrorPropagation]
-    correlated_events: list[CorrelatedEvent]
-    graph: DependencyGraph
-    change_points: list[ChangePoint]
-    forecasts: list[TrajectoryForecast]
-    degradation_signals: list[DegradationSignal]
-    anomaly_clusters: list[AnomalyCluster]
-
-
-def _overall_severity(*groups: Sequence[object]) -> Severity:
+def _overall_severity(groups: Sequence[Sequence[object]]) -> Severity:
     best = Severity.LOW
     for group in groups:
         for item in group:
@@ -212,9 +187,7 @@ async def _fetch_parallel_observations(
 async def _run_metrics_stage(
     provider: DataSourceProvider,
     req: AnalyzeRequest,
-    all_metric_queries: list[str],
-    z_threshold: float,
-    analysis_window_seconds: float,
+    inputs: MetricsStageInputs,
     state: AnalyzerRuntimeState,
 ) -> tuple[
     list[MetricAnomaly],
@@ -234,7 +207,13 @@ async def _run_metrics_stage(
             series_map,
             metric_series_statistics,
         ) = await asyncio.wait_for(
-            _process_metrics(provider, req, all_metric_queries, z_threshold, analysis_window_seconds),
+            _process_metrics(
+                provider,
+                req,
+                inputs.all_metric_queries,
+                inputs.z_threshold,
+                analysis_window_seconds=inputs.analysis_window_seconds,
+            ),
             timeout=float(settings.analyzer_metrics_timeout_seconds),
         )
     except TimeoutError:
@@ -364,15 +343,15 @@ async def _run_logs_stage(
 async def _run_traces_stage(
     provider: DataSourceProvider,
     req: AnalyzeRequest,
-    *,
-    primary_service: str | None,
-    trace_filters: dict[str, str | int | float | bool],
-    traces_raw: object,
-    warnings: list[str],
+    inputs: TracesStageInputs,
 ) -> tuple[list[ServiceLatency], list[ErrorPropagation], DependencyGraph]:
     traces_started = time.perf_counter()
     service_latency, error_propagation = [], []
     graph = DependencyGraph()
+    primary_service = inputs.primary_service
+    trace_filters = inputs.trace_filters
+    traces_raw = inputs.traces_raw
+    warnings = inputs.warnings
     if isinstance(traces_raw, dict):
         service_latency = traces.analyze(traces_raw, req.apdex_threshold_ms)
         error_propagation = traces.detect_propagation(traces_raw)
@@ -439,7 +418,13 @@ def _run_slo_stage(
                 filtered_slo_total_raw = filtered_totals
         for err_ts, err_vals, tot_vals in _slo_series_pairs(filtered_slo_errors_raw, filtered_slo_total_raw, warnings):
             slo_alerts_raw.extend(
-                slo_evaluate(primary_service or "global", err_vals, tot_vals, err_ts, req.slo_target or 0.999)
+                slo_evaluate(
+                    primary_service or "global",
+                    err_vals,
+                    tot_vals,
+                    err_ts,
+                    target_availability=req.slo_target or 0.999,
+                )
             )
     else:
         warnings.append("SLO metrics unavailable for one or both queries.")
@@ -500,8 +485,7 @@ async def _run_correlate_cluster_stage(
 
 
 async def _run_causal_rank_and_quality(
-    tenant_id: str,
-    primary_service: str | None,
+    scope: AnalysisScope,
     req: AnalyzeRequest,
     *,
     registry: TenantRegistry,
@@ -540,7 +524,7 @@ async def _run_causal_rank_and_quality(
 
     try:
         await asyncio.wait_for(
-            granger_store.save_and_merge(tenant_id, primary_service or "global", fresh_granger),
+            granger_store.save_and_merge(scope.tenant_id, scope.primary_service or "global", fresh_granger),
             timeout=1.0,
         )
     except _RECOVERABLE_ANALYSIS_ERRORS as exc:
@@ -557,7 +541,7 @@ async def _run_causal_rank_and_quality(
     if common_cause_hints:
         log.debug("analyzer causal common_cause_hints=%s", common_cause_hints)
 
-    raw_deployment_events = await registry.events_in_window(tenant_id, req.start, req.end)
+    raw_deployment_events = await registry.events_in_window(scope.tenant_id, req.start, req.end)
     deployment_events = list(raw_deployment_events) if isinstance(raw_deployment_events, list) else []
     bayesian_scores = bayesian_score(
         has_deployment_event=bool(deployment_events),
@@ -567,12 +551,15 @@ async def _run_causal_rank_and_quality(
         has_error_propagation=bool(inputs.error_propagation),
     )
 
+    rca_signal_inputs = rca.RcaSignalInputs(
+        metric_anomalies=metric_anomalies,
+        log_bursts=inputs.rca_log_bursts,
+        log_patterns=inputs.log_patterns,
+        service_latency=inputs.service_latency,
+        error_propagation=inputs.error_propagation,
+    )
     root_causes = rca.generate(
-        metric_anomalies,
-        inputs.rca_log_bursts,
-        inputs.log_patterns,
-        inputs.service_latency,
-        inputs.error_propagation,
+        rca_signal_inputs,
         correlated_events=inputs.correlated_events,
         graph=inputs.graph,
         event_registry=_build_compat_registry(deployment_events),
@@ -662,9 +649,11 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     ) = await _run_metrics_stage(
         provider,
         req,
-        all_metric_queries,
-        z_threshold,
-        analysis_window_seconds,
+        MetricsStageInputs(
+            all_metric_queries=all_metric_queries,
+            z_threshold=z_threshold,
+            analysis_window_seconds=analysis_window_seconds,
+        ),
         state,
     )
 
@@ -675,10 +664,12 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     service_latency, error_propagation, graph = await _run_traces_stage(
         provider,
         req,
-        primary_service=primary_service,
-        trace_filters=trace_filters,
-        traces_raw=traces_raw,
-        warnings=warnings,
+        TracesStageInputs(
+            primary_service=primary_service,
+            trace_filters=trace_filters,
+            traces_raw=traces_raw,
+            warnings=warnings,
+        ),
     )
 
     slo_alerts = _run_slo_stage(
@@ -719,8 +710,7 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
         quality,
         bayesian_scores,
     ) = await _run_causal_rank_and_quality(
-        tenant_id,
-        primary_service,
+        AnalysisScope(tenant_id=tenant_id, primary_service=primary_service),
         req,
         registry=registry,
         inputs=CausalStageInputs(
@@ -741,12 +731,14 @@ async def run(provider: DataSourceProvider, req: AnalyzeRequest) -> AnalysisRepo
     )
 
     severity = _overall_severity(
-        metric_anomalies,
-        log_bursts,
-        log_patterns,
-        service_latency,
-        slo_alerts,
-        forecasts,
+        [
+            metric_anomalies,
+            log_bursts,
+            log_patterns,
+            service_latency,
+            slo_alerts,
+            forecasts,
+        ]
     )
     has_actionable_now = bool(
         metric_anomalies or log_bursts or log_patterns or service_latency or error_propagation or slo_alerts

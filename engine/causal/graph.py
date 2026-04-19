@@ -40,7 +40,7 @@ class CausalGraph:
         self._forward: dict[str, list[CausalEdge]] = defaultdict(list)
         self._reverse: dict[str, set[str]] = defaultdict(set)
 
-    def add_edge(self, cause: str, effect: str, strength: float, lag_seconds: float = 0.0) -> None:
+    def add_edge(self, cause: str, effect: str, strength: float, *, lag_seconds: float = 0.0) -> None:
         edge = CausalEdge(cause=cause, effect=effect, strength=strength, lag_seconds=lag_seconds)
         self._edges.append(edge)
         self._forward[cause].append(edge)

@@ -72,7 +72,15 @@ async def slo_burn(req: SloRequest) -> JSONDict:
             err_vals = err_vals[:n]
             tot_vals = tot_vals[:n]
             err_ts = err_ts[:n]
-        alerts.extend(slo_evaluate(req.service, err_vals, tot_vals, err_ts, req.target_availability))
+        alerts.extend(
+            slo_evaluate(
+                req.service,
+                err_vals,
+                tot_vals,
+                err_ts,
+                target_availability=req.target_availability,
+            )
+        )
         budget = remaining_minutes(req.service, err_vals, tot_vals, req.target_availability)
 
     return {

@@ -54,13 +54,16 @@ def _to_json(b: Baseline) -> str:
 def _from_json(data: str) -> Baseline:
     baseline_cls = _baseline_cls()
     d = json.loads(data)
-    return baseline_cls(
+    return cast(
+        "Baseline",
+        baseline_cls(
         mean=d["mean"],
         std=d["std"],
         lower=d["lower"],
         upper=d["upper"],
         seasonal_mean=d.get("seasonal_mean"),
         sample_count=d.get("sample_count", 0),
+        ),
     )
 
 
@@ -69,13 +72,16 @@ def _blend(cached: Baseline, fresh: Baseline) -> Baseline:
     a = 1.0 - BLEND_ALPHA
     blended_mean = a * cached.mean + BLEND_ALPHA * fresh.mean
     blended_std = a * cached.std + BLEND_ALPHA * fresh.std
-    return baseline_cls(
+    return cast(
+        "Baseline",
+        baseline_cls(
         mean=round(blended_mean, 6),
         std=round(max(blended_std, 1e-9), 6),
         lower=round(blended_mean - 3 * blended_std, 6),
         upper=round(blended_mean + 3 * blended_std, 6),
         seasonal_mean=fresh.seasonal_mean or cached.seasonal_mean,
         sample_count=cached.sample_count + fresh.sample_count,
+        ),
     )
 
 
@@ -101,6 +107,7 @@ async def compute_and_persist(
     metric_name: str,
     ts: list[float],
     vals: list[float],
+    *,
     z_threshold: float = 3.0,
 ) -> Baseline:
     fresh = _compute(ts, vals, z_threshold=z_threshold)
@@ -122,4 +129,4 @@ def _compute(ts: list[float], vals: list[float], z_threshold: float) -> Baseline
     compute_fn = globals().get("compute")
     if compute_fn is None:
         compute_fn = __getattr__("compute")
-    return compute_fn(ts, vals, z_threshold=z_threshold)
+    return cast("Baseline", compute_fn(ts, vals, z_threshold=z_threshold))

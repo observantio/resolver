@@ -94,6 +94,63 @@ def _safe_float(value: object) -> float | None:
         return None
 
 
+def _windowed_log_bursts(log_bursts: list[LogBurst], window_start: float, window_end: float) -> list[LogBurst]:
+    selected: list[LogBurst] = []
+    for burst in log_bursts:
+        burst_start = _safe_float(getattr(burst, "start", getattr(burst, "window_start", None)))
+        burst_end = _safe_float(getattr(burst, "end", getattr(burst, "window_end", None)))
+        if burst_start is None or burst_end is None:
+            continue
+        if _overlap(window_start, window_end, burst_start, burst_end):
+            selected.append(burst)
+    return selected
+
+
+def _correlated_service_tokens(ma: list[MetricAnomaly], lb: list[LogBurst]) -> set[str]:
+    metric_services: set[str] = set()
+    for anomaly in ma:
+        metric_services.update(_service_tokens_from_metric_name(getattr(anomaly, "metric_name", "")))
+    log_services: set[str] = set()
+    for burst in lb:
+        log_services.update(_service_tokens_from_log_burst(burst))
+    return metric_services | log_services
+
+
+def _windowed_latency(
+    service_latency: list[ServiceLatency],
+    correlated_services: set[str],
+    window_start: float,
+    window_end: float,
+) -> list[ServiceLatency]:
+    selected: list[ServiceLatency] = []
+    for latency in service_latency:
+        service_name = _normalize_service(getattr(latency, "service", ""))
+        if not service_name or not correlated_services or service_name not in correlated_services:
+            continue
+        latency_start, latency_end = _latency_window(latency)
+        if latency_start is None or latency_end is None:
+            continue
+        if _overlap(window_start, window_end, latency_start, latency_end):
+            selected.append(latency)
+    return selected
+
+
+def _confidence_for_signals(
+    metric_count: int,
+    log_count: int,
+    trace_count: int,
+    weight_fn: Callable[[float, float, float], float] | None,
+) -> float:
+    metric_score = min(settings.correlation_score_max, metric_count * settings.correlation_weight_time)
+    log_score = min(settings.correlation_score_max, log_count * settings.correlation_weight_latency)
+    trace_score = min(settings.correlation_errors_cap, trace_count * settings.correlation_weight_errors)
+    if weight_fn is not None:
+        raw_conf = weight_fn(metric_score, log_score, trace_score)
+    else:
+        raw_conf = metric_score + log_score + trace_score
+    return round(min(settings.correlation_score_max, raw_conf), 3)
+
+
 def correlate(
     metric_anomalies: list[MetricAnomaly],
     log_bursts: list[LogBurst],
@@ -128,51 +185,15 @@ def correlate(
         w_end = anchor + window_seconds
 
         ma = [a for a in metric_anomalies if w_start <= a.timestamp <= w_end]
-        lb = []
-        for burst in log_bursts:
-            burst_start = getattr(burst, "start", getattr(burst, "window_start", None))
-            burst_end = getattr(burst, "end", getattr(burst, "window_end", None))
-            burst_start = _safe_float(burst_start)
-            burst_end = _safe_float(burst_end)
-            if burst_start is None or burst_end is None:
-                continue
-            if _overlap(w_start, w_end, burst_start, burst_end):
-                lb.append(burst)
-        metric_services: set[str] = set()
-        for anomaly in ma:
-            metric_services.update(_service_tokens_from_metric_name(getattr(anomaly, "metric_name", "")))
-        log_services: set[str] = set()
-        for burst in lb:
-            log_services.update(_service_tokens_from_log_burst(burst))
-        correlated_services = metric_services | log_services
-
-        sl = []
-        for latency in service_latency:
-            service_name = _normalize_service(getattr(latency, "service", ""))
-            if not service_name:
-                continue
-            if not correlated_services:
-                continue
-            if service_name not in correlated_services:
-                continue
-            latency_start, latency_end = _latency_window(latency)
-            if latency_start is None or latency_end is None:
-                continue
-            if _overlap(w_start, w_end, latency_start, latency_end):
-                sl.append(latency)
+        lb = _windowed_log_bursts(log_bursts, w_start, w_end)
+        correlated_services = _correlated_service_tokens(ma, lb)
+        sl = _windowed_latency(service_latency, correlated_services, w_start, w_end)
 
         sig = len(ma) + len(lb) + len(sl)
         if sig < 2:
             continue
 
-        metric_score = min(settings.correlation_score_max, len(ma) * settings.correlation_weight_time)
-        log_score = min(settings.correlation_score_max, len(lb) * settings.correlation_weight_latency)
-        trace_score = min(settings.correlation_errors_cap, len(sl) * settings.correlation_weight_errors)
-        if weight_fn is not None:
-            raw_conf = weight_fn(metric_score, log_score, trace_score)
-        else:
-            raw_conf = metric_score + log_score + trace_score
-        confidence = round(min(settings.correlation_score_max, raw_conf), 3)
+        confidence = _confidence_for_signals(len(ma), len(lb), len(sl), weight_fn)
 
         events.append(
             CorrelatedEvent(

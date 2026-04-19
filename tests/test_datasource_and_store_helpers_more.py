@@ -9,10 +9,11 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 
-from connectors.common import query_backend_json
+from connectors.common import BackendErrorMessages, query_backend_json
 from datasources.data_config import DataSourceSettings
 from datasources.factory import DataSourceFactory
 from datasources.retry import retry
@@ -23,19 +24,19 @@ from store import baseline as baseline_store
 async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
     captured = {}
 
-    async def fake_fetch_json(
-        url, params=None, headers=None, timeout=30, client=None, invalid_msg="", timeout_msg="", unavailable_msg=""
-    ):
+    async def fake_fetch_json(url, options=None, messages=None):
+        options = options or SimpleNamespace(params=None, headers=None, timeout=30, client=None)
+        messages = messages or SimpleNamespace(invalid_msg="", timeout_msg="", unavailable_msg="")
         captured.update(
             {
                 "url": url,
-                "params": params,
-                "headers": headers,
-                "timeout": timeout,
-                "client": client,
-                "invalid_msg": invalid_msg,
-                "timeout_msg": timeout_msg,
-                "unavailable_msg": unavailable_msg,
+                "params": options.params,
+                "headers": options.headers,
+                "timeout": options.timeout,
+                "client": options.client,
+                "invalid_msg": messages.invalid_msg,
+                "timeout_msg": messages.timeout_msg,
+                "unavailable_msg": messages.unavailable_msg,
             }
         )
         return {"ok": True}
@@ -52,7 +53,10 @@ async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
         },
     )()
     assert await query_backend_json(
-        connector, path="/query", params={"q": "up"}, invalid_msg="bad", timeout_msg="slow", unavailable_msg="down"
+        connector,
+        path="/query",
+        params={"q": "up"},
+        messages=BackendErrorMessages(invalid="bad", timeout="slow", unavailable="down"),
     ) == {"ok": True}
     assert captured["url"] == "https://backend/query"
     assert captured["headers"] == {"X-Scope-OrgID": "tenant"}
@@ -71,12 +75,30 @@ async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
         connector_with_request_headers,
         path="/query2",
         params={"q": "up"},
-        invalid_msg="bad",
-        timeout_msg="slow",
-        unavailable_msg="down",
+        messages=BackendErrorMessages(invalid="bad", timeout="slow", unavailable="down"),
     ) == {"ok": True}
     assert captured["url"] == "https://backend/query2"
     assert captured["headers"] == {"X-From": "request_headers"}
+
+    connector_with_non_callable_request_headers = type(
+        "C3",
+        (),
+        {
+            "base_url": "https://backend",
+            "timeout": 12,
+            "client": object(),
+            "request_headers": {},
+            "_headers": lambda self: {"X-Fallback": "legacy"},
+        },
+    )()
+    assert await query_backend_json(
+        connector_with_non_callable_request_headers,
+        "/query3",
+        {"q": "up"},
+        messages=BackendErrorMessages(invalid="i", timeout="t", unavailable="u"),
+    ) == {"ok": True}
+    assert captured["url"] == "https://backend/query3"
+    assert captured["headers"] == {"X-Fallback": "legacy"}
 
     baseline = baseline_store.Baseline(mean=1.0, std=2.0, lower=-5.0, upper=7.0, seasonal_mean=3.0, sample_count=4)
     raw = baseline_store._to_json(baseline)

@@ -11,7 +11,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol, cast
+from typing import Any, cast
 
 import httpx
 
@@ -19,16 +19,12 @@ from datasources.exceptions import DataSourceUnavailable, InvalidQuery, QueryTim
 from datasources.types import JSONDict, QueryParams
 
 
-class AsyncGetClient(Protocol):
-    async def get(self, url: str, **kwargs: object) -> Any: ...
-
-
 @dataclass(frozen=True)
 class FetchRequestOptions:
     params: QueryParams | None = None
     headers: dict[str, str] | None = None
     timeout: int = 30
-    client: AsyncGetClient | None = None
+    client: Any | None = None
 
 
 @dataclass(frozen=True)
@@ -51,24 +47,15 @@ _DEFAULT_TEXT_MESSAGES = FetchErrorMessages(
 )
 
 
-def _coerce_fetch_options(
-    options: FetchRequestOptions | None,
-    legacy_kwargs: dict[str, object],
-) -> FetchRequestOptions:
+def _coerce_fetch_options(options: FetchRequestOptions | None) -> FetchRequestOptions:
     base = options or FetchRequestOptions()
-
-    params = legacy_kwargs.pop("params", base.params)
-    headers = legacy_kwargs.pop("headers", base.headers)
-    timeout_raw = legacy_kwargs.pop("timeout", base.timeout)
-    client_raw = legacy_kwargs.pop("client", base.client)
-
-    timeout = int(cast(int | str | bytes | bytearray, timeout_raw))
-
+    timeout = int(cast(int | str | bytes | bytearray, base.timeout))
+    client_raw = base.client
     client = client_raw if hasattr(client_raw, "get") else base.client
 
     return FetchRequestOptions(
-        params=cast(QueryParams | None, params),
-        headers=cast(dict[str, str] | None, headers),
+        params=base.params,
+        headers=base.headers,
         timeout=timeout,
         client=client,
     )
@@ -76,17 +63,13 @@ def _coerce_fetch_options(
 
 def _coerce_error_messages(
     messages: FetchErrorMessages | None,
-    legacy_kwargs: dict[str, object],
     defaults: FetchErrorMessages,
 ) -> FetchErrorMessages:
     base = messages or defaults
-    invalid_raw = legacy_kwargs.pop("invalid_msg", base.invalid_msg)
-    timeout_raw = legacy_kwargs.pop("timeout_msg", base.timeout_msg)
-    unavailable_raw = legacy_kwargs.pop("unavailable_msg", base.unavailable_msg)
     return FetchErrorMessages(
-        invalid_msg=str(invalid_raw),
-        timeout_msg=str(timeout_raw),
-        unavailable_msg=str(unavailable_raw),
+        invalid_msg=str(base.invalid_msg),
+        timeout_msg=str(base.timeout_msg),
+        unavailable_msg=str(base.unavailable_msg),
     )
 
 
@@ -94,10 +77,9 @@ async def fetch_json(
     url: str,
     options: FetchRequestOptions | None = None,
     messages: FetchErrorMessages | None = None,
-    **legacy_kwargs: object,
 ) -> JSONDict:
-    parsed_options = _coerce_fetch_options(options, dict(legacy_kwargs))
-    parsed_messages = _coerce_error_messages(messages, dict(legacy_kwargs), _DEFAULT_JSON_MESSAGES)
+    parsed_options = _coerce_fetch_options(options)
+    parsed_messages = _coerce_error_messages(messages, _DEFAULT_JSON_MESSAGES)
 
     try:
         if parsed_options.client is None:
@@ -120,10 +102,9 @@ async def fetch_text(
     url: str,
     options: FetchRequestOptions | None = None,
     messages: FetchErrorMessages | None = None,
-    **legacy_kwargs: object,
 ) -> str:
-    parsed_options = _coerce_fetch_options(options, dict(legacy_kwargs))
-    parsed_messages = _coerce_error_messages(messages, dict(legacy_kwargs), _DEFAULT_TEXT_MESSAGES)
+    parsed_options = _coerce_fetch_options(options)
+    parsed_messages = _coerce_error_messages(messages, _DEFAULT_TEXT_MESSAGES)
 
     try:
         if parsed_options.client is None:

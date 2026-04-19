@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from json import JSONDecodeError
-from typing import TypedDict
+from typing import TypedDict, cast
 
 from config import EVENTS_TTL
 from engine.events.models import DeploymentEvent
@@ -44,36 +44,41 @@ def _coerce_float(value: object) -> float:
 
 
 def _coerce_event(value: object) -> StoredEvent | None:
-    if not isinstance(value, dict):
-        return None
-    service = value.get("service")
-    version = value.get("version")
-    author = value.get("author", "")
-    environment = value.get("environment", "production")
-    source = value.get("source", "unknown")
-    metadata = value.get("metadata", {})
-    if not isinstance(service, str) or not isinstance(version, str):
-        return None
-    if not isinstance(author, str) or not isinstance(environment, str) or not isinstance(source, str):
-        return None
-    if not isinstance(metadata, dict) or not all(
-        isinstance(key, str) and isinstance(item, str) for key, item in metadata.items()
-    ):
-        return None
-    timestamp_raw: object = value.get("timestamp")
-    try:
-        timestamp = _coerce_float(timestamp_raw)
-    except (TypeError, ValueError):
-        return None
-    return {
-        "service": service,
-        "timestamp": timestamp,
-        "version": version,
-        "author": author,
-        "environment": environment,
-        "source": source,
-        "metadata": metadata,
-    }
+    coerced: StoredEvent | None = None
+    if isinstance(value, dict):
+        service = value.get("service")
+        version = value.get("version")
+        author = value.get("author", "")
+        environment = value.get("environment", "production")
+        source = value.get("source", "unknown")
+        metadata = value.get("metadata", {})
+        has_required_fields = isinstance(service, str) and isinstance(version, str)
+        has_valid_meta = (
+            isinstance(author, str)
+            and isinstance(environment, str)
+            and isinstance(source, str)
+            and isinstance(metadata, dict)
+            and all(isinstance(key, str) and isinstance(item, str) for key, item in metadata.items())
+        )
+        if has_required_fields and has_valid_meta:
+            try:
+                timestamp = _coerce_float(value.get("timestamp"))
+            except (TypeError, ValueError):
+                timestamp = None
+            if timestamp is not None:
+                coerced = cast(
+                    StoredEvent,
+                    {
+                    "service": service,
+                    "timestamp": timestamp,
+                    "version": version,
+                    "author": author,
+                    "environment": environment,
+                    "source": source,
+                    "metadata": metadata,
+                    },
+                )
+    return coerced
 
 
 def _serialise(event: DeploymentEvent) -> str:
