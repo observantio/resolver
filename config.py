@@ -248,7 +248,7 @@ class Settings(BaseSettings):
     # changepoint detection
     cusum_window: int = 10
     cusum_relative_cutoff: float = 0.6
-    # keep this alias for backwards compatibility while allowing override
+
     cusum_threshold_sigma: float = cusum_threshold
 
     # correlation/temporal scoring
