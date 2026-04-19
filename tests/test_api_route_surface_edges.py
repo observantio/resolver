@@ -249,9 +249,7 @@ async def test_metric_anomalies_and_changepoints_routes_cover_fallbacks(monkeypa
     captured = []
 
     def fake_changepoint_detect(ts, vals, threshold_sigma=None, metric_name=None):
-        if metric_name is not None:
-            raise TypeError("legacy signature")
-        captured.append((tuple(ts), tuple(vals), threshold_sigma))
+        captured.append((tuple(ts), tuple(vals), threshold_sigma, metric_name))
         return [types.SimpleNamespace(timestamp=2)]
 
     monkeypatch.setattr(metrics_route, "changepoint_detect", fake_changepoint_detect)
@@ -260,7 +258,10 @@ async def test_metric_anomalies_and_changepoints_routes_cover_fallbacks(monkeypa
     )
 
     assert [item.timestamp for item in changepoints] == [2, 2]
-    assert captured == [((1,), (2.0,), 6.0), ((2,), (3.0,), 6.0)]
+    assert captured == [
+        ((1,), (2.0,), 6.0, "metric-b"),
+        ((2,), (3.0,), 6.0, "metric-a"),
+    ]
 
 
 @pytest.mark.asyncio

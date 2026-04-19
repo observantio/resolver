@@ -530,16 +530,12 @@ async def _process_one_metric_series(
         else float(settings.cusum_threshold_sigma)
     )
     sigma_multiplier = max(1.0, sigma_multiplier)
-    try:
-        change_points = changepoint_detect(
-            job.ts,
-            job.vals,
-            threshold_sigma=sigma_multiplier,
-            metric_name=metric_name,
-        )
-    except TypeError:
-        # Backward-compatible path for monkeypatched/legacy detector signatures.
-        change_points = changepoint_detect(job.ts, job.vals, sigma_multiplier)
+    change_points = changepoint_detect(
+        job.ts,
+        job.vals,
+        threshold_sigma=sigma_multiplier,
+        metric_name=metric_name,
+    )
 
     threshold = next((v for k, v in FORECAST_THRESHOLDS.items() if k in job.query_string), None)
     if threshold and job.analysis_window_seconds >= float(
