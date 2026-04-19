@@ -1,9 +1,14 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Mimir connector for Metrics queries. This module defines a MimirConnector class that provides methods to scrape metrics 
+and query time series data from a Mimir instance. It uses httpx for making asynchronous HTTP requests to the Mimir API 
+and includes error handling for common issues such as invalid queries, timeouts, and service unavailability. 
+The connector is designed to be used within the resolver service to fetch metric data for analysis and correlation
+with other telemetry data.
+
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 import httpx

@@ -3,11 +3,10 @@ All database models for Resolver are defined in this module. This includes the R
 represent the RCA jobs and their corresponding reports stored in the database. The models are defined using SQLAlchemy's
 DeclarativeBase, allowing for easy interaction with the database using Python objects.
 
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 from __future__ import annotations

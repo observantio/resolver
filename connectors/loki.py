@@ -1,9 +1,15 @@
 """
-Copyright (c) 2026 Stefan Kumarasinghe
+Loki connector for Log and LogQL queries. This module defines a LokiConnector
+class that provides methods to query logs and log labels from a Loki instance.
+It uses httpx for asynchronous HTTP requests to the Loki API and includes error
+handling for invalid queries, timeouts, and service unavailability. The connector
+is designed to fetch log data for analysis and correlation with other telemetry
+data.
+
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 import re

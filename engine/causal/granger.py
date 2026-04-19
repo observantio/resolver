@@ -3,11 +3,10 @@ Granger causality analysis logic for determining whether one time series can be 
 the predictability of the effect series using past values of the cause series, to assist in root cause analysis and
 understanding of relationships between metrics.
 
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 from __future__ import annotations
