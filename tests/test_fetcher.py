@@ -19,7 +19,7 @@ class DummyProvider:
         self._results = results
 
         class Metrics:
-            async def scrape(self_non):
+            async def scrape(self):
                 return ""
 
         self.metrics = Metrics()

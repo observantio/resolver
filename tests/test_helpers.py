@@ -37,7 +37,7 @@ class DummyClient:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, *args):
         return False
 
     async def get(self, url, params=None, headers=None):

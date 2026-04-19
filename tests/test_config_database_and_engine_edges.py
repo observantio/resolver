@@ -271,7 +271,7 @@ def test_database_setup_session_and_connection_paths(monkeypatch):
         def __enter__(self):
             return self
 
-        def __exit__(self, exc_type, exc, tb):
+        def __exit__(self, *args):
             return False
 
         def execute(self, stmt, params=None):
