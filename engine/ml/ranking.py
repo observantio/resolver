@@ -114,14 +114,12 @@ def rank(
                 events_map[a.metric_name] = ev
 
     feature_matrix = []
-    event_refs: list[CorrelatedEvent | None] = []
     for cause in causes:
         ref_metric = next(
             (s.split(":")[1] for s in cause.contributing_signals if s.startswith("metric:")),
             None,
         )
         event_ref: CorrelatedEvent | None = events_map.get(ref_metric) if ref_metric else None
-        event_refs.append(event_ref)
         feature_matrix.append(_extract_features(cause, event_ref))
 
     x = np.array(feature_matrix, dtype=float)

@@ -48,28 +48,28 @@ def test_project_version_helpers_cover_success_and_fallback(monkeypatch) -> None
     monkeypatch.setattr(
         openapi_middleware.Path,
         "read_text",
-        lambda self, encoding="utf-8": "[project]\nversion = '9.9.9'\n",
+        lambda *args, **kwargs: "[project]\nversion = '9.9.9'\n",
     )
     assert openapi_middleware._project_version() == "9.9.9"
 
     monkeypatch.setattr(
         openapi_middleware.Path,
         "read_text",
-        lambda self, encoding="utf-8": "[project]\nversion = ''\n",
+        lambda *args, **kwargs: "[project]\nversion = ''\n",
     )
     assert openapi_middleware._project_version() == openapi_middleware._DEFAULT_APP_VERSION
 
     monkeypatch.setattr(
         openapi_middleware.Path,
         "read_text",
-        lambda self, encoding="utf-8": (_ for _ in ()).throw(OSError("boom")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("boom")),
     )
     assert openapi_middleware._project_version() == openapi_middleware._DEFAULT_APP_VERSION
 
     monkeypatch.setattr(
         openapi_middleware.Path,
         "read_text",
-        lambda self, encoding="utf-8": "bad-toml",
+        lambda *args, **kwargs: "bad-toml",
     )
     monkeypatch.setattr(
         openapi_middleware.tomllib,
