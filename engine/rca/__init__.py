@@ -2,6 +2,6 @@
 Engine module for rca ->   init  .
 """
 
-from engine.rca.hypothesis import RootCause, generate
+from engine.rca.hypothesis import RcaSignalInputs, RootCause, generate
 
-__all__ = ["RootCause", "generate"]
+__all__ = ["RootCause", "RcaSignalInputs", "generate"]

@@ -255,13 +255,15 @@ def test_apply_precision_quality_gates_non_precision_and_empty_filtered(monkeypa
     suppression_counts: dict[str, int] = {}
     warnings: list[str] = []
     _, _, causes_after, ranked_after, quality = helpers._apply_precision_quality_gates(
-        metric_anomalies=[_anomaly("m", 1.0, 1.0)],
-        change_points=[_cp("m", 1.0, 1.0)],
-        root_causes=causes,
-        ranked_causes=ranked,
-        duration_seconds=3600.0,
-        suppression_counts=suppression_counts,
-        warnings=warnings,
+        helpers.PrecisionQualityGateInputs(
+            metric_anomalies=[_anomaly("m", 1.0, 1.0)],
+            change_points=[_cp("m", 1.0, 1.0)],
+            root_causes=causes,
+            ranked_causes=ranked,
+            duration_seconds=3600.0,
+            suppression_counts=suppression_counts,
+            warnings=warnings,
+        )
     )
     assert len(causes_after) == 1
     assert ranked_after == []
@@ -269,13 +271,15 @@ def test_apply_precision_quality_gates_non_precision_and_empty_filtered(monkeypa
 
     monkeypatch.setattr(helpers.settings, "quality_gating_profile", "recall")
     _, _, _, _, quality_non_precision = helpers._apply_precision_quality_gates(
-        metric_anomalies=[_anomaly("m", 1.0, 1.0)],
-        change_points=[_cp("m", 1.0, 1.0)],
-        root_causes=causes,
-        ranked_causes=ranked,
-        duration_seconds=120.0,
-        suppression_counts={},
-        warnings=[],
+        helpers.PrecisionQualityGateInputs(
+            metric_anomalies=[_anomaly("m", 1.0, 1.0)],
+            change_points=[_cp("m", 1.0, 1.0)],
+            root_causes=causes,
+            ranked_causes=ranked,
+            duration_seconds=120.0,
+            suppression_counts={},
+            warnings=[],
+        )
     )
     assert quality_non_precision.gating_profile == "recall"
 
@@ -308,13 +312,15 @@ async def test_process_metric_series_and_metrics_pipeline_branches(monkeypatch):
     req = AnalyzeRequest(tenant_id="t", start=1, end=2, step="15s")
     key = next(iter(helpers.FORECAST_THRESHOLDS.keys()))
     anomalies, change_points, fc, deg = await helpers._process_one_metric_series(
-        req=req,
-        query_string=key,
-        metric_name="m",
-        ts=[1.0, 2.0, 3.0],
-        vals=[1.0, 2.0, 3.0],
-        z_threshold=0.0,
-        analysis_window_seconds=20.0,
+        helpers.MetricSeriesJob(
+            req=req,
+            query_string=key,
+            metric_name="m",
+            ts=[1.0, 2.0, 3.0],
+            vals=[1.0, 2.0, 3.0],
+            z_threshold=0.0,
+            analysis_window_seconds=20.0,
+        )
     )
     assert anomalies
     assert change_points
@@ -346,10 +352,10 @@ async def test_process_metric_series_and_metrics_pipeline_branches(monkeypatch):
         lambda sk, mn, vals: None if mn == "m1" else SimpleNamespace(series_key=sk),
     )
 
-    async def _process_one(req, query_string, metric_name, ts, vals, z_threshold, analysis_window_seconds):
-        if metric_name == "m1":
+    async def _process_one(job):
+        if job.metric_name == "m1":
             raise RuntimeError("boom")
-        return ([_anomaly(metric_name, 1.0, 1.0)], [_cp(metric_name, 1.0, 1.0)], None, None)
+        return ([_anomaly(job.metric_name, 1.0, 1.0)], [_cp(job.metric_name, 1.0, 1.0)], None, None)
 
     monkeypatch.setattr(helpers, "_process_one_metric_series", _process_one)
 
@@ -559,13 +565,15 @@ async def test_process_metrics_and_slo_remaining_branches(monkeypatch):
 
     req = AnalyzeRequest(tenant_id="t", start=1, end=2, step="15s")
     _, _, _, deg = await helpers._process_one_metric_series(
-        req=req,
-        query_string="no-threshold-key",
-        metric_name="m",
-        ts=[1.0, 2.0],
-        vals=[1.0, 2.0],
-        z_threshold=1.0,
-        analysis_window_seconds=10.0,
+        helpers.MetricSeriesJob(
+            req=req,
+            query_string="no-threshold-key",
+            metric_name="m",
+            ts=[1.0, 2.0],
+            vals=[1.0, 2.0],
+            z_threshold=1.0,
+            analysis_window_seconds=10.0,
+        )
     )
     assert deg is None
 
@@ -580,7 +588,7 @@ async def test_process_metrics_and_slo_remaining_branches(monkeypatch):
     monkeypatch.setattr(helpers.anomaly, "iter_series", _iter_series)
     monkeypatch.setattr(helpers, "compute_series_distribution_stats", lambda *_a, **_k: SimpleNamespace(series_key="s"))
 
-    async def _process_one(*_args, **_kwargs):
+    async def _process_one(_job):
         return ([], [], SimpleNamespace(name="fc"), None)
 
     monkeypatch.setattr(helpers, "_process_one_metric_series", _process_one)

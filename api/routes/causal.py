@@ -55,7 +55,7 @@ def _common_causes_for_roots(causal_graph: CausalGraph, roots: list[str]) -> dic
 
 async def _fetch_requested_metrics(provider: DataSourceProvider, req: CorrelateRequest) -> list[tuple[str, JSONDict]]:
     queries = list(dict.fromkeys((getattr(req, "metric_queries", None) or []) + DEFAULT_METRIC_QUERIES))
-    return await safe_call(fetch_metrics(provider, queries, req.start, req.end, req.step))
+    return await safe_call(fetch_metrics(provider, queries, req.start, req.end, step=req.step))
 
 
 @router.post(
@@ -66,6 +66,7 @@ async def _fetch_requested_metrics(provider: DataSourceProvider, req: CorrelateR
 @handle_exceptions
 async def granger_causality(
     req: CorrelateRequest,
+    *,
     limit: int = Query(default=100, ge=1, le=2000),
     min_strength: float = Query(default=0.05, ge=0.0, le=1.0),
     max_series: int = Query(default=25, ge=2, le=200),

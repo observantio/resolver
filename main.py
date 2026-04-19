@@ -85,6 +85,7 @@ async def wait_for(
     name: str,
     url: str,
     timeout: float,
+    *,
     headers: dict[str, str] | None = None,
     accept_status: tuple[int, ...] = (200, 204, 404),
 ) -> None:

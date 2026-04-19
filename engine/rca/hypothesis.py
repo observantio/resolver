@@ -80,36 +80,9 @@ class RcaSignalInputs:
 
 
 def _coerce_signal_inputs(
-    signal_inputs: RcaSignalInputs | list[MetricAnomaly] | None,
-    legacy_signal_groups: tuple[object, ...],
+    signal_inputs: RcaSignalInputs | None,
 ) -> RcaSignalInputs:
-    if isinstance(signal_inputs, RcaSignalInputs):
-        return signal_inputs
-
-    groups: list[object] = []
-    if signal_inputs is not None:
-        groups.append(signal_inputs)
-    groups.extend(legacy_signal_groups)
-
-    def _as_list(value: object) -> list[object]:
-        return value if isinstance(value, list) else []
-
-    if not groups:
-        return RcaSignalInputs()
-
-    metric_anomalies = _as_list(groups[0])
-    log_bursts = _as_list(groups[1]) if len(groups) > 1 else []
-    log_patterns = _as_list(groups[2]) if len(groups) > 2 else []
-    service_latency = _as_list(groups[3]) if len(groups) > 3 else []
-    error_propagation = _as_list(groups[4]) if len(groups) > 4 else []
-
-    return RcaSignalInputs(
-        metric_anomalies=[item for item in metric_anomalies if isinstance(item, MetricAnomaly)],
-        log_bursts=[item for item in log_bursts if isinstance(item, LogBurst)],
-        log_patterns=[item for item in log_patterns if isinstance(item, LogPattern)],
-        service_latency=[item for item in service_latency if isinstance(item, ServiceLatency)],
-        error_propagation=[item for item in error_propagation if isinstance(item, ErrorPropagation)],
-    )
+    return signal_inputs or RcaSignalInputs()
 
 
 def _anomaly_impact_rank(anomaly: MetricAnomaly) -> tuple[float, float, float]:
@@ -304,81 +277,82 @@ def _action_for_category(category: RcaCategory | None, service: str = "") -> str
     return actions.get(category, "Investigate correlated signals.")
 
 
-def generate(
-    signal_inputs: RcaSignalInputs | list[MetricAnomaly] | None,
-    *legacy_signal_groups: object,
-    correlated_events: list[CorrelatedEvent] | None = None,
-    graph: DependencyGraph | None = None,
-    event_registry: EventRegistry | None = None,
-) -> list[RootCause]:
-    inputs = _coerce_signal_inputs(signal_inputs, legacy_signal_groups)
-    _ = (inputs.metric_anomalies, inputs.log_bursts, inputs.service_latency)
-    causes: list[RootCause] = []
-    deployments = event_registry.list_all() if event_registry else []
+def _nearest_deployment(
+    event: CorrelatedEvent,
+    deployments: list[DeploymentEvent],
+    event_registry: EventRegistry | None,
+    service: str | None = None,
+) -> DeploymentEvent | None:
+    window_seconds = float(settings.rca_deploy_window_seconds)
+    window_start = float(event.window_start) - window_seconds
+    window_end = float(event.window_start) + window_seconds
 
-    for event in correlated_events or []:
+    def _deployment_distance(
+        deployment: DeploymentEvent,
+        reference_time: float = event.window_start,
+    ) -> float:
+        return abs(deployment.timestamp - reference_time)
+
+    if service and event_registry:
+        candidates = [d for d in event_registry.for_service(service) if window_start <= d.timestamp <= window_end]
+        if candidates:
+            return min(candidates, key=_deployment_distance)
+
+    nearby_deploys = event_registry.in_window(window_start, window_end) if event_registry else [
+        d for d in deployments if window_start <= d.timestamp <= window_end
+    ]
+    return min(nearby_deploys, key=_deployment_distance) if nearby_deploys else None
+
+
+def _build_event_hypothesis_parts(
+    event: CorrelatedEvent,
+    deploy_event: DeploymentEvent | None,
+) -> tuple[list[str], list[str], list[str]]:
+    metric_names = _metric_names_for_hypothesis(event.metric_anomalies, limit=2)
+    service_names = sorted({service.service for service in event.service_latency})[:2]
+    process_entities = _process_entities_for_hypothesis(event.metric_anomalies, limit=2)
+    parts: list[str] = []
+    if deploy_event:
+        parts.append(f"deployment of {deploy_event.service} v{deploy_event.version}")
+    if metric_names:
+        parts.append(f"metric anomaly in {', '.join(metric_names)}")
+    if process_entities:
+        parts.append(f"process hotspot in {', '.join(process_entities)}")
+    if service_names:
+        parts.append(f"latency spike in {', '.join(service_names)}")
+    if event.log_bursts:
+        parts.append(f"{len(event.log_bursts)} log burst(s)")
+    return parts, process_entities, service_names
+
+
+def _correlated_event_causes(
+    correlated_events: list[CorrelatedEvent],
+    *,
+    deployments: list[DeploymentEvent],
+    graph: DependencyGraph | None,
+    event_registry: EventRegistry | None,
+) -> list[RootCause]:
+    causes: list[RootCause] = []
+    for event in correlated_events:
         if event.confidence < settings.rca_event_confidence_threshold:
             continue
-        event_window_start = event.window_start
-
         category = categorize(event, deployments)
         base_score = score_correlated_event(event)
         deploy_score = score_deployment_correlation(event.window_start, deployments)
         confidence = round(min(settings.rca_score_cap, base_score + deploy_score * 0.2), 3)
 
-        deploy_event: DeploymentEvent | None = None
-        window_seconds = float(settings.rca_deploy_window_seconds)
-        window_start = float(event.window_start) - window_seconds
-        window_end = float(event.window_start) + window_seconds
+        root_service = event.service_latency[0].service if event.service_latency else ""
+        deploy_event = _nearest_deployment(event, deployments, event_registry)
+        affected_services: list[str] = []
+        if root_service and graph:
+            affected_services = graph.blast_radius(root_service).affected_downstream
+            deploy_event = _nearest_deployment(event, deployments, event_registry, service=root_service) or deploy_event
 
-        def _deployment_distance(
-            deployment: DeploymentEvent,
-            reference_time: float = event_window_start,
-        ) -> float:
-            return abs(deployment.timestamp - reference_time)
-
-        if event_registry:
-            nearby_deploys = event_registry.in_window(window_start, window_end)
-        else:
-            nearby_deploys = [d for d in deployments if window_start <= d.timestamp <= window_end]
-        if nearby_deploys:
-            deploy_event = min(nearby_deploys, key=_deployment_distance)
-
-        affected: list[str] = []
-        root_svc = ""
-        if event.service_latency and graph:
-            root_svc = event.service_latency[0].service
-            blast = graph.blast_radius(root_svc)
-            affected = blast.affected_downstream
-            if event_registry:
-                service_deploys = [
-                    d for d in event_registry.for_service(root_svc) if window_start <= d.timestamp <= window_end
-                ]
-                if service_deploys:
-                    deploy_event = min(service_deploys, key=_deployment_distance)
-
-        metric_names = _metric_names_for_hypothesis(event.metric_anomalies, limit=2)
-        svc_names = sorted({s.service for s in event.service_latency})[:2]
-        process_entities = _process_entities_for_hypothesis(event.metric_anomalies, limit=2)
-
-        parts = []
-        if deploy_event:
-            parts.append(f"deployment of {deploy_event.service} v{deploy_event.version}")
-        if metric_names:
-            parts.append(f"metric anomaly in {', '.join(metric_names)}")
-        if process_entities:
-            parts.append(f"process hotspot in {', '.join(process_entities)}")
-        if svc_names:
-            parts.append(f"latency spike in {', '.join(svc_names)}")
-        if event.log_bursts:
-            parts.append(f"{len(event.log_bursts)} log burst(s)")
-
-        hypothesis = f"[{category.value}] Correlated incident: {' + '.join(parts) or 'multi-signal event'}"
-
+        parts, process_entities, _ = _build_event_hypothesis_parts(event, deploy_event)
         event_signals = _signals_from_event(event)
         causes.append(
             RootCause(
-                hypothesis=hypothesis,
+                hypothesis=f"[{category.value}] Correlated incident: {' + '.join(parts) or 'multi-signal event'}",
                 confidence=confidence,
                 severity=Severity.from_score(confidence),
                 category=category,
@@ -389,31 +363,63 @@ def generate(
                     f"latency_services={len(event.service_latency)}",
                 ],
                 contributing_signals=event_signals,
-                affected_services=affected,
-                recommended_action=_action_for_category(category, root_svc),
+                affected_services=affected_services,
+                recommended_action=_action_for_category(category, root_service),
                 deployment=deploy_event,
                 corroboration_summary=_corroboration_summary(event_signals),
             )
         )
+    return causes
 
-    for prop in inputs.error_propagation:
-        svc = prop.source_service
-        affected = getattr(prop, "affected_services", [])
-        conf = score_error_propagation([prop])
-        upstream = graph.find_upstream_roots(svc) if graph else []
+
+def _error_propagation_causes(
+    error_propagation: list[ErrorPropagation],
+    *,
+    graph: DependencyGraph | None,
+) -> list[RootCause]:
+    causes: list[RootCause] = []
+    for propagation in error_propagation:
+        source_service = propagation.source_service
+        affected = getattr(propagation, "affected_services", [])
+        confidence = score_error_propagation([propagation])
+        upstream = graph.find_upstream_roots(source_service) if graph else []
         all_affected = list(dict.fromkeys(upstream + affected))
+        signal = f"trace:propagation:{source_service}"
         causes.append(
             RootCause(
-                hypothesis=f"[error_propagation] Errors originating from {svc}, cascading to {', '.join(affected[:3])}",
-                confidence=conf,
+                hypothesis=(
+                    f"[error_propagation] Errors originating from {source_service}, "
+                    f"cascading to {', '.join(affected[:3])}"
+                ),
+                confidence=confidence,
                 severity=Severity.HIGH,
                 category=RcaCategory.ERROR_PROPAGATION,
-                contributing_signals=[f"trace:propagation:{svc}"],
+                contributing_signals=[signal],
                 affected_services=all_affected,
-                recommended_action=_action_for_category(RcaCategory.ERROR_PROPAGATION, svc),
-                corroboration_summary=_corroboration_summary([f"trace:propagation:{svc}"]),
+                recommended_action=_action_for_category(RcaCategory.ERROR_PROPAGATION, source_service),
+                corroboration_summary=_corroboration_summary([signal]),
             )
         )
+    return causes
+
+
+def generate(
+    signal_inputs: RcaSignalInputs | None,
+    *,
+    correlated_events: list[CorrelatedEvent] | None = None,
+    graph: DependencyGraph | None = None,
+    event_registry: EventRegistry | None = None,
+) -> list[RootCause]:
+    inputs = _coerce_signal_inputs(signal_inputs)
+    _ = (inputs.metric_anomalies, inputs.log_bursts, inputs.service_latency)
+    deployments = event_registry.list_all() if event_registry else []
+    causes = _correlated_event_causes(
+        correlated_events or [],
+        deployments=deployments,
+        graph=graph,
+        event_registry=event_registry,
+    )
+    causes.extend(_error_propagation_causes(inputs.error_propagation, graph=graph))
 
     critical_patterns = [
         p for p in inputs.log_patterns if p.severity.weight() >= settings.rca_severity_weight_threshold

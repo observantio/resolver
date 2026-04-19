@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - Lazily load baseline and granger engine classes via module `__getattr__` hooks to avoid import-time engine dependencies in store modules.
 - Hardened shared Redis patching in resolver tests by importing store modules dynamically and only patching available attributes.
 - Improved exception wrapper tests to preserve original HTTP exception identity and validate sync/async handler shape preservation.
+- Tightened resolver pylint design thresholds and refactored analyzer/connector/rca interfaces to keep strict linting without compatibility regressions.
+- Added structured RCA signal-input wiring and expanded edge-case tests so resolver `mypy`, `pylint`, and `pytest` all pass cleanly at 100% coverage.
 
 ## [v0.0.4] - 2026-04-14
 

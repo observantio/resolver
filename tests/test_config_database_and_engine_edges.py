@@ -193,12 +193,12 @@ async def test_fetcher_scrape_fallback_and_helper_paths():
             invalid_metric nope
         """,
     )
-    results = await fetch_metrics(provider, ["up", "cpu_usage", "bad", "weird"], 10, 20, "15s")
+    results = await fetch_metrics(provider, ["up", "cpu_usage", "bad", "weird"], 10, 20, step="15s")
     assert [query for query, _ in results] == ["up", "cpu_usage"]
     assert results[0][1]["data"]["result"][0]["metric"]["__name__"] == "up"
 
     direct = _FetchProvider({"up": {"data": {"result": [{"metric": {}, "values": [[1, 1.0]]}]}}})
-    returned = await fetch_metrics(direct, ["up"], 0, 1, "30s")
+    returned = await fetch_metrics(direct, ["up"], 0, 1, step="30s")
     assert returned == [("up", {"data": {"result": [{"metric": {}, "values": [[1, 1.0]]}]}})]
 
 

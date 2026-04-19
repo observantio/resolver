@@ -16,7 +16,7 @@ import pytest
 
 from api.responses import LogBurst, MetricAnomaly, ServiceLatency
 from engine.anomaly.detection import detect
-from engine.causal.granger import granger_multiple_pairs, granger_pair_analysis
+from engine.causal.granger import GrangerAnalysisOptions, granger_multiple_pairs, granger_pair_analysis
 from engine.causal.graph import CausalGraph
 from engine.correlation.temporal import correlate
 from engine.enums import Severity
@@ -87,7 +87,7 @@ def test_fuzzy_granger(seed):
     length = random.randint(15, 60)
     base = [random.random() for _ in range(length)]
     other = [b + random.gauss(0, 0.5) for b in base]
-    res = granger_pair_analysis("a", base, "b", other, max_lag=3)
+    res = granger_pair_analysis("a", base, "b", other, options=GrangerAnalysisOptions(max_lag=3))
     if res:
         assert res.cause_metric == "a"
     allr = granger_multiple_pairs({"a": base, "b": other})

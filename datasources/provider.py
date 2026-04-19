@@ -25,16 +25,51 @@ class DataSourceProvider:
         self.metrics = DataSourceFactory.create_metrics(settings, tenant_id)
         self.traces = DataSourceFactory.create_traces(settings, tenant_id)
 
-    async def query_logs(self, query: str, start: int, end: int, limit: int | None = None) -> JSONDict:
-        return await self.logs.query_range(query=query, start=start, end=end, limit=limit)
+    async def query_logs(
+        self,
+        query: str,
+        start: int,
+        end: int,
+        *,
+        limit: int | None = None,
+    ) -> JSONDict:
+        resolved_limit = _coerce_optional_int(limit)
+        return await self.logs.query_range(query=query, start=start, end=end, limit=resolved_limit)
 
-    async def query_metrics(self, query: str, start: int, end: int, step: str) -> JSONDict:
-        return await self.metrics.query_range(query=query, start=start, end=end, step=step)
+    async def query_metrics(
+        self,
+        query: str,
+        start: int,
+        end: int,
+        *,
+        step: str | None = None,
+    ) -> JSONDict:
+        resolved_step = None if step is None else str(step)
+        if not resolved_step:
+            raise TypeError("step is required")
+        return await self.metrics.query_range(query=query, start=start, end=end, step=resolved_step)
 
-    async def query_traces(self, filters: TraceFilters, start: int, end: int, limit: int | None = None) -> JSONDict:
-        return await self.traces.query_range(filters=filters, start=start, end=end, limit=limit)
+    async def query_traces(
+        self,
+        filters: TraceFilters,
+        start: int,
+        end: int,
+        *,
+        limit: int | None = None,
+    ) -> JSONDict:
+        resolved_limit = _coerce_optional_int(limit)
+        return await self.traces.query_range(filters=filters, start=start, end=end, limit=resolved_limit)
 
     async def aclose(self) -> None:
         await self.logs.aclose()
         await self.metrics.aclose()
         await self.traces.aclose()
+
+
+def _coerce_optional_int(value: object | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None

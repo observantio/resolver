@@ -84,4 +84,4 @@ async def fetch_requested_metrics(
     req: _MetricRequestLike,
 ) -> list[tuple[str, JSONDict]]:
     queries = list(dict.fromkeys((getattr(req, "metric_queries", None) or []) + DEFAULT_METRIC_QUERIES))
-    return await safe_call(fetch_metrics(provider, queries, req.start, req.end, req.step))
+    return await safe_call(fetch_metrics(provider, queries, req.start, req.end, step=req.step))

@@ -74,18 +74,19 @@ def _serialize_weights(weights: dict[Signal, float]) -> dict[str, float]:
 
 
 def _coerce_update_count(value: object) -> int:
+    parsed = 0
     if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return max(0, value)
-    if isinstance(value, float):
-        return max(0, int(value)) if math.isfinite(value) else 0
-    if isinstance(value, str):
+        parsed = int(value)
+    elif isinstance(value, int):
+        parsed = value
+    elif isinstance(value, float) and math.isfinite(value):
+        parsed = int(value)
+    elif isinstance(value, str):
         try:
-            return max(0, int(value))
+            parsed = int(value)
         except ValueError:
-            return 0
-    return 0
+            parsed = 0
+    return max(0, parsed)
 
 
 class TenantState:

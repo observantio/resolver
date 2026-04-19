@@ -12,7 +12,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 from api.responses import MetricAnomaly, ServiceLatency
 from engine.correlation.temporal import CorrelatedEvent
 from engine.enums import ChangeType, RcaCategory, Severity
-from engine.rca.hypothesis import RootCause, _action_for_category, _signals_from_event, generate
+from engine.rca.hypothesis import RcaSignalInputs, RootCause, _action_for_category, _signals_from_event, generate
 
 
 class DummyEvent:
@@ -51,7 +51,12 @@ def test_signals_and_actions():
 
 
 def test_generate_empty():
-    root = generate([], [], [], [], [], correlated_events=[], graph=None, event_registry=None)
+    root = generate(
+        RcaSignalInputs(),
+        correlated_events=[],
+        graph=None,
+        event_registry=None,
+    )
     assert root == []
 
 
@@ -89,7 +94,12 @@ def test_generate_with_simple_event():
         ],
         confidence=0.5,
     )
-    root = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
+    root = generate(
+        RcaSignalInputs(),
+        correlated_events=[ev],
+        graph=None,
+        event_registry=None,
+    )
     assert isinstance(root, list)
     if root:
         assert isinstance(root[0], RootCause)
@@ -126,7 +136,12 @@ def test_generate_deduplicates_same_hypothesis_events():
         service_latency=[],
         confidence=0.7,
     )
-    causes = generate([], [], [], [], [], correlated_events=[ev1, ev2], graph=None, event_registry=None)
+    causes = generate(
+        RcaSignalInputs(),
+        correlated_events=[ev1, ev2],
+        graph=None,
+        event_registry=None,
+    )
     assert len(causes) == 1
     assert causes[0].corroboration_summary
 
@@ -169,7 +184,12 @@ def test_hypothesis_prefers_high_impact_metrics_over_alphabetical():
         service_latency=[],
         confidence=0.8,
     )
-    causes = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
+    causes = generate(
+        RcaSignalInputs(),
+        correlated_events=[ev],
+        graph=None,
+        event_registry=None,
+    )
     assert causes
     hyp = causes[0].hypothesis
     assert "520145" in hyp
@@ -200,7 +220,12 @@ def test_generate_includes_process_entity_from_metric_labels():
         service_latency=[],
         confidence=0.7,
     )
-    causes = generate([], [], [], [], [], correlated_events=[ev], graph=None, event_registry=None)
+    causes = generate(
+        RcaSignalInputs(),
+        correlated_events=[ev],
+        graph=None,
+        event_registry=None,
+    )
     assert causes
     assert "process hotspot in redis-server(pid=274)" in causes[0].hypothesis
     assert any(str(item).startswith("process_entities=") for item in causes[0].evidence)

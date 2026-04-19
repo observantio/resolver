@@ -54,6 +54,7 @@ def forecast(
     ts: Sequence[float],
     vals: Sequence[float],
     threshold: float,
+    *,
     horizon_seconds: float | None = None,
 ) -> TrajectoryForecast | None:
     if horizon_seconds is None:

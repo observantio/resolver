@@ -33,21 +33,17 @@ def result_matches_services(result: object, services: set[str]) -> bool:
 
 
 def filter_metric_response_by_services(response: object, services: set[str]) -> object:
-    if not services:
-        return response
-    if not isinstance(response, dict):
-        return response
-    data = response.get("data")
-    if not isinstance(data, dict):
-        return response
-    results = data.get("result")
-    if not isinstance(results, list):
-        return response
-    filtered = [item for item in results if result_matches_services(item, services)]
-    if len(filtered) == len(results):
-        return response
-    response_copy = dict(response)
-    data_copy = dict(data)
-    data_copy["result"] = filtered
-    response_copy["data"] = data_copy
-    return response_copy
+    filtered_response = response
+    if services and isinstance(response, dict):
+        data = response.get("data")
+        if isinstance(data, dict):
+            results = data.get("result")
+            if isinstance(results, list):
+                filtered = [item for item in results if result_matches_services(item, services)]
+                if len(filtered) != len(results):
+                    response_copy = dict(response)
+                    data_copy = dict(data)
+                    data_copy["result"] = filtered
+                    response_copy["data"] = data_copy
+                    filtered_response = response_copy
+    return filtered_response

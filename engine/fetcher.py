@@ -95,14 +95,19 @@ async def fetch_metrics(
     queries: list[str],
     start: int,
     end: int,
-    step: str,
+    *,
+    step: str | None = None,
 ) -> list[tuple[str, JSONDict]]:
+    resolved_step = None if step is None else str(step)
+    if not resolved_step:
+        raise TypeError("step is required")
+
     max_parallel = max(1, int(settings.analyzer_max_parallel_metric_queries))
     sem = asyncio.Semaphore(max_parallel)
 
     async def _query(q: str) -> JSONDict:
         async with sem:
-            return await provider.query_metrics(query=q, start=start, end=end, step=step)
+            return await provider.query_metrics(query=q, start=start, end=end, step=resolved_step)
 
     raw = await asyncio.gather(*[_query(q) for q in queries], return_exceptions=True)
 

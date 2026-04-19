@@ -18,7 +18,14 @@ from datasources.types import JSONDict, TraceFilters
 class BaseConnector(ABC):
     health_path: str = ""
 
-    def __init__(self, tenant_id: str, base_url: str, timeout: int = 30, headers: dict[str, str] | None = None):
+    def __init__(
+        self,
+        tenant_id: str,
+        base_url: str,
+        *,
+        timeout: int = 30,
+        headers: dict[str, str] | None = None,
+    ):
         self.tenant_id = tenant_id
         self.base_url = str(base_url).rstrip("/")
         self.timeout = timeout
@@ -48,6 +55,7 @@ class LogsConnector(BaseConnector):
         query: str,
         start: int,
         end: int,
+        *,
         limit: int | None = None,
     ) -> JSONDict: ...
 
@@ -59,6 +67,7 @@ class MetricsConnector(BaseConnector):
         query: str,
         start: int,
         end: int,
+        *,
         step: str,
     ) -> JSONDict: ...
 
@@ -70,5 +79,6 @@ class TracesConnector(BaseConnector):
         filters: TraceFilters,
         start: int,
         end: int,
+        *,
         limit: int | None = None,
     ) -> JSONDict: ...
