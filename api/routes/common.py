@@ -5,11 +5,10 @@ Provides a centralized place for creating data source providers, handling common
 and other helpers used across multiple routers. This keeps individual route files thin and avoids repeating boilerplate
 logic.
 
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 from __future__ import annotations

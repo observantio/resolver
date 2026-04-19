@@ -3,11 +3,10 @@ Analyze route for root cause analysis (RCA) across multiple signals. This gives 
 including metric anomalies, log bursts, service latency issues, error propagation, and more. You may filter or specify
 time ranges and other parameters in the AnalyzeRequest to focus the analysis.
 
-Copyright (c) 2026 Stefan Kumarasinghe
+Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
 from __future__ import annotations
