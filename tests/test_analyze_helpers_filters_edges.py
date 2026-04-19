@@ -295,10 +295,11 @@ async def test_process_metric_series_and_metrics_pipeline_branches(monkeypatch):
     monkeypatch.setattr(helpers, "baseline_compute", lambda *_a, **_k: called.__setitem__("baseline_fallback", 1))
     monkeypatch.setattr(helpers.anomaly, "detect", lambda *_a, **_k: [_anomaly("m", 1.0, 1.0)])
 
-    def _legacy_cp(ts, vals, sigma):
-        return [_cp("m", 1.0, sigma)]
+    def _cp_detector(ts, vals, threshold_sigma=None, metric_name=None):
+        assert metric_name == "m"
+        return [_cp("m", 1.0, float(threshold_sigma or 0.0))]
 
-    monkeypatch.setattr(helpers, "changepoint_detect", _legacy_cp)
+    monkeypatch.setattr(helpers, "changepoint_detect", _cp_detector)
     monkeypatch.setattr(helpers.settings, "cusum_threshold_sigma", 2.0)
     monkeypatch.setattr(helpers.settings, "analyzer_forecast_min_window_seconds", 10.0)
     monkeypatch.setattr(helpers.settings, "analyzer_degradation_min_window_seconds", 10.0)

@@ -55,15 +55,12 @@ async def metric_changepoints(req: ChangepointRequest) -> list[ChangePoint]:
     results: list[ChangePoint] = []
     for metric_name, ts, vals in anomaly.iter_series(raw, query_hint=req.query):
         threshold_sigma = float(req.threshold_sigma)
-        try:
-            results.extend(
-                changepoint_detect(
-                    ts,
-                    vals,
-                    threshold_sigma=threshold_sigma,
-                    metric_name=metric_name,
-                )
+        results.extend(
+            changepoint_detect(
+                ts,
+                vals,
+                threshold_sigma=threshold_sigma,
+                metric_name=metric_name,
             )
-        except TypeError:
-            results.extend(changepoint_detect(ts, vals, threshold_sigma))
+        )
     return sorted(results, key=lambda c: c.timestamp)
