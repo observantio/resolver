@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Improved exception wrapper tests to preserve original HTTP exception identity and validate sync/async handler shape preservation.
 - Tightened resolver pylint design thresholds and refactored analyzer/connector/rca interfaces to keep strict linting without compatibility regressions.
 - Added structured RCA signal-input wiring and expanded edge-case tests so resolver `mypy`, `pylint`, and `pytest` all pass cleanly at 100% coverage.
+- Applied cleanup-only compatibility wording updates in resolver config/comments and datasource fallback test literals with no behavior changes.
 
 ## [v0.0.4] - 2026-04-14
 

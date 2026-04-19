@@ -88,7 +88,7 @@ async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
             "timeout": 12,
             "client": object(),
             "request_headers": {},
-            "_headers": lambda self: {"X-Fallback": "legacy"},
+            "_headers": lambda self: {"X-Fallback": "compat"},
         },
     )()
     assert await query_backend_json(
@@ -98,7 +98,7 @@ async def test_query_backend_json_and_store_baseline_helpers(monkeypatch):
         messages=BackendErrorMessages(invalid="i", timeout="t", unavailable="u"),
     ) == {"ok": True}
     assert captured["url"] == "https://backend/query3"
-    assert captured["headers"] == {"X-Fallback": "legacy"}
+    assert captured["headers"] == {"X-Fallback": "compat"}
 
     baseline = baseline_store.Baseline(mean=1.0, std=2.0, lower=-5.0, upper=7.0, seasonal_mean=3.0, sample_count=4)
     raw = baseline_store._to_json(baseline)
