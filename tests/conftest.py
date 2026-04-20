@@ -7,8 +7,12 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 License. See http://www.apache.org/licenses/LICENSE-2.0 for details.
 """
 
+import atexit
 import os
+import shutil
 import sys
+import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +21,36 @@ os.environ.setdefault("MUTANT_UNDER_TEST", "")
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
+
+_TEST_SQLITE_DIR = Path(tempfile.mkdtemp(prefix="observantio-resolver-tests-"))
+_TEST_SQLITE_URL = f"sqlite:///{_TEST_SQLITE_DIR / 'resolver.sqlite3'}"
+_TEST_DATABASE_INITIALIZED = False
+
+atexit.register(shutil.rmtree, _TEST_SQLITE_DIR, ignore_errors=True)
+
+
+def _bootstrap_sqlite_database() -> None:
+    global _TEST_DATABASE_INITIALIZED
+
+    use_temp_sqlite = os.getenv("USE_TEMP_SQLITE_TEST_DB", "").strip().lower() in {"1", "true", "yes", "on"}
+    database_url = os.getenv("RESOLVER_DATABASE_URL", "").strip()
+    if use_temp_sqlite:
+        database_url = _TEST_SQLITE_URL
+        os.environ["RESOLVER_DATABASE_URL"] = database_url
+        os.environ["DATABASE_URL"] = database_url
+
+    if _TEST_DATABASE_INITIALIZED or not database_url.startswith("sqlite"):
+        return
+
+    from database import dispose_database, init_database, init_db
+
+    dispose_database()
+    init_database(database_url)
+    init_db()
+    _TEST_DATABASE_INITIALIZED = True
+
+
+_bootstrap_sqlite_database()
 
 from store.client import _fallback  # noqa: E402
 
