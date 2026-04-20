@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Tightened resolver pylint design thresholds and refactored analyzer/connector/rca interfaces to keep strict linting without compatibility regressions.
 - Added structured RCA signal-input wiring and expanded edge-case tests so resolver `mypy`, `pylint`, and `pytest` all pass cleanly at 100% coverage.
 - Applied cleanup-only compatibility wording updates in resolver config/comments and datasource fallback test literals with no behavior changes.
+- Added a temporary SQLite test bootstrap for resolver tests, cleaned up resolver request/analyzer docstrings, and excluded generated mutation fixtures from resolver mypy.
 
 ## [v0.0.4] - 2026-04-14
 
