@@ -1,5 +1,6 @@
 """
-Analyzer Helpers.
+Analyzer Helpers for validating and normalizing incoming requests to the resolver engine's analyze endpoint.
+
 Copyright (c) 2026 Stefan Kumarasinghe.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
