@@ -26,6 +26,7 @@ from api.routes import logs as logs_route
 from api.routes import metrics as metrics_route
 from api.routes import traces as traces_route
 from custom_types import json as json_types
+from middleware.runtime_ssl import RuntimeSSLOptions
 
 
 class DemoModel(NpModel):
@@ -491,8 +492,39 @@ def test_dunder_main_runs_uvicorn_with_ssl(monkeypatch):
     )
     runpy.run_module("main", run_name="__main__")
 
-    assert captured["app"] == "main:app"
+    assert captured["app"].title == "Resolver Analysis Engine"
     assert captured["host"] == "0.0.0.0"
     assert captured["port"] == 9443
     assert captured["ssl_certfile"] == "/tmp/cert.pem"
     assert captured["ssl_keyfile"] == "/tmp/key.pem"
+
+
+def test_dunder_main_runs_uvicorn_without_ssl(monkeypatch):
+    captured = {}
+
+    monkeypatch.delenv("RESOLVER_SSL_ENABLED", raising=False)
+    monkeypatch.delenv("RESOLVER_SSL_CERTFILE", raising=False)
+    monkeypatch.delenv("RESOLVER_SSL_KEYFILE", raising=False)
+    monkeypatch.setenv("RESOLVER_HOST", "127.0.0.1")
+    monkeypatch.setenv("RESOLVER_PORT", "4322")
+    import config as config_module
+
+    importlib.reload(config_module)
+    monkeypatch.setitem(
+        sys.modules, "uvicorn", types.SimpleNamespace(run=lambda app, **kwargs: captured.update({"app": app, **kwargs}))
+    )
+    runpy.run_module("main", run_name="__main__")
+
+    assert captured["app"].title == "Resolver Analysis Engine"
+    assert captured["host"] == "127.0.0.1"
+    assert captured["port"] == 4322
+    assert "ssl_certfile" not in captured
+    assert "ssl_keyfile" not in captured
+
+
+def test_runtime_ssl_options_requires_paths():
+    with pytest.raises(
+        ValueError,
+        match="RESOLVER_SSL_ENABLED=true requires RESOLVER_SSL_CERTFILE and RESOLVER_SSL_KEYFILE to be set",
+    ):
+        RuntimeSSLOptions.from_settings(types.SimpleNamespace(ssl_enabled=True, ssl_certfile="", ssl_keyfile=""))
