@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import os
 import logging
 import sys
 import time
@@ -18,7 +19,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import httpx
-import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
@@ -30,6 +30,7 @@ from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMP
 from database import dispose_database, init_database, init_db
 from datasources.exceptions import BackendStartupTimeout
 from middleware.openapi import install_custom_openapi
+from middleware.runtime_ssl import RuntimeSSLOptions, run_uvicorn
 from services.rca_job_service import rca_job_service
 from services.security_service import InternalAuthMiddleware
 
@@ -70,6 +71,32 @@ def _openapi_servers() -> list[dict[str, str]]:
 
 def _generate_operation_id(route: APIRoute) -> str:
     return route.name
+
+
+async def _bootstrap_database() -> None:
+    timeout_seconds = float(os.getenv("DATABASE_STARTUP_TIMEOUT", "180"))
+    retry_delay_seconds = float(os.getenv("DATABASE_STARTUP_RETRY_DELAY", "2"))
+    deadline = time.monotonic() + timeout_seconds
+    attempt = 0
+
+    while True:
+        attempt += 1
+        try:
+            if settings.database_url:
+                init_database(settings.database_url)
+                init_db()
+                log.info("Resolver database initialization completed")
+            return
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Resolver database did not become ready before startup timeout") from exc
+            log.warning(
+                "Resolver database not ready (attempt %d, retrying in %.1fs): %s",
+                attempt,
+                retry_delay_seconds,
+                exc,
+            )
+            await asyncio.sleep(retry_delay_seconds)
 
 
 class ResolverReadyResponse(BaseModel):
@@ -175,8 +202,7 @@ async def _wait_for_all_bg(data_settings: Settings, tenant_id: str) -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if settings.database_url:
-        init_database(settings.database_url)
-        init_db()
+        await _bootstrap_database()
         await rca_job_service.startup_recovery()
 
     tenant_id = settings.default_tenant_id
@@ -245,21 +271,11 @@ async def ready() -> JSONResponse:
 
 
 if __name__ == "__main__":
-    if settings.ssl_enabled:
-        uvicorn.run(
-            "main:app",
-            host=settings.host,
-            port=settings.port,
-            log_level="info",
-            access_log=True,
-            ssl_certfile=settings.ssl_certfile,
-            ssl_keyfile=settings.ssl_keyfile,
-        )
-    else:
-        uvicorn.run(
-            "main:app",
-            host=settings.host,
-            port=settings.port,
-            log_level="info",
-            access_log=True,
-        )
+    run_uvicorn(
+        app,
+        host=settings.host,
+        port=settings.port,
+        log_level="info",
+        access_log=True,
+        ssl_options=RuntimeSSLOptions.from_settings(settings),
+    )
