@@ -77,3 +77,13 @@ async def test_fetch_text_success(monkeypatch):
     monkeypatch.setattr(httpx, "AsyncClient", lambda timeout: DummyClient(resp))
     got = await fetch_text("url")
     assert got == "hello"
+
+
+@pytest.mark.asyncio
+async def test_fetch_json_falls_back_to_owned_client_when_client_is_invalid(monkeypatch):
+    resp = DummyResponse(status_code=200, json_data={"ok": True})
+    monkeypatch.setattr(httpx, "AsyncClient", lambda timeout: DummyClient(resp))
+
+    got = await fetch_json("url", options=FetchRequestOptions(client=object()))
+
+    assert got == {"ok": True}
