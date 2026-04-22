@@ -24,7 +24,19 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 
-from api.routes import router
+from api.routes.analyze import router as analyze_router
+from api.routes.causal import router as causal_router
+from api.routes.correlation import router as correlation_router
+from api.routes.events import router as events_router
+from api.routes.forecast import router as forecast_router
+from api.routes.health import router as health_router
+from api.routes.jobs import router as jobs_router
+from api.routes.logs import router as logs_router
+from api.routes.metrics import router as metrics_router
+from api.routes.ml import router as ml_router
+from api.routes.slo import router as slo_router
+from api.routes.topology import router as topology_router
+from api.routes.traces import router as traces_router
 from api.routes.common import close_providers
 from config import LOGS_BACKEND_LOKI, METRICS_BACKEND_MIMIR, TRACES_BACKEND_TEMPO, Settings, settings
 from database import dispose_database, init_database, init_db
@@ -247,7 +259,22 @@ app = FastAPI(
 )
 
 app.add_middleware(InternalAuthMiddleware)
-app.include_router(router, prefix="/api/v1")
+for api_router in (
+    health_router,
+    analyze_router,
+    metrics_router,
+    logs_router,
+    traces_router,
+    correlation_router,
+    slo_router,
+    topology_router,
+    events_router,
+    forecast_router,
+    causal_router,
+    ml_router,
+    jobs_router,
+):
+    app.include_router(api_router, prefix="/api/v1")
 install_custom_openapi(app)
 
 
