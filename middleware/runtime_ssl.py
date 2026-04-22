@@ -21,7 +21,7 @@ class RuntimeSSLOptions:
 
     @classmethod
     def from_settings(cls, settings: object) -> RuntimeSSLOptions | None:
-        if not getattr(settings, "ssl_enabled"):
+        if not getattr(settings, "ssl_enabled", False):
             return None
 
         certfile = str(getattr(settings, "ssl_certfile", "")).strip()

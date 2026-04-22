@@ -528,3 +528,12 @@ def test_runtime_ssl_options_requires_paths():
         match="RESOLVER_SSL_ENABLED=true requires RESOLVER_SSL_CERTFILE and RESOLVER_SSL_KEYFILE to be set",
     ):
         RuntimeSSLOptions.from_settings(types.SimpleNamespace(ssl_enabled=True, ssl_certfile="", ssl_keyfile=""))
+
+
+def test_aggregated_router_is_populated_and_ssl_defaults_disabled():
+    from api.routes import router as aggregated_router
+
+    route_paths = {route.path for route in aggregated_router.routes}
+
+    assert "/health" in route_paths
+    assert RuntimeSSLOptions.from_settings(types.SimpleNamespace()) is None

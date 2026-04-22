@@ -50,7 +50,7 @@ def _coerce_fetch_options(options: FetchRequestOptions | None) -> FetchRequestOp
     base = options or FetchRequestOptions()
     timeout = int(cast(int | str | bytes | bytearray, base.timeout))
     client_raw = base.client
-    client = client_raw if hasattr(client_raw, "get") else base.client
+    client = client_raw if callable(getattr(client_raw, "get", None)) else None
 
     return FetchRequestOptions(
         params=base.params,
