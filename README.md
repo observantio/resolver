@@ -110,7 +110,7 @@ Resolver combines several layers of reasoning rather than relying on a single de
 
 | Layer | Purpose |
 | --- | --- |
-| Fetch and datasource routing | Collects signals from Loki, Mimir, Tempo, or VictoriaMetrics |
+| Fetch and datasource routing | Collects signals from Loki, Mimir, Tempo |
 | Anomaly detection | Flags unusual changes in time series and derived signals |
 | Baselines and changepoints | Separates structural change from normal variation |
 | Correlation | Aligns multi-signal evidence over time |
