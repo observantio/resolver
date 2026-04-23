@@ -125,7 +125,7 @@ This is why the service is useful both for on-demand RCA and for background anal
 Supported defaults in the current configuration:
 
 - Logs: Loki
-- Metrics: Mimir or VictoriaMetrics
+- Metrics: Mimir
 - Traces: Tempo
 
 Default URLs:
